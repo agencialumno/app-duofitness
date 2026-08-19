@@ -1,0 +1,169 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DEMO_USER, DEMO_WORKOUTS, DEMO_SESSIONS, DEMO_XP, DEMO_STREAK, DEMO_ACHIEVEMENTS } from '../data/demoData';
+
+const AppContext = createContext({});
+
+export const useApp = () => useContext(AppContext);
+
+export const AppProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [workouts, setWorkouts] = useState([]);
+  const [completedSessions, setCompletedSessions] = useState([]);
+  const [xp, setXp] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [achievements, setAchievements] = useState([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const u = await AsyncStorage.getItem('@duo_user');
+      const w = await AsyncStorage.getItem('@duo_workouts');
+      const s = await AsyncStorage.getItem('@duo_sessions');
+      const x = await AsyncStorage.getItem('@duo_xp');
+      const st = await AsyncStorage.getItem('@duo_streak');
+      const ach = await AsyncStorage.getItem('@duo_achievements');
+
+      if (u) setUser(JSON.parse(u));
+      if (w) setWorkouts(JSON.parse(w));
+      if (s) setCompletedSessions(JSON.parse(s));
+      if (x) setXp(parseInt(x));
+      if (st) setStreak(parseInt(st));
+      if (ach) setAchievements(JSON.parse(ach));
+    } catch (e) {
+      console.log('Erro ao carregar dados:', e);
+    }
+  };
+
+  const saveUser = async (userData) => {
+    setUser(userData);
+    await AsyncStorage.setItem('@duo_user', JSON.stringify(userData));
+    await AsyncStorage.setItem('@duo_onboarded', 'true');
+  };
+
+  const addWorkout = async (workout) => {
+    const updated = [...workouts, { ...workout, id: Date.now().toString(), createdAt: new Date().toISOString() }];
+    setWorkouts(updated);
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
+  };
+
+  // Adiciona várias séries de uma vez (ex: A, B, C geradas juntas).
+  // Use esta função em vez de chamar addWorkout em loop — chamadas em
+  // sequência rápida leem o mesmo estado antigo e uma sobrescreve a
+  // outra, fazendo só a última série sobreviver.
+  const addWorkouts = async (newWorkouts) => {
+    const withMeta = newWorkouts.map((w, i) => ({
+      ...w,
+      id: `${Date.now()}_${i}`,
+      createdAt: new Date().toISOString(),
+    }));
+    const updated = [...workouts, ...withMeta];
+    setWorkouts(updated);
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
+  };
+
+
+  const updateWorkout = async (id, data) => {
+    const updated = workouts.map(w => w.id === id ? { ...w, ...data } : w);
+    setWorkouts(updated);
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
+  };
+
+  const deleteWorkout = async (id) => {
+    const updated = workouts.filter(w => w.id !== id);
+    setWorkouts(updated);
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
+  };
+
+  const completeSession = async (workoutId) => {
+    const session = {
+      id: Date.now().toString(),
+      workoutId,
+      completedAt: new Date().toISOString(),
+      xpEarned: 50,
+    };
+    const updatedSessions = [...completedSessions, session];
+    setCompletedSessions(updatedSessions);
+    await AsyncStorage.setItem('@duo_sessions', JSON.stringify(updatedSessions));
+
+    // XP + streak
+    const newXp = xp + 50;
+    setXp(newXp);
+    await AsyncStorage.setItem('@duo_xp', newXp.toString());
+
+    const newStreak = streak + 1;
+    setStreak(newStreak);
+    await AsyncStorage.setItem('@duo_streak', newStreak.toString());
+
+    checkAchievements(updatedSessions, newXp, newStreak);
+    return session;
+  };
+
+  const checkAchievements = async (sessions, currentXp, currentStreak) => {
+    const newAchs = [...achievements];
+    let changed = false;
+
+    const unlock = (id, title, icon) => {
+      if (!newAchs.find(a => a.id === id)) {
+        newAchs.push({ id, title, icon, unlockedAt: new Date().toISOString() });
+        changed = true;
+      }
+    };
+
+    if (sessions.length >= 1) unlock('first_workout', 'Primeira série!', '🏆');
+    if (sessions.length >= 7) unlock('week_warrior', 'Guerreiro da semana', '🔥');
+    if (sessions.length >= 30) unlock('monthly_beast', 'Besta mensal', '💪');
+    if (currentStreak >= 3) unlock('streak_3', '3 dias seguidos', '⚡');
+    if (currentStreak >= 7) unlock('streak_7', 'Semana perfeita', '🌟');
+    if (currentXp >= 500) unlock('xp_500', '500 XP acumulado', '🎯');
+    if (currentXp >= 1000) unlock('xp_1000', 'Mestre do XP', '👑');
+
+    if (changed) {
+      setAchievements(newAchs);
+      await AsyncStorage.setItem('@duo_achievements', JSON.stringify(newAchs));
+    }
+  };
+
+    const loadDemoData = async () => {
+    setUser(DEMO_USER);
+    setWorkouts(DEMO_WORKOUTS);
+    setCompletedSessions(DEMO_SESSIONS);
+    setXp(DEMO_XP);
+    setStreak(DEMO_STREAK);
+    setAchievements(DEMO_ACHIEVEMENTS);
+
+    await AsyncStorage.setItem('@duo_user', JSON.stringify(DEMO_USER));
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(DEMO_WORKOUTS));
+    await AsyncStorage.setItem('@duo_sessions', JSON.stringify(DEMO_SESSIONS));
+    await AsyncStorage.setItem('@duo_xp', DEMO_XP.toString());
+    await AsyncStorage.setItem('@duo_streak', DEMO_STREAK.toString());
+    await AsyncStorage.setItem('@duo_achievements', JSON.stringify(DEMO_ACHIEVEMENTS));
+    await AsyncStorage.setItem('@duo_onboarded', 'true');
+  };
+
+  const getLevel = () => {
+    if (xp < 100) return { level: 1, title: 'Iniciante', nextXp: 100 };
+    if (xp < 300) return { level: 2, title: 'Ativo', nextXp: 300 };
+    if (xp < 600) return { level: 3, title: 'Dedicado', nextXp: 600 };
+    if (xp < 1000) return { level: 4, title: 'Avançado', nextXp: 1000 };
+    if (xp < 2000) return { level: 5, title: 'Elite', nextXp: 2000 };
+    return { level: 6, title: 'Lenda', nextXp: null };
+  };
+
+  return (
+    <AppContext.Provider value={{
+      user, saveUser,
+      workouts, addWorkout, addWorkouts, updateWorkout, deleteWorkout,
+      completedSessions, completeSession,
+            xp, streak, achievements,
+      getLevel,
+      refreshData: loadData,
+      loadDemoData,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
