@@ -1,7 +1,7 @@
 // Subconjunto do catálogo permitido para um usuário. Espelha as regras do app
 // (workoutGenerator.js: filterByEquipment/Level/Limitation e imc.js:
 // avoidHighImpact). Testes comparam com o app para não divergir.
-import { CATALOG, COMBO_EQUIPMENT, LIMITATION_BLOCKED, type CatalogExercise } from './catalog.js';
+import { CATALOG, COMBO_EQUIPMENT, HIGH_IMPACT_IDS, LIMITATION_BLOCKED, type CatalogExercise } from './catalog.js';
 
 export const COMBOS = ['uno', 'duo', 'triple', 'prime', 'elite'] as const;
 export type Combo = (typeof COMBOS)[number];
@@ -9,11 +9,6 @@ export const LIMITATIONS = ['none', 'knee', 'shoulder', 'back'] as const;
 export type Limitation = (typeof LIMITATIONS)[number];
 export const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 export type Level = (typeof LEVELS)[number];
-
-// Exercícios de impacto: saem quando imc.js marca avoidHighImpact
-// (menor de 18, 46+, obesidade). Regra só do servidor: o gerador offline do app
-// ainda não filtra por isso.
-export const HIGH_IMPACT_IDS = ['jumping_jack', 'burpee', 'high_knees'];
 
 export type ImcCategory = 'underweight' | 'normal' | 'overweight' | 'obese1' | 'obese2';
 

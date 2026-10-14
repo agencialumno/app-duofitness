@@ -223,6 +223,16 @@ export const LIMITATION_BLOCKED = {
   back: ['rdl', 'superman', 'row_db', 'pullover', 'deadlift', 'seated_cable_row', 'lat_pulldown_ex'],
 };
 
+// Exercícios de impacto, removidos quando getIMCRecommendations marca
+// avoidHighImpact (menor de 18, 46+ e obesidade). Lista única: o backend lê esta
+// mesma constante pelo catálogo gerado (backend/scripts/sync-catalog.ts).
+export const HIGH_IMPACT_IDS = ['jumping_jack', 'burpee', 'high_knees'];
+
+export function filterHighImpact(exercises, avoidHighImpact) {
+  if (!avoidHighImpact) return exercises;
+  return exercises.filter(e => !HIGH_IMPACT_IDS.includes(e.id));
+}
+
 export function filterByLimitation(exercises, limitation) {
   if (!limitation || limitation === 'none') return exercises;
   return exercises.filter(e => !(LIMITATION_BLOCKED[limitation] || []).includes(e.id));
@@ -258,6 +268,7 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
     let filtered = filterByEquipment(exList, equipment);
     filtered = filterByLevel(filtered, level);
     filtered = filterByLimitation(filtered, limitation);
+    filtered = filterHighImpact(filtered, recs.avoidHighImpact);
     filtered = applyIMCRecommendations(filtered, recs);
     db[key] = filtered;
   }

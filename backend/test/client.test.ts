@@ -185,6 +185,16 @@ describe('chatStream (XHR + SSE)', () => {
     expect(h.onDone).not.toHaveBeenCalled();
   });
 
+  it('error no_plan chega ao app com o código (a tela cai no roteiro offline)', async () => {
+    const api = await loadApi();
+    const h = handlers();
+    api.chatStream({ messages: [], profile: {}, ...h });
+    FakeXhr.last.chunk('event: delta\ndata: {"text":"Vamos lá"}\n\nevent: error\ndata: {"code":"no_plan","message":"A conversa terminou sem plano."}\n\n');
+    expect(h.onDelta).toHaveBeenCalledWith('Vamos lá');
+    expect(h.onError).toHaveBeenCalledWith({ code: 'no_plan', message: 'A conversa terminou sem plano.', fallback: undefined });
+    expect(h.onDone).not.toHaveBeenCalled();
+  });
+
   it('conexão fechada sem done nem error vira erro; falha de rede também', async () => {
     const api = await loadApi();
     const h1 = handlers();

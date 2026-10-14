@@ -4,7 +4,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 // @ts-expect-error módulo JS do app, sem tipos
-import { EXERCISE_DB, LIMITATION_BLOCKED } from '../../src/utils/workoutGenerator.js';
+import { EXERCISE_DB, HIGH_IMPACT_IDS, LIMITATION_BLOCKED } from '../../src/utils/workoutGenerator.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import { COMBOS } from '../../src/data/combosEquipment.js';
 
@@ -64,6 +64,9 @@ export const CATALOG: CatalogExercise[] = ${JSON.stringify(exercises, null, 2)};
 export const COMBO_EQUIPMENT: Record<string, string[]> = ${JSON.stringify(comboEquipment, null, 2)};
 
 export const LIMITATION_BLOCKED: Record<string, string[]> = ${JSON.stringify(LIMITATION_BLOCKED, null, 2)};
+
+// Exercícios de impacto, removidos para menor de 18, 46+ e obesidade (avoidHighImpact).
+export const HIGH_IMPACT_IDS: string[] = ${JSON.stringify(HIGH_IMPACT_IDS, null, 2)};
 `;
 }
 

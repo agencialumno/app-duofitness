@@ -711,3 +711,10 @@ export const LIMITATION_BLOCKED: Record<string, string[]> = {
     "lat_pulldown_ex"
   ]
 };
+
+// Exercícios de impacto, removidos para menor de 18, 46+ e obesidade (avoidHighImpact).
+export const HIGH_IMPACT_IDS: string[] = [
+  "jumping_jack",
+  "burpee",
+  "high_knees"
+];

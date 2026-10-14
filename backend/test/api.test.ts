@@ -180,6 +180,23 @@ describe('POST /api/ia/chat (streaming)', () => {
     expect(JSON.stringify(last.content)).toContain('Instrução do sistema');
   });
 
+  it('no_plan: tool_use sem a ferramenta criar_plano (outra ferramenta ou bloco ausente)', async () => {
+    for (const content of [[], [{ type: 'tool_use', name: 'outra_ferramenta', input: {} }]]) {
+      const { app } = makeApp({ client: fakeClient([], { stop_reason: 'tool_use', content }) });
+      const events = parseSse(await (await post(app, validBody())).text());
+      expect(events.map((e) => e.event)).toEqual(['error']);
+      expect(events[0]!.data.code).toBe('no_plan');
+    }
+  });
+
+  it('no_plan no limite de turnos tem corpo sem "fallback" (o app segue com o roteiro offline)', async () => {
+    const config = testConfig({ MAX_USER_TURNS: '1' });
+    const { app } = makeApp({ config, client: fakeClient([textDelta('ainda perguntando')], { stop_reason: 'end_turn' }) });
+    const events = parseSse(await (await post(app, validBody())).text());
+    expect(events.map((e) => e.event)).toEqual(['delta', 'error']);
+    expect(events[1]!.data).toEqual({ code: 'no_plan', message: 'A conversa terminou sem plano.' });
+  });
+
   it('abaixo do limite de turnos, texto sem plano é normal (done)', async () => {
     const client = fakeClient([textDelta('Qual seu peso?')], { stop_reason: 'end_turn' });
     const { app } = makeApp({ client });
