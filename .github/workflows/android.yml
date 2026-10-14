@@ -1,0 +1,238 @@
+# Build Android (APK + AAB) assinado, fora do EAS.
+#
+# - Dispara ao subir uma tag "v*" (ex: v0.1.0) ou manualmente (workflow_dispatch).
+# - Projeto nativo gerado por "expo prebuild" (android/ fica fora do git).
+# - Assinatura e versão vêm do plugin plugins/withAndroidRelease.js, por variáveis de ambiente.
+# - Guia completo (keystore, secrets, tag): docs/android.md.
+#
+# NÃO RENOMEIE ESTE ARQUIVO: o versionCode usa github.run_number, que é contado por arquivo de
+# workflow. Renomear reinicia a contagem e a Play Store recusa versionCode menor.
+name: android
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # ABIs do APK e do AAB. Para emulador x86_64 ou para a Play Store, veja docs/android.md.
+  ANDROID_ABIS: arm64-v8a,armeabi-v7a
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # OPCIONAIS: sem elas o build segue e o app fica 100% offline.
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_APP_KEY: ${{ secrets.EXPO_PUBLIC_APP_KEY }}
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Versão (versionName da tag, versionCode = run_number)
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          if [ "$REF_TYPE" = "tag" ]; then
+            if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::A tag não segue o padrão vMAJOR.MINOR.PATCH (ex: v0.1.0)."
+              exit 1
+            fi
+            VERSION_NAME="${REF_NAME#v}"
+          else
+            # execução manual, sem tag: usa a versão do app.json
+            VERSION_NAME="$(node -p "require('./app.json').expo.version")"
+          fi
+          echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=$RUN_NUMBER" >> "$GITHUB_ENV"
+
+          if [ -n "${EXPO_PUBLIC_API_URL:-}" ]; then API="sim"; else API="não (app 100% offline)"; fi
+          if [ -n "${EXPO_PUBLIC_APP_KEY:-}" ]; then KEY="sim"; else KEY="não"; fi
+          {
+            echo "## Build Android"
+            echo ""
+            echo "- versionName: \`$VERSION_NAME\`"
+            echo "- versionCode: \`$RUN_NUMBER\`"
+            echo "- ABIs configuradas: \`$ANDROID_ABIS\`"
+            echo "- URL da API embutida no app: **$API**"
+            echo "- APP_KEY embutida no app: **$KEY**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Conferir secrets de assinatura
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEY_ALIAS ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            list="$(printf '%s, ' "${missing[@]}")"
+            list="${list%, }"
+            echo "::error::Faltam secrets de assinatura: $list. Cadastre em Settings > Secrets and variables > Actions (veja docs/android.md)."
+            {
+              echo ""
+              echo "### Build interrompido: faltam secrets de assinatura"
+              echo ""
+              echo "Secrets ausentes: \`$list\`. Veja \`docs/android.md\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: actions/setup-java@v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Cache do Gradle. Não usamos "cache: gradle" do setup-java porque ele exige arquivos
+      # .gradle já presentes, e o android/ só existe depois do prebuild.
+      - uses: actions/cache@v4.2.3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - run: npm ci
+
+      - name: Preparar keystore de release
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/duofitness-release.keystore"
+          # registra o caminho antes de criar o arquivo, para o passo final de limpeza achar
+          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE" 2>/dev/null; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 não é um base64 válido (veja docs/android.md)."
+            exit 1
+          fi
+          chmod 600 "$KEYSTORE"
+          if ! keytool -list -keystore "$KEYSTORE" -alias "$ANDROID_KEY_ALIAS" \
+               -storepass:env ANDROID_KEYSTORE_PASSWORD > /dev/null 2>&1; then
+            echo "::error::Não consegui abrir o keystore com ANDROID_KEY_ALIAS e ANDROID_KEYSTORE_PASSWORD. Confira os dois secrets."
+            exit 1
+          fi
+
+      - name: Gerar projeto Android (expo prebuild)
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --no-install
+          # confere que o plugin aplicou versão e assinatura
+          grep -q "versionCode $ANDROID_VERSION_CODE\$" android/app/build.gradle
+          grep -q "versionName \"$APP_VERSION_NAME\"" android/app/build.gradle
+          grep -q "withAndroidRelease" android/app/build.gradle
+
+      - name: Build (APK e AAB)
+        working-directory: android
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease bundleRelease \
+            -PreactNativeArchitectures="$ANDROID_ABIS" \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" \
+            --no-daemon --stacktrace
+
+      - name: Conferir e reunir os arquivos
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$APK" && test -f "$AAB"
+
+          mkdir -p release-out
+          cp "$APK" "release-out/duofitness-$APP_VERSION_NAME.apk"
+          cp "$AAB" "release-out/duofitness-$APP_VERSION_NAME.aab"
+          echo "APK_PATH=$GITHUB_WORKSPACE/release-out/duofitness-$APP_VERSION_NAME.apk" >> "$GITHUB_ENV"
+
+          # a assinatura precisa ser a do keystore de release, nunca a de debug
+          BT="$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/certs.txt"
+          if grep -qi "Android Debug" "$RUNNER_TEMP/certs.txt"; then
+            echo "::error::O APK foi assinado com a chave de DEBUG, não com o keystore de release."
+            exit 1
+          fi
+          SHA="$(grep -m1 'certificate SHA-256 digest' "$RUNNER_TEMP/certs.txt" | awk '{print $NF}')"
+          ABIS_FOUND="$(unzip -Z1 "$APK" | grep '^lib/' | cut -d/ -f2 | sort -u | paste -sd, -)"
+          SIZE="$(du -h "$APK" | cut -f1)"
+          {
+            echo "- ABIs no APK (conferido): \`$ABIS_FOUND\`"
+            echo "- Tamanho do APK: $SIZE"
+            echo "- Assinatura verificada (SHA-256 do certificado): \`$SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4.6.2
+        with:
+          name: duofitness-android-${{ env.APP_VERSION_NAME }}-${{ github.run_number }}
+          path: |
+            release-out/*.apk
+            release-out/*.aab
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Vercel Blob habilitado?
+        id: blob
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: |
+          if [ -n "${BLOB_READ_WRITE_TOKEN:-}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "- Vercel Blob: pulado (secret BLOB_READ_WRITE_TOKEN não configurado)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar APK no Vercel Blob
+        if: steps.blob.outputs.enabled == 'true'
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          VERSION_NAME: ${{ env.APP_VERSION_NAME }}
+        run: |
+          set -euo pipefail
+          # @vercel/blob fica numa pasta temporária: não entra no package.json do app
+          PUB="$RUNNER_TEMP/blobpub"
+          mkdir -p "$PUB"
+          cp scripts/publish-apk.mjs "$PUB/"
+          (cd "$PUB" && npm init -y > /dev/null && npm install @vercel/blob@2.8.2 --no-audit --no-fund --loglevel=error)
+          OUT="$(cd "$PUB" && node publish-apk.mjs)"
+          get() { printf '%s\n' "$OUT" | sed -n "s/^$1=//p"; }
+          {
+            echo ""
+            echo "### Downloads (Vercel Blob, público)"
+            echo ""
+            echo "- Última versão: $(get latest_download_url)"
+            echo "- Esta versão (\`$VERSION_NAME\`): $(get versioned_download_url)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Sempre apaga o keystore decodificado, mesmo se algum passo acima falhar.
+      - name: Apagar keystore decodificado
+        if: always()
+        run: rm -f "${ANDROID_KEYSTORE_FILE:-$RUNNER_TEMP/duofitness-release.keystore}"

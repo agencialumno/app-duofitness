@@ -11,12 +11,23 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
+    "plugins": [
+      "./plugins/withAndroidRelease"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.duofitness.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#fed205"
+        "backgroundColor": "#000000"
       },
       "package": "com.duofitness.app",
+      "versionCode": 1,
       "softwareKeyboardLayoutMode": "pan"
     },
     "extra": {
