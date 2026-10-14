@@ -14,3 +14,7 @@ web-build/
 .env
 .env.*
 !.env.example
+
+# Projetos nativos gerados por "expo prebuild" (não versionar)
+/android/
+/ios/
