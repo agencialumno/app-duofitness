@@ -7,9 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
-import { generateWorkoutPlan } from '../utils/workoutGenerator';
+import { generateWorkoutPlan, hydratePlan } from '../utils/workoutGenerator';
 import { calculateIMC, getIMCCategory } from '../utils/imc';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
+import { isApiConfigured, checkHealth, chatStream } from '../services/api';
 
 // Este roteiro roda 100% no aparelho, sem depender de internet — pensado para
 // funcionar de forma confiável em feiras/eventos. O texto e o comportamento
@@ -18,6 +19,11 @@ import { COMBOS, getComboEquipment } from '../data/combosEquipment';
 //
 // Peso, altura, objetivos e nível são reaproveitados do perfil quando já
 // existem (coletados no onboarding) — só perguntamos o que ainda falta.
+//
+// Quando a API (backend/) está configurada e há conexão, depois de 2 ou 3
+// perguntas rápidas (combo, limitação e, se faltar, nível) a conversa passa para
+// a IA real, em streaming. Se a chamada falhar ou demorar, o app continua no
+// roteiro offline com o que já foi respondido. O Modo Demo nunca usa a API.
 
 const GOAL_OPTIONS = [
   { id: 'lose_weight', label: 'Emagrecer', keywords: ['emagre', 'perder peso', 'queimar', 'secar'] },
@@ -166,18 +172,68 @@ function buildSteps(user) {
 
   steps.push(STEP_LIMITATION);
 
-  return { steps, known };
+  // Perguntas feitas antes de passar a conversa para a IA online: o servidor
+  // precisa de combo, limitação e nível para só oferecer exercícios adequados.
+  const preSteps = [STEP_COMBO, STEP_LIMITATION];
+  if (!known.level) preSteps.push(STEP_LEVEL);
+
+  return { steps, known, preSteps };
 }
+
+// Quais respostas já existem para cada passo do roteiro offline. Usado ao cair
+// do modo online para o offline sem perguntar de novo o que já foi respondido.
+function isStepAnswered(step, answers) {
+  switch (step.id) {
+    case 'body': return !!(answers.weight && answers.height);
+    case 'goals': return Array.isArray(answers.goals) && answers.goals.length > 0;
+    case 'schedule': return !!(answers.days && answers.time);
+    case 'combo': return !!answers.combo;
+    case 'level': return !!answers.level;
+    case 'limitation': return answers.limitation !== undefined;
+    default: return false;
+  }
+}
+
+const GOAL_IDS = GOAL_OPTIONS.map(g => g.id);
+
+function toFiniteNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+// Perfil enviado à API. Campos sem valor ficam de fora (JSON.stringify ignora undefined).
+function buildApiProfile(answers, user) {
+  const goals = (answers.goals || []).filter(g => GOAL_IDS.includes(g));
+  return {
+    combo: answers.combo,
+    limitation: answers.limitation,
+    level: answers.level,
+    weight: toFiniteNumber(answers.weight),
+    height: toFiniteNumber(answers.height),
+    goals: goals.length > 0 ? goals : undefined,
+    gender: user?.gender,
+    ageGroup: user?.ageGroup,
+  };
+}
+
+const API_HISTORY_START = 'Olá! Quero montar meu treino.';
 
 const INTRO_MESSAGE =
   'Olá! Eu sou seu personal trainer virtual da Duo Fitness. 💪\nVou te fazer algumas perguntas rápidas para montar suas Séries A, B e C sob medida.';
 
 export default function AIPersonalTrainerScreen({ navigation }) {
   const { addWorkouts, saveUser, user } = useApp();
-  const [{ steps: STEP_LIST, known: KNOWN_ANSWERS }] = useState(() => buildSteps(user));
+  const [{ steps: INITIAL_STEPS, known: KNOWN_ANSWERS, preSteps: PRE_STEPS }] = useState(() => buildSteps(user));
+  // Modo Demo nunca usa a API; sem EXPO_PUBLIC_API_URL também fica tudo offline.
+  const online = isApiConfigured() && !user?.isDemo;
+  // 'pre' = perguntas antes da IA online, 'ai' = conversa com a API, 'script' = roteiro offline
+  const [phase, setPhase] = useState(online ? 'pre' : 'script');
+  const [stepList, setStepList] = useState(INITIAL_STEPS);
+  const [preIndex, setPreIndex] = useState(0);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streamingId, setStreamingId] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState(KNOWN_ANSWERS);
   const [chipSelection, setChipSelection] = useState([]);
@@ -185,9 +241,17 @@ export default function AIPersonalTrainerScreen({ navigation }) {
   const [planSaved, setPlanSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const scrollRef = useRef(null);
+  const apiHistory = useRef([]);
+  const streamRef = useRef(null);
+  const healthRef = useRef(null);
+  const mounted = useRef(true);
 
   useEffect(() => {
     startConversation();
+    return () => {
+      mounted.current = false;
+      streamRef.current?.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -211,10 +275,130 @@ export default function AIPersonalTrainerScreen({ navigation }) {
       ? ` Já peguei ${knownParts.join(', ')} do seu perfil, então vamos direto ao que falta. Bora?`
       : ' Vamos lá?';
 
+    // Em paralelo com as primeiras perguntas, vê se a API responde.
+    if (online) healthRef.current = checkHealth();
+
+    const firstStep = online ? PRE_STEPS[0] : stepList[0];
     setTimeout(() => {
-      pushAI(`${INTRO_MESSAGE}${knownNote}\n\n${STEP_LIST[0].ask()}`);
+      pushAI(`${INTRO_MESSAGE}${knownNote}\n\n${firstStep.ask()}`);
       setLoading(false);
     }, 700);
+  };
+
+  // Conversa com a IA online (streaming). `acc` = tudo que já foi respondido.
+  const runAiTurn = (acc) => {
+    const msgId = `ai_${Date.now()}`;
+    let text = '';
+    let gotPlan = false;
+    setLoading(true);
+
+    streamRef.current = chatStream({
+      messages: apiHistory.current,
+      profile: buildApiProfile(acc, user),
+      onDelta: (chunk) => {
+        if (!mounted.current) return;
+        text += chunk;
+        setStreamingId(msgId);
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === msgId);
+          return exists
+            ? prev.map(m => (m.id === msgId ? { ...m, content: text } : m))
+            : [...prev, { id: msgId, role: 'assistant', content: text }];
+        });
+      },
+      onPlan: ({ plan, collected }) => {
+        if (!mounted.current) return;
+        const merged = { ...acc, ...collected };
+        const imc = calculateIMC(merged.weight, merged.height);
+        const imcInfo = imc ? getIMCCategory(imc) : null;
+        const generated = hydratePlan(plan, {
+          goals: merged.goals,
+          gender: user?.gender,
+          ageGroup: user?.ageGroup,
+          imcCategory: imcInfo?.id,
+        }).map(w => ({ ...w, generatedByAI: true }));
+
+        if (generated.length === 0 || generated.some(w => w.exercises.length < 5)) {
+          gotPlan = true;
+          switchToScript(merged, 'Não consegui validar o plano da IA aqui no aparelho, então vou montar o seu plano pelo roteiro offline.');
+          return;
+        }
+
+        const planObj = {
+          imc: imc ? imc.toFixed(1) : null,
+          imcCategoria: imcInfo?.id,
+          series: generated.map(w => ({ serie: w.serie, nome: w.name, foco: w.focus, exercicios: w.exercises })),
+          workouts: generated,
+        };
+        gotPlan = true;
+        setAnswers(merged);
+        pushAI('Prontinho! Montei suas séries com base no que você me contou. Dá uma olhada:', { plan: planObj });
+        setFinalPlan(planObj);
+      },
+      onDone: () => {
+        if (!mounted.current) return;
+        if (text) apiHistory.current.push({ role: 'assistant', content: text });
+        setStreamingId(null);
+        setLoading(false);
+      },
+      onError: (err) => {
+        if (!mounted.current || gotPlan) return;
+        setStreamingId(null);
+        // A IA validou os dados mas o plano não passou: o que ela coletou já dá
+        // para o gerador local montar o plano, sem perguntar tudo de novo.
+        const f = err.fallback || {};
+        const merged = {
+          ...acc,
+          ...(f.weight && f.height ? { weight: f.weight, height: f.height } : {}),
+          ...(Array.isArray(f.goals) && f.goals.length > 0 ? { goals: f.goals } : {}),
+          ...(f.days && f.time ? { days: f.days, time: f.time } : {}),
+        };
+        const note = err.code === 'timeout' || err.code === 'stalled'
+          ? 'A IA demorou para responder, então vou seguir com o roteiro offline.'
+          : 'Não consegui falar com a IA agora, então vou seguir com o roteiro offline.';
+        switchToScript(merged, note);
+      },
+    });
+  };
+
+  // Passa para o roteiro offline pulando o que já foi respondido. Se não
+  // faltar nada, já gera o plano local.
+  const switchToScript = (acc, note) => {
+    streamRef.current?.abort();
+    streamRef.current = null;
+    setPhase('script');
+    setAnswers(acc);
+    const remaining = INITIAL_STEPS.filter(step => !isStepAnswered(step, acc));
+    setStepList(remaining);
+    setStepIndex(0);
+    if (note) pushAI(note);
+    if (remaining.length === 0) {
+      finalizePlan(acc);
+    } else {
+      pushAI(remaining[0].ask());
+      setLoading(false);
+    }
+  };
+
+  // Terminadas as perguntas iniciais: testa a API e começa a conversa online.
+  const startAiPhase = async (acc) => {
+    setLoading(true);
+    const healthy = healthRef.current ? await healthRef.current : false;
+    if (!mounted.current) return;
+    if (!healthy) {
+      switchToScript(acc, 'Não consegui falar com a IA agora, então vou seguir com o roteiro offline.');
+      return;
+    }
+    setPhase('ai');
+    apiHistory.current = [{ role: 'user', content: API_HISTORY_START }];
+    runAiTurn(acc);
+  };
+
+  const handleAiAnswer = (text) => {
+    pushUser(text);
+    setInput('');
+    apiHistory.current = [...apiHistory.current, { role: 'user', content: text }];
+    runAiTurn(answers);
   };
 
   const finalizePlan = (allAnswers) => {
@@ -254,10 +438,18 @@ export default function AIPersonalTrainerScreen({ navigation }) {
   };
 
   const handleAnswer = (rawText) => {
-    const step = STEP_LIST[stepIndex];
-    if (!step) return;
     const trimmed = rawText.trim();
     if (!trimmed) return;
+    if (phase === 'ai') {
+      handleAiAnswer(trimmed);
+      return;
+    }
+
+    const inPre = phase === 'pre';
+    const list = inPre ? PRE_STEPS : stepList;
+    const index = inPre ? preIndex : stepIndex;
+    const step = list[index];
+    if (!step) return;
 
     pushUser(trimmed);
     setInput('');
@@ -277,11 +469,13 @@ export default function AIPersonalTrainerScreen({ navigation }) {
 
       if (result.note) pushAI(result.note);
 
-      const nextIndex = stepIndex + 1;
-      if (nextIndex < STEP_LIST.length) {
-        setStepIndex(nextIndex);
-        pushAI(STEP_LIST[nextIndex].ask());
+      const nextIndex = index + 1;
+      if (nextIndex < list.length) {
+        (inPre ? setPreIndex : setStepIndex)(nextIndex);
+        pushAI(list[nextIndex].ask());
         setLoading(false);
+      } else if (inPre) {
+        startAiPhase(updatedAnswers);
       } else {
         setLoading(false);
         finalizePlan(updatedAnswers);
@@ -299,7 +493,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
   };
 
   const confirmChips = () => {
-    const step = STEP_LIST[stepIndex];
+    const step = currentStep;
     if (!step?.chips) return;
     const labels = step.chips.filter(o => chipSelection.includes(o.id)).map(o => o.label);
     if (labels.length === 0) return;
@@ -325,7 +519,10 @@ export default function AIPersonalTrainerScreen({ navigation }) {
     setSaving(false);
   };
 
-  const currentStep = !finalPlan ? STEP_LIST[stepIndex] : null;
+  // Na fase da IA online não há chips: a conversa é livre.
+  const currentStep = finalPlan || phase === 'ai'
+    ? null
+    : phase === 'pre' ? PRE_STEPS[preIndex] : stepList[stepIndex];
 
   const renderMessage = (msg, i) => {
     const isAI = msg.role === 'assistant';
@@ -424,7 +621,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
             </View>
           )}
           {messages.map(renderMessage)}
-          {loading && messages.length > 0 && (
+          {loading && messages.length > 0 && !streamingId && (
             <View style={[styles.msgRow, styles.msgRowAI]}>
               <View style={styles.aiAvatar}>
                 <Ionicons name="fitness-outline" size={14} color={COLORS.black} />

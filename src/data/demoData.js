@@ -3,6 +3,7 @@
 // nem depender de internet.
 
 export const DEMO_USER = {
+  isDemo: true, // o Modo Demo nunca chama a API: fica 100% offline
   name: 'Rafael Souza',
   goals: ['gain_muscle', 'health'],
   gender: 'male',

@@ -1,6 +1,6 @@
 import { getIMCRecommendations } from './imc';
 
-const EXERCISE_DB = {
+export const EXERCISE_DB = {
   chest: [
     { id: 'chest_press_machine', name: 'Supino na Máquina (Peitoral Dorsal)', muscleGroup: ['Peitoral', 'Tríceps'], difficulty: 'Iniciante', equipment: 'chest_back_machine', sets: 3, reps: '10–12', rest: 75, category: 'Peito',
       instructions: ['Ajuste o banco/assento para os punhos ficarem na altura do peito', 'Segure as alças com pegada firme', 'Empurre para frente até quase estender os cotovelos', 'Volte controlado até a posição inicial'],
@@ -204,25 +204,28 @@ function normalizeGoals(goalsOrGoal) {
   return [];
 }
 
-function filterByEquipment(exercises, equipment) {
+export function filterByEquipment(exercises, equipment) {
   if (!equipment || equipment.length === 0) return exercises.filter(e => e.equipment === 'bodyweight');
   return exercises.filter(ex => ex.equipment === 'bodyweight' || equipment.includes(ex.equipment));
 }
 
-function filterByLevel(exercises, level) {
+export function filterByLevel(exercises, level) {
   if (level === 'beginner') return exercises.filter(e => e.difficulty === 'Iniciante');
   if (level === 'intermediate') return exercises;
   return exercises;
 }
 
-function filterByLimitation(exercises, limitation) {
+// Exercícios bloqueados por limitação física. Exportado para o catálogo do
+// backend (backend/scripts/sync-catalog.ts) usar exatamente a mesma regra.
+export const LIMITATION_BLOCKED = {
+  knee: ['squat', 'lunge', 'goblet_squat', 'jumping_jack', 'burpee', 'high_knees', 'wall_sit', 'sumo_squat', 'leg_press_ex', 'smith_squat', 'leg_extension'],
+  shoulder: ['shoulder_press', 'pike_pushup', 'db_press', 'front_raise', 'lateral_raise', 'pushup', 'shoulder_machine_press', 'cable_lateral_raise', 'smith_bench_press'],
+  back: ['rdl', 'superman', 'row_db', 'pullover', 'deadlift', 'seated_cable_row', 'lat_pulldown_ex'],
+};
+
+export function filterByLimitation(exercises, limitation) {
   if (!limitation || limitation === 'none') return exercises;
-  const blocked = {
-    knee: ['squat', 'lunge', 'goblet_squat', 'jumping_jack', 'burpee', 'high_knees', 'wall_sit', 'sumo_squat', 'leg_press_ex', 'smith_squat', 'leg_extension'],
-    shoulder: ['shoulder_press', 'pike_pushup', 'db_press', 'front_raise', 'lateral_raise', 'pushup', 'shoulder_machine_press', 'cable_lateral_raise', 'smith_bench_press'],
-    back: ['rdl', 'superman', 'row_db', 'pullover', 'deadlift', 'seated_cable_row', 'lat_pulldown_ex'],
-  };
-  return exercises.filter(e => !(blocked[limitation] || []).includes(e.id));
+  return exercises.filter(e => !(LIMITATION_BLOCKED[limitation] || []).includes(e.id));
 }
 
 function applyIMCRecommendations(exercises, recs) {
@@ -356,4 +359,41 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
       rest: goalList.includes('lose_weight') ? Math.max((ex.rest || 60) - 15, 30) : (ex.rest || 60),
     })),
   }));
+}
+
+// Monta as séries a partir de um plano "por ids" (resposta validada da IA do
+// backend): { series: [{ serie, name, focus, exercises: [{ id, sets, reps, rest }] }] }.
+// Os dados completos de cada exercício (instruções, dicas, músculos...) vêm do
+// EXERCISE_DB local; ids desconhecidos são ignorados. O resultado tem o mesmo
+// formato de generateWorkoutPlan, então o resto do app não muda.
+export function hydratePlan(plan, { goals, gender, ageGroup, imcCategory } = {}) {
+  const byId = {};
+  for (const list of Object.values(EXERCISE_DB)) {
+    for (const ex of list) byId[ex.id] = ex;
+  }
+  const recs = getIMCRecommendations(imcCategory, normalizeGoals(goals), gender, ageGroup);
+
+  return (plan?.series || []).map(s => {
+    const exercises = (s.exercises || [])
+      .map(item => {
+        const base = byId[item.id];
+        if (!base) return null;
+        return {
+          ...base,
+          sets: item.sets ?? base.sets,
+          reps: item.reps ?? base.reps,
+          rest: item.rest ?? base.rest,
+        };
+      })
+      .filter(Boolean);
+    const firstStrength = exercises.find(e => e.category !== 'Cardio') || exercises[0];
+    return {
+      serie: s.serie,
+      name: s.name,
+      category: firstStrength?.category || 'Treino',
+      focus: s.focus,
+      exercises,
+      personalNotes: recs.notes,
+    };
+  });
 }

@@ -1,0 +1,28 @@
+{
+  "name": "duo-fitness-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/dev.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sync-catalog": "tsx scripts/sync-catalog.ts",
+    "check-catalog": "tsx scripts/sync-catalog.ts --check"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.0",
+    "vitest": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

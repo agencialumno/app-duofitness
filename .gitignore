@@ -10,3 +10,7 @@ npm-debug.*
 *.orig.*
 web-build/
 .DS_Store
+# Variáveis locais (EXPO_PUBLIC_* ficam visíveis no app, nunca ponha segredos)
+.env
+.env.*
+!.env.example
