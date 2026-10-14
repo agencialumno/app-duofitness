@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [release-teste, main]
+  push:
+    branches: [release-teste, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # App (raiz do repositório): Expo SDK 51.
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npx expo-doctor
+      # A raiz ainda não tem lint nem testes; --if-present roda quando existirem.
+      - run: npm run --if-present lint
+      - run: npm run --if-present test
+
+  # Backend (backend/): projeto separado, com package.json e lockfile próprios.
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # Os testes injetam a própria configuração e uma Anthropic falsa. Estas
+    # variáveis são FALSAS e só existem para garantir que nada real é usado.
+    env:
+      ANTHROPIC_API_KEY: sk-ant-fake-ci
+      ANTHROPIC_MODEL: fake-model
+      MODEL_INPUT_USD_PER_MTOK: '1'
+      MODEL_OUTPUT_USD_PER_MTOK: '1'
+      APP_KEY: fake-app-key
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      # Falha se backend/src/ia/catalog.ts estiver desatualizado em relação ao app.
+      - run: npm run check-catalog
+      - run: npx vitest run
