@@ -13,7 +13,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - React Native + Expo, React Navigation, AsyncStorage. Local-first: tudo funciona offline.
 - Cores `#fed205` (amarelo), `#000000`, `#ffffff`; fonte Roboto; tema escuro. Tokens em `src/utils/theme.js`.
 - Bundle id: `com.duofitness.app` (Android e iOS).
-- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O workflow de build ainda não existe; o `.github/workflows/ci.yml` só valida o código. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
+- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O build Android é o `.github/workflows/android.yml` (tag `v*` ou manual; guia em `docs/android.md`; **não renomear**, por causa do `run_number`); o `ci.yml` só valida o código. A assinatura e a versão são aplicadas pelo plugin `plugins/withAndroidRelease.js`, sem commitar nada em `android/`. Build iOS ainda não existe. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
 
 ## Estrutura do repositório
 
@@ -22,6 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
+- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI, ex.: `publish-apk.mjs`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do RN no SDK 51 não faz streaming).
 
 ## Regras do projeto

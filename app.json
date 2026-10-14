@@ -11,6 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
+    "plugins": [
+      "./plugins/withAndroidRelease"
+    ],
     "ios": {
       "bundleIdentifier": "com.duofitness.app",
       "buildNumber": "1",
