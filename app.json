@@ -12,7 +12,9 @@
       "backgroundColor": "#000000"
     },
     "plugins": [
-      "./plugins/withAndroidRelease"
+      "./plugins/withAndroidRelease",
+      "expo-font",
+      "expo-asset"
     ],
     "ios": {
       "bundleIdentifier": "com.duofitness.app",
