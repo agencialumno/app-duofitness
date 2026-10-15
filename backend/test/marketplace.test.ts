@@ -192,3 +192,41 @@ describe('imagens', () => {
     expect(items.some((i) => i.imagem === null)).toBe(true);
   });
 });
+
+describe('acesso ao marketplace pela Home', () => {
+  const home = readFileSync(path.join(REPO, 'src/screens/HomeScreen.js'), 'utf8');
+  const quick = home.slice(home.indexOf('{/* Quick Actions */}'), home.indexOf('{/* Academia agora'));
+
+  it('a ação rápida tem só Gerador rápido e Criar manualmente (sem atalho do marketplace)', () => {
+    expect(quick).toContain('Gerador rápido');
+    expect(quick).toContain('Criar manualmente');
+    expect((quick.match(/<TouchableOpacity/g) || []).length).toBe(2);
+    expect(quick).not.toMatch(/Loja|Marketplace|storefront/);
+  });
+
+  it('o marketplace continua acessível: seção "Para você" (detalhe do item) e botão "Ver marketplace" (lista)', () => {
+    expect(home).toContain('PARA VOCÊ');
+    expect(home).toMatch(/navigate\('LojaDetalhe', \{ itemId: item\.id \}\)/);
+    expect(home).toMatch(/navigate\('Loja'\)/);
+    expect(home).toContain('Ver marketplace');
+    expect((home.match(/navigate\('Loja'\)/g) || []).length).toBe(1);
+  });
+
+  it('"Para você" fica logo abaixo da Academia agora e acima da Saúde', () => {
+    expect(home.indexOf('PARA VOCÊ')).toBeGreaterThan(home.indexOf("navigate('AcademiaAgora')"));
+    expect(home.indexOf('PARA VOCÊ')).toBeLessThan(home.indexOf("navigate('Saude')"));
+  });
+
+  it('as rotas Loja e LojaDetalhe seguem registradas na pilha da aba Início (também usada no Modo Demo)', () => {
+    const nav = readFileSync(path.join(REPO, 'src/navigation/MainNavigator.js'), 'utf8');
+    expect(nav).toMatch(/name="Loja" component=\{StoreScreen\}/);
+    expect(nav).toMatch(/name="LojaDetalhe" component=\{StoreDetailScreen\}/);
+    // a Home mostra a seção sem condição por perfil (Modo Demo incluso)
+    expect(home).not.toMatch(/isDemo.*PARA VOCÊ|PARA VOCÊ.*isDemo/);
+  });
+
+  it('o botão "Anunciar em nosso marketplace" continua dentro da tela do marketplace', () => {
+    const store = readFileSync(path.join(REPO, 'src/screens/StoreScreen.js'), 'utf8');
+    expect(store).toContain('Anunciar em nosso marketplace');
+  });
+});

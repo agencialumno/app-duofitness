@@ -10,7 +10,7 @@ O marketplace é uma **vitrine**: o app mostra anúncios de parceiros e leva o m
 - `src/data/marketplaceImages.js`: mapa chave → `require` das imagens em `assets/marketplace/`.
 - `src/screens/StoreScreen.js` (Marketplace, chips por categoria), `StoreDetailScreen.js` (detalhe + botão), `src/components/MarketplaceImage.js` (imagem ou placeholder).
 - Navegação: a aba Início é uma pilha (`HomeMain`, `Loja`, `LojaDetalhe`; os nomes das rotas e dos arquivos continuam "Loja"/"Store" por dentro, só os textos mudaram) dentro do `MainNavigator`, para existir também no Modo Demo.
-- Home: seção "Para você" (itens com `destaque: true`) e botão "Ver marketplace".
+- Home: seção "Para você" (itens com `destaque: true`, logo abaixo da Academia agora) e botão "Ver marketplace". A linha de ação rápida **não** tem atalho do marketplace (só Gerador rápido e Criar manualmente): o acesso é pela seção "Para você" e pelo botão "Ver marketplace", inclusive no Modo Demo.
 
 ## Regras
 
