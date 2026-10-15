@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFreshDemoData } from '../data/demoData';
 import { canOfferDemo, clearAllDuoData, restartDemoData, writeDemoData } from '../utils/demoSession';
+import { readAppData } from '../utils/safeStorage';
 
 const AppContext = createContext({});
 
@@ -22,20 +23,16 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const loadData = async () => {
+    // Cada chave é lida e validada sozinha: valor corrompido (JSON quebrado, tipo errado) é tratado como
+    // ausente, sem derrubar o app e sem apagar nenhuma chave (nem as outras, nem a corrompida).
     try {
-      const u = await AsyncStorage.getItem('@duo_user');
-      const w = await AsyncStorage.getItem('@duo_workouts');
-      const s = await AsyncStorage.getItem('@duo_sessions');
-      const x = await AsyncStorage.getItem('@duo_xp');
-      const st = await AsyncStorage.getItem('@duo_streak');
-      const ach = await AsyncStorage.getItem('@duo_achievements');
-
-      if (u) setUser(JSON.parse(u));
-      if (w) setWorkouts(JSON.parse(w));
-      if (s) setCompletedSessions(JSON.parse(s));
-      if (x) setXp(parseInt(x));
-      if (st) setStreak(parseInt(st));
-      if (ach) setAchievements(JSON.parse(ach));
+      const d = await readAppData(AsyncStorage);
+      if (d.user !== undefined) setUser(d.user);
+      if (d.workouts !== undefined) setWorkouts(d.workouts);
+      if (d.sessions !== undefined) setCompletedSessions(d.sessions);
+      if (d.xp !== undefined) setXp(d.xp);
+      if (d.streak !== undefined) setStreak(d.streak);
+      if (d.achievements !== undefined) setAchievements(d.achievements);
     } catch (e) {
       console.log('Erro ao carregar dados:', e);
     }

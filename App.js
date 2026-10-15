@@ -1,15 +1,27 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from './src/context/AppContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import { createForcedError } from './src/utils/errorTestFlag';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function App() {
+// Flag de TESTE (só na web, pela URL; nunca liga em iOS/Android): provoca um erro de render para o smoke
+// test conferir a tela de recuperação. Ver src/utils/errorTestFlag.js.
+const forced = createForcedError(Platform.OS, typeof window !== 'undefined' && window.location ? window.location.search : '');
+
+function ForceRenderError() {
+  if (forced.shouldThrow()) throw new Error('Erro de teste forçado (duoForceError)');
+  return null;
+}
+
+function AppRoot() {
   const [isOnboarded, setIsOnboarded] = useState(null);
   // Pré-carrega a fonte dos ícones antes de renderizar. Se falhar, registra o erro e
   // segue renderizando o app mesmo assim (sem travar).
@@ -24,20 +36,40 @@ export default function App() {
   }, []);
 
   const checkOnboarding = async () => {
-    const val = await AsyncStorage.getItem('@duo_onboarded');
-    setIsOnboarded(val === 'true');
+    try {
+      const val = await AsyncStorage.getItem('@duo_onboarded');
+      setIsOnboarded(val === 'true');
+    } catch (e) {
+      // armazenamento ilegível: segue como "ainda não fez o onboarding" em vez de travar numa tela vazia
+      console.error('Falha ao ler o estado do onboarding:', e);
+      setIsOnboarded(false);
+    }
   };
 
   if (isOnboarded === null || (!fontsLoaded && !fontError)) return null;
 
   return (
+    <AppProvider>
+      <NavigationContainer>
+        <StatusBar style="light" backgroundColor="#000000" />
+        <RootNavigator isOnboarded={isOnboarded} />
+      </NavigationContainer>
+    </AppProvider>
+  );
+}
+
+export default function App() {
+  // "Recomeçar do zero" (na tela de recuperação) limpa as chaves @duo_* e remonta o app, que relê o
+  // armazenamento já vazio e cai nas boas-vindas.
+  const [appKey, setAppKey] = useState(0);
+  const handleReset = useCallback(() => setAppKey((k) => k + 1), []);
+
+  return (
     <SafeAreaProvider>
-      <AppProvider>
-        <NavigationContainer>
-          <StatusBar style="light" backgroundColor="#000000" />
-          <RootNavigator isOnboarded={isOnboarded} />
-        </NavigationContainer>
-      </AppProvider>
+      <ErrorBoundary onReset={handleReset} onError={() => forced.consume()}>
+        <ForceRenderError />
+        <AppRoot key={appKey} />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
