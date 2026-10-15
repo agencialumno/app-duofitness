@@ -152,15 +152,22 @@ jobs:
       - name: Conferir autolinking (módulos Expo obrigatórios)
         run: node scripts/check-autolinking.mjs
 
+      # O prebuild reescreve os scripts "android" e "ios" do package.json (vira "expo run:..."). Isso é
+      # inofensivo aqui: o npm ci já rodou e nenhum passo seguinte lê esses scripts.
       - name: Gerar projeto iOS (expo prebuild)
         run: |
           set -euo pipefail
           npx expo prebuild --platform ios --no-install
-          test -d ios
-          XCODEPROJ="$(find ios -maxdepth 1 -name '*.xcodeproj' | head -1)"
-          test -n "$XCODEPROJ"
-          grep -q "PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID" "$XCODEPROJ/project.pbxproj"
-          echo "Projeto iOS: $XCODEPROJ"
+
+      # Cada checagem diz qual falhou e o que era esperado (nada de "grep -q" mudo sob set -e).
+      - name: Conferir o projeto iOS gerado
+        run: |
+          set -uo pipefail
+          echo "::group::Conteúdo de ios/ (só nomes)"
+          ls -la ios || true
+          ls -d ios/*.xcodeproj ios/*.xcworkspace 2>&1 || true # o .xcworkspace só nasce no pod install
+          echo "::endgroup::"
+          node scripts/check-ios-project.mjs --bundle-id "$BUNDLE_ID"
 
       - name: Cache do CocoaPods
         uses: actions/cache@v4.2.3
@@ -176,7 +183,11 @@ jobs:
           set -euo pipefail
           pod --version
           pod install
-          test -n "$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)"
+          if [ -z "$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)" ]; then
+            echo "::error::O pod install terminou, mas não gerou o .xcworkspace em ios/. Esperado: ios/<Nome>.xcworkspace."
+            ls -la
+            exit 1
+          fi
 
       - name: Archive (assinatura automática pela chave da API)
         env:
@@ -231,6 +242,10 @@ jobs:
         run: |
           set -euo pipefail
           APP="$(find "$XC_ARCHIVE/Products/Applications" -maxdepth 1 -name '*.app' | head -1)"
+          if [ -z "$APP" ]; then
+            echo "::error::O archive não tem um .app em Products/Applications. Esperado: o app compilado dentro do .xcarchive."
+            exit 1
+          fi
           PLIST="$APP/Info.plist"
           BID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")"
           SHORT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"

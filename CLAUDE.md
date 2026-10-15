@@ -22,7 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
-- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`), `docs/` (guias, ex.: `android.md`).
+- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`, `check-ios-project.mjs`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
 
 ## Regras do projeto
