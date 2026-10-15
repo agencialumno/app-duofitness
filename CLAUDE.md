@@ -23,6 +23,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - Loja (vitrine de parceiros, sem pagamento): `src/data/marketplace.js` (itens de exemplo e funções), `marketplaceConfig.js` (WhatsApp via `EXPO_PUBLIC_MARKETPLACE_WHATSAPP`, opcional), `marketplaceImages.js`, `src/screens/Store*Screen.js`; aba Início é uma pilha com `Loja` e `LojaDetalhe`. Guia em `docs/marketplace.md`.
 - Academia agora (lotação, só números agregados): `src/utils/occupancy.js` (puro: faixas, MockProvider, RemoteProvider, melhor horário), `src/data/occupancyConfig.js`, `src/hooks/useOccupancy.js`, `OccupancyCard` e `GymNowScreen` (rota `AcademiaAgora` na pilha da aba Início). Hoje só dados de exemplo, sempre com o selo "Dados de exemplo". Contrato do endpoint futuro em `docs/catraca.md`.
+- Série guiada (substitui o chat nos atalhos): `src/screens/GuidedPlanScreen.js`, `src/components/guided/`, `src/utils/guidedPlan.js` (lógica pura e testada), `src/utils/planOptions.js` (palavras-chave compartilhadas com o chat), `src/data/guidedConfig.js` (`AI_BADGE_ENABLED`, desligada). Guia em `docs/serie-guiada.md`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
 - `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`, `check-ios-project.mjs`, `set-ios-version.sh`, `ios-upload.sh`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
@@ -38,6 +39,8 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - **Imagens PNG** (`assets/` e as citadas no `app.json` ou importadas em `src/`) precisam ser PNG de verdade, 8 bits por canal e sem entrelaçamento; o `logo.png` já quebrou o AAPT2 por ser um JPEG com extensão `.png`. Confira com `node scripts/check-pngs.mjs` (roda também no `ci.yml`).
 
 ## Chat do Personal Trainer IA (`AIPersonalTrainerScreen`)
+
+Os atalhos "Personal Trainer IA" (rota `AIPersonalTrainer`) abrem a **série guiada** (`GuidedPlanScreen`, sempre offline). O chat descrito abaixo continua na rota alternativa `AIPersonalTrainerChat` até a validação.
 
 1. Offline (padrão e único modo em uso hoje): roteiro de perguntas no aparelho + `generateWorkoutPlan`.
 2. Online (só se `EXPO_PUBLIC_API_URL` estiver definida e não for Modo Demo): o app pergunta combo, limitação e (se faltar) nível por chips; depois a conversa segue com a IA em streaming (`POST /api/ia/chat`). A IA entrega o plano pela ferramenta `criar_plano`, no formato por ids; o app completa com `hydratePlan`.

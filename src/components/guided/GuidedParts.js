@@ -94,11 +94,11 @@ export function Chip({ label, selected, onPress, accessibilityLabel }) {
   );
 }
 
-// Botão principal fixo no rodapé, respeitando a área segura.
+// Botão principal fixo no rodapé.
+// A tela fica acima da barra de abas, que já respeita a área segura de baixo: só um respiro aqui.
 export function FooterButton({ label, onPress, disabled, secondary, icon }) {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.footer, { paddingBottom: insets.bottom + SPACING.md }]}>
+    <View style={styles.footer}>
       <TouchableOpacity
         style={[styles.primaryBtn, secondary && styles.secondaryBtn, disabled && styles.btnDisabled]}
         onPress={onPress}
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
   chipTextSelected: { color: COLORS.black },
-  footer: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
+  footer: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
   primaryBtn: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
   secondaryBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.primary },
   btnDisabled: { opacity: 0.4 },
