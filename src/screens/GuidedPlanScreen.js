@@ -7,27 +7,63 @@ import { COMBOS } from '../data/combosEquipment';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from '../utils/planOptions';
 import {
   DAYS_OPTIONS, FOCUS_OPTIONS, TIME_OPTIONS,
-  PLAN_LABEL, buildReasons, defaultSettings, generateGuidedPlan, getPlanBadge, getPlanSteps, getProfileChips,
-  getProfileDefaults, missingProfileFields, parseMeasure, swapExercise,
+  PLAN_LABEL, SUGGESTION_CHIPS, applyAdjustment, buildReasons, defaultSettings, generateGuidedPlan, getPlanBadge, getPlanSteps, getProfileChips,
+  getProfileDefaults, missingProfileFields, parseAdjustment, parseMeasure, swapExercise,
 } from '../utils/guidedPlan';
 import { AI_BADGE_ENABLED } from '../data/guidedConfig';
 import { isApiConfigured } from '../services/api';
 import SeriesCard from '../components/guided/SeriesCard';
-import { BuildingChecklist, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
+import { BuildingChecklist, animateLayout, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
 // "AIPersonalTrainerChat". Nada aqui altera os dados salvos até o morador tocar em "Salvar série".
 const QUESTIONS = ['schedule', 'combo', 'limitation', 'focus'];
 
 export default function GuidedPlanScreen({ navigation }) {
-  const { user } = useApp();
+  const { user, addWorkouts, saveUser } = useApp();
   const [settings, setSettings] = useState(() => defaultSettings(getProfileDefaults(user)));
   const [stage, setStage] = useState('intro'); // 'intro' | 'ask' | 'building' | 'review'
   const [qIndex, setQIndex] = useState(0);
   const [plan, setPlan] = useState(null);
+  const [swaps, setSwaps] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const finishBuilding = useCallback(() => setStage('review'), []);
+  // "Quer ajustar algo?": interpreta o texto localmente e regenera a série. Devolve a mensagem para o morador.
+  const adjust = useCallback((text) => {
+    const { actions, understood } = parseAdjustment(text);
+    if (!understood) {
+      return { ok: false, message: 'Não entendi esse pedido. Tente algo como "mais glúteo", "treino mais curto", "evitar impacto" ou "mais perna".' };
+    }
+    const result = applyAdjustment(settings, actions);
+    if (!result.changed) {
+      return { ok: false, message: result.notes.join(' ') || 'Nada para mudar nesse pedido.' };
+    }
+    setSettings(result.settings);
+    setPlan(generateGuidedPlan(result.settings, user));
+    const redone = swaps > 0 ? ' As trocas de exercício feitas à mão foram refeitas.' : '';
+    setSwaps(0);
+    return { ok: true, message: `Pronto: ${result.changes.join(', ')}.${redone}` };
+  }, [settings, user, swaps]);
+
+  // Salva com addWorkouts (mesmo formato dos treinos de sempre). O IMC só é gravado no perfil se
+  // o peso e a altura usados forem os do próprio perfil.
+  const save = useCallback(async () => {
+    if (!plan || saving) return;
+    setSaving(true);
+    try {
+      await addWorkouts(plan.workouts);
+      const sameBody = user && Number(user.weight) === settings.weight && Number(user.height) === settings.height;
+      if (plan.imc && sameBody) await saveUser({ ...user, imc: plan.imc, imcCategory: plan.imcCategoria });
+      setStage('saved');
+    } catch (e) {
+      console.log('Erro ao salvar a série:', e);
+    }
+    setSaving(false);
+  }, [plan, saving, addWorkouts, saveUser, user, settings.weight, settings.height]);
+
   const swap = useCallback((serieIndex, exerciseId, newId) => {
+    setSwaps((n) => n + 1);
     setPlan((p) => (p ? { ...p, workouts: swapExercise(p.workouts, serieIndex, exerciseId, newId, settings, user) } : p));
   }, [settings, user]);
   const patch = useCallback((p) => setSettings((s) => ({ ...s, ...p })), []);
@@ -106,8 +142,15 @@ export default function GuidedPlanScreen({ navigation }) {
         user={user}
         onBack={goBack}
         onSwap={swap}
+        onAdjust={adjust}
+        onSave={save}
+        saving={saving}
       />
     );
+  }
+
+  if (stage === 'saved') {
+    return <SavedStage plan={plan} onOpen={() => navigation.navigate('WorkoutsList')} onHome={() => navigation.getParent()?.navigate('Home')} />;
   }
 
   return null;
@@ -158,7 +201,18 @@ function BuildingStage({ settings, plan, user, onBack, onDone }) {
 
 // ---------- Revisão: por que esta série, cartões A/B/C e troca de exercício ----------
 
-function ReviewStage({ settings, plan, user, onBack, onSwap }) {
+function ReviewStage({ settings, plan, user, onBack, onSwap, onAdjust, onSave, saving }) {
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustText, setAdjustText] = useState('');
+  const [feedback, setFeedback] = useState(null);
+
+  const submit = (text) => {
+    const value = (text ?? adjustText).trim();
+    if (!value) return;
+    setFeedback(onAdjust(value));
+    setAdjustText('');
+  };
+
   const reasons = buildReasons(settings, plan, user);
   const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured(), isDemo: !!user?.isDemo });
   const combo = COMBOS.find((c) => c.id === settings.combo);
@@ -171,7 +225,7 @@ function ReviewStage({ settings, plan, user, onBack, onSwap }) {
   return (
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} caption="Revisão" progress={1} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.labelRow}>
           <TrainerLabel text={PLAN_LABEL} badge={badge} />
         </View>
@@ -197,6 +251,72 @@ function ReviewStage({ settings, plan, user, onBack, onSwap }) {
           <SeriesCard key={w.serie} workouts={plan.workouts} index={i} settings={settings} user={user} onSwap={onSwap} initiallyOpen={i === 0} />
         ))}
       </ScrollView>
+
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={0}>
+        <View style={styles.adjustBar}>
+          <TouchableOpacity
+            style={styles.adjustToggle}
+            onPress={() => { animateLayout(); setAdjustOpen((o) => !o); }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: adjustOpen }}
+            accessibilityLabel="Quer ajustar algo?"
+          >
+            <Ionicons name="options-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.adjustToggleText}>Quer ajustar algo?</Text>
+            <Ionicons name={adjustOpen ? 'chevron-down' : 'chevron-up'} size={16} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+
+          {adjustOpen && (
+            <View style={styles.adjustPanel}>
+              <View style={styles.chipsWrap}>
+                {SUGGESTION_CHIPS.map((c) => (
+                  <Chip key={c} label={c} onPress={() => submit(c)} />
+                ))}
+              </View>
+              <View style={styles.editorRow}>
+                <TextInput
+                  style={styles.input}
+                  value={adjustText}
+                  onChangeText={setAdjustText}
+                  placeholder="Ex.: mais perna, 30 minutos"
+                  placeholderTextColor={COLORS.textSecondary}
+                  returnKeyType="send"
+                  onSubmitEditing={() => submit()}
+                  accessibilityLabel="Escreva o que quer ajustar"
+                />
+                <TouchableOpacity style={styles.okBtn} onPress={() => submit()} accessibilityRole="button" accessibilityLabel="Ajustar a série">
+                  <Text style={styles.okBtnText}>Ajustar</Text>
+                </TouchableOpacity>
+              </View>
+              {feedback ? (
+                <Text style={[styles.feedback, !feedback.ok && styles.feedbackWarn]} accessibilityLiveRegion="polite">{feedback.message}</Text>
+              ) : null}
+            </View>
+          )}
+        </View>
+        <FooterButton label={saving ? 'Salvando…' : 'Salvar série'} onPress={onSave} disabled={saving} icon="save-outline" />
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+// ---------- Série salva ----------
+
+function SavedStage({ plan, onOpen, onHome }) {
+  const n = plan?.workouts?.length ?? 0;
+  return (
+    <View style={styles.container}>
+      <View style={styles.savedBody}>
+        <Ionicons name="checkmark-circle" size={72} color={COLORS.success} />
+        <Text style={styles.title} accessibilityRole="header">Série salva!</Text>
+        <Text style={styles.subtitle}>
+          {n === 1 ? 'Sua série A já está' : `Suas ${n} séries já estão`} em Treinos, prontas para você começar.
+        </Text>
+      </View>
+      <FooterButton label="Ver minhas séries" onPress={onOpen} icon="barbell-outline" />
+      <TouchableOpacity style={styles.homeLink} onPress={onHome} accessibilityRole="button" accessibilityLabel="Voltar ao início">
+        <Text style={styles.linkText}>Voltar ao início</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -387,6 +507,14 @@ const styles = StyleSheet.create({
   reasonsCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
   reasonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   reasonText: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.white, lineHeight: 22 },
+  adjustBar: { backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border, paddingHorizontal: SPACING.lg },
+  adjustToggle: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  adjustToggleText: { flex: 1, fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
+  adjustPanel: { gap: SPACING.sm, paddingBottom: SPACING.sm },
+  feedback: { fontSize: FONTS.sizes.sm, color: COLORS.success, lineHeight: 18 },
+  feedbackWarn: { color: COLORS.warning },
+  savedBody: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.lg },
+  homeLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg },
   groupTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, marginTop: SPACING.sm, textTransform: 'uppercase' },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   profileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, flexShrink: 1 },
