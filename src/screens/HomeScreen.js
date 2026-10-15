@@ -10,6 +10,7 @@ import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
 import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
+import { DemoBanner } from '../components/DemoControls';
 import { scoreBand } from '../utils/health';
 
 export default function HomeScreen({ navigation }) {
@@ -28,10 +29,13 @@ export default function HomeScreen({ navigation }) {
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.container}>
+      {/* Modo Demo: faixa fixa no topo (já cobre a área segura de cima) */}
+      {user?.isDemo && <DemoBanner navigation={navigation} />}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+      <View style={[styles.header, { paddingTop: user?.isDemo ? SPACING.sm : insets.top + SPACING.sm }]}>
         <View>
           <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0]}</Text>
           <Text style={styles.subGreeting}>
@@ -273,11 +277,13 @@ export default function HomeScreen({ navigation }) {
         </>
       )}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
+  scroll: { flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg },
   greeting: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },

@@ -11,7 +11,7 @@ import { selectHealthProvider } from '../utils/healthProviders';
 // Dados de saúde (@duo_health) + Duo Score. Tudo local: nenhuma chamada de rede.
 // No Modo Demo, enquanto nada foi gravado, mostra um histórico de EXEMPLO (isExample = true).
 export default function useHealth() {
-  const { user, completedSessions } = useApp();
+  const { user, completedSessions, dataEpoch } = useApp();
   const isDemo = !!user?.isDemo;
   const [health, setHealth] = useState(null); // null = carregando
   const ref = useRef(emptyHealth());
@@ -34,7 +34,7 @@ export default function useHealth() {
         }
       })();
       return () => { alive = false; };
-    }, [isDemo]),
+    }, [isDemo, dataEpoch]),
   );
 
   // Aplica uma função pura (ex.: addWeight) sobre o estado mais recente e grava.

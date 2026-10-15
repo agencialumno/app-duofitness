@@ -393,11 +393,12 @@ describe('integração (provedores)', () => {
 });
 
 describe('"Resetar tudo" limpa também @duo_health', () => {
-  it('a tela de Perfil remove a chave de saúde antes de limpar o armazenamento', () => {
+  it('a tela de Perfil usa resetAll (apaga todas as @duo_*, inclusive a de saúde) e volta às boas-vindas', () => {
     const src = readFileSync(path.join(REPO, 'src/screens/ProfileScreen.js'), 'utf8');
-    expect(src).toMatch(/AsyncStorage\.removeItem\(HEALTH_KEY\)/);
-    expect(src).toMatch(/AsyncStorage\.clear\(\)/);
+    expect(src).toMatch(/await resetAll\(\)/);
+    expect(src).toMatch(/resetToWelcome\(navigation\)/);
     expect(H.HEALTH_KEY).toBe('@duo_health');
+    expect(H.HEALTH_KEY.startsWith('@duo_')).toBe(true); // coberta pela limpeza por prefixo
   });
   it('as chaves @duo_* existentes continuam as mesmas (a nova só acrescenta)', () => {
     const ctx = readFileSync(path.join(REPO, 'src/context/AppContext.js'), 'utf8');

@@ -14,6 +14,8 @@ export const AppProvider = ({ children }) => {
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
   const [achievements, setAchievements] = useState([]);
+  // Sobe a cada reinício/limpeza dos dados; telas com cache próprio (ex.: Saúde) recarregam.
+  const [dataEpoch, setDataEpoch] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -135,6 +137,7 @@ export const AppProvider = ({ children }) => {
     setXp(d.xp);
     setStreak(d.streak);
     setAchievements(d.achievements);
+    setDataEpoch((n) => n + 1);
   };
 
   // Carrega os dados de exemplo. Recusa (devolve false) se houver perfil real salvo: o demo nunca
@@ -165,6 +168,7 @@ export const AppProvider = ({ children }) => {
     setXp(0);
     setStreak(0);
     setAchievements([]);
+    setDataEpoch((n) => n + 1);
   };
 
   const getLevel = () => {
@@ -184,7 +188,7 @@ export const AppProvider = ({ children }) => {
             xp, streak, achievements,
       getLevel,
       refreshData: loadData,
-      loadDemoData, restartDemo, resetAll,
+      loadDemoData, restartDemo, resetAll, dataEpoch,
     }}>
       {children}
     </AppContext.Provider>

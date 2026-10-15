@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } fr
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
-import { HEALTH_KEY } from '../utils/health';
+import { DemoCard } from '../components/DemoControls';
+import { resetToWelcome } from '../navigation/resetNavigation';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecer',
@@ -27,7 +27,7 @@ function formatGoals(goals) {
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, streak, achievements, completedSessions, workouts, getLevel } = useApp();
+  const { user, xp, streak, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
   const levelInfo = getLevel();
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
 
@@ -37,9 +37,10 @@ export default function ProfileScreen({ navigation }) {
       {
         text: 'Resetar tudo', style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem(HEALTH_KEY); // dados de saúde (@duo_health) também
-          await AsyncStorage.clear();
-          navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+          // Apaga TODAS as chaves @duo_* (inclusive @duo_health), zera o estado em memória e volta
+          // às boas-vindas de qualquer navegador (também com o app reaberto).
+          await resetAll();
+          resetToWelcome(navigation);
         },
       },
     ]);
@@ -182,6 +183,8 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
       </View>
+
+      {user?.isDemo && <DemoCard navigation={navigation} />}
 
       <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
         <Ionicons name="trash-outline" size={16} color={COLORS.error} />
