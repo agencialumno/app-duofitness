@@ -44,6 +44,8 @@ jobs:
       # OPCIONAIS: sem elas o build segue e o app fica 100% offline.
       EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
       EXPO_PUBLIC_APP_KEY: ${{ secrets.EXPO_PUBLIC_APP_KEY }}
+      # Variável (não secret) do repositório: o número vai dentro do app, qualquer pessoa consegue ler. Opcional.
+      EXPO_PUBLIC_MARKETPLACE_WHATSAPP: ${{ vars.EXPO_PUBLIC_MARKETPLACE_WHATSAPP }}
       # Tag sempre envia; execução manual envia só com upload=true.
       UPLOAD: ${{ (github.event_name == 'push' || inputs.upload) && 'true' || 'false' }}
       BUNDLE_ID: com.duofitness.app
@@ -67,6 +69,7 @@ jobs:
           echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "IOS_BUILD_NUMBER=$RUN_NUMBER" >> "$GITHUB_ENV"
           if [ -n "${EXPO_PUBLIC_API_URL:-}" ]; then API="sim"; else API="não (app 100% offline)"; fi
+          if [ -n "${EXPO_PUBLIC_MARKETPLACE_WHATSAPP:-}" ]; then WPP="sim"; else WPP="não"; fi
           if [ "$UPLOAD" = "true" ]; then MODE="envia ao TestFlight"; else MODE="só valida a assinatura (sem enviar)"; fi
           {
             echo "## Build iOS"
@@ -75,6 +78,7 @@ jobs:
             echo "- build number: \`$RUN_NUMBER\`"
             echo "- modo: **$MODE**"
             echo "- URL da API embutida no app: **$API**"
+            echo "- WhatsApp da loja embutido: **$WPP**"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Conferir Xcode 26 e SDK do iOS 26
