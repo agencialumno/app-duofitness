@@ -80,10 +80,10 @@ describe('barras de rolagem escondidas', () => {
     expect(missingIndicator(wrong)).toBe('showsHorizontalScrollIndicator');
   });
 
-  it('TextInput multiline: o React Native não expõe a propriedade; só o chat antigo usa um (lista de exceções)', () => {
+  it('TextInput multiline: o React Native não expõe a propriedade; só o chat antigo e o formulário de anúncio usam um (lista de exceções)', () => {
     const multiline: string[] = [];
     for (const f of files) if (/\bmultiline\b/.test(readFileSync(f, 'utf8'))) multiline.push(path.relative(REPO, f).replace(/\\/g, '/'));
     // Se aparecer outro campo multiline, revise: a barra de rolagem dele não pode ser escondida por prop.
-    expect(multiline).toEqual(['src/screens/AIPersonalTrainerScreen.js']);
+    expect(multiline.sort()).toEqual(['src/screens/AIPersonalTrainerScreen.js', 'src/screens/AdvertiseScreen.js']);
   });
 });

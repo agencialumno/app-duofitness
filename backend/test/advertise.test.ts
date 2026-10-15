@@ -222,6 +222,32 @@ describe('mailto: escape e limite de tamanho', () => {
   });
 });
 
+describe('fiação da tela', () => {
+  const screen = readFileSync(path.join(REPO, 'src/screens/AdvertiseScreen.js'), 'utf8');
+  it('abre o e-mail com Linking.openURL, sem canOpenURL, e cai em Share.share se falhar', () => {
+    expect(screen).toMatch(/Linking\.openURL\(email\.url\)/);
+    expect(screen).not.toMatch(/canOpenURL/);
+    expect(screen).toMatch(/Share\.share\(/);
+    expect(screen.indexOf('Linking.openURL')).toBeLessThan(screen.indexOf('Share.share'));
+  });
+  it('no Modo Demo "Confirmar" mostra a prévia e retorna antes de abrir o aplicativo de e-mail', () => {
+    const demo = screen.indexOf('if (isDemo)');
+    expect(demo).toBeGreaterThan(-1);
+    expect(demo).toBeLessThan(screen.indexOf('Linking.openURL'));
+    expect(screen).toMatch(/É assim que o e-mail será montado/);
+  });
+  it('nada do formulário é gravado: a tela não usa AsyncStorage nem localStorage', () => {
+    expect(screen).not.toMatch(/AsyncStorage|localStorage/);
+  });
+  it('o botão destacado está no marketplace, no topo e no fim da lista', () => {
+    const store = readFileSync(path.join(REPO, 'src/screens/StoreScreen.js'), 'utf8');
+    expect(store.match(/<AdvertiseButton /g)).toHaveLength(2);
+    expect(store).toContain('Anunciar em nosso marketplace');
+    const nav = readFileSync(path.join(REPO, 'src/navigation/MainNavigator.js'), 'utf8');
+    expect(nav).toMatch(/name="AnunciarMarketplace" component=\{AdvertiseScreen\}/);
+  });
+});
+
 describe('privacidade', () => {
   it('a lógica e as telas não gravam nada no aparelho (sem AsyncStorage)', () => {
     for (const f of ['src/utils/advertise.js', 'src/data/advertiseConfig.js']) {

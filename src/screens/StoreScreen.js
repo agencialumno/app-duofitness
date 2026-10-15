@@ -14,6 +14,23 @@ import {
   getCategoria,
 } from '../data/marketplace';
 
+// Botão destacado: leva ao formulário "Anunciar em nosso marketplace" (aparece no topo e no fim da lista).
+function AdvertiseButton({ onPress }) {
+  return (
+    <TouchableOpacity
+      style={styles.advertiseBtn}
+      onPress={onPress}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Anunciar em nosso marketplace"
+      accessibilityHint="Abre o formulário para pedir um anúncio"
+    >
+      <Ionicons name="megaphone-outline" size={20} color={COLORS.black} />
+      <Text style={styles.advertiseText}>Anunciar em nosso marketplace</Text>
+    </TouchableOpacity>
+  );
+}
+
 // Marketplace = VITRINE de parceiros: sem pagamento nem entrega no app. Funciona 100% offline (dados locais).
 export default function StoreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -42,6 +59,8 @@ export default function StoreScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
+
         <View style={styles.chips} accessibilityRole="tablist">
           {chips.map((c) => {
             const active = c.id === categoria;
@@ -106,6 +125,8 @@ export default function StoreScreen({ navigation }) {
           })
         )}
 
+        <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
+
         <Text style={styles.notice}>{MARKETPLACE_CONFIG.partnerNotice}</Text>
       </ScrollView>
     </View>
@@ -120,6 +141,8 @@ const styles = StyleSheet.create({
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   content: { padding: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl, gap: SPACING.md },
+  advertiseBtn: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
+  advertiseText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black, flexShrink: 1, textAlign: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   chip: { minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, justifyContent: 'center', borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border },
   chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },

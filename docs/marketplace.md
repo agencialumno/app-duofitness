@@ -22,3 +22,24 @@ O marketplace é uma **vitrine**: o app mostra anúncios de parceiros e leva o m
 ## Testes
 
 `cd backend && npm test` (inclui `marketplace.test.ts`). Smoke web (Playwright) cobre Home → Marketplace → filtro → detalhe → WhatsApp.
+
+## Anunciar em nosso marketplace
+
+Botão destacado no topo e no fim da lista do marketplace. Abre um formulário (rota interna `AnunciarMarketplace`,
+`src/screens/AdvertiseScreen.js`) e, depois de "Confira os dados", monta um **e-mail** para a equipe.
+
+- Campos: nicho (nutrição, suplementos, whey e alimentação, acessórios, serviços e personal, ou "Outro" com campo livre),
+  nome do responsável, empresa ou marca, WhatsApp, e-mail, cidade ou condomínio de interesse, descrição (até 600
+  caracteres, com contador) e link ou Instagram. Obrigatórios: nicho, nome, descrição (mínimo de 20 caracteres) e pelo
+  menos um entre WhatsApp e e-mail. O WhatsApp aceita DDD com ou sem máscara (também com +55 ou 0 na frente).
+- Destinatário: `MARKETPLACE_CONTACT_EMAIL` em `src/data/advertiseConfig.js` (`contato@duofitnessoficial.com.br`).
+- Assunto: `[Marketplace] Pedido de anúncio - <nicho> - <nome>`. Corpo em português com todos os campos.
+- "Confirmar" abre `mailto:` com `Linking.openURL` (sem `canOpenURL`). Se falhar, abre a folha de compartilhamento
+  (`Share.share`) com o mesmo texto. A URL é mantida abaixo de ~1900 caracteres: se a descrição não couber, ela é
+  resumida no e-mail (o app avisa) e a folha de compartilhamento leva o texto completo.
+- **Nada é gravado no aparelho** e o app não envia nada por servidor: o usuário envia o e-mail no próprio aplicativo.
+- **Modo Demo:** "Confirmar" não abre o e-mail; mostra a prévia "É assim que o e-mail será montado".
+- Avisos fixos na tela: análise dos anúncios (sem promessa de cura, resultado garantido ou indicação de dose) e envio
+  dos dados por e-mail à equipe Duo Fitness.
+- Lógica pura e testada: `src/utils/advertise.js` (`backend/test/advertise.test.ts`).
+
