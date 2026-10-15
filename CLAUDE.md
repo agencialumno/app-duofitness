@@ -22,6 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - Loja (vitrine de parceiros, sem pagamento): `src/data/marketplace.js` (itens de exemplo e funções), `marketplaceConfig.js` (WhatsApp via `EXPO_PUBLIC_MARKETPLACE_WHATSAPP`, opcional), `marketplaceImages.js`, `src/screens/Store*Screen.js`; aba Início é uma pilha com `Loja` e `LojaDetalhe`. Guia em `docs/marketplace.md`.
+- Academia agora (lotação, só números agregados): `src/utils/occupancy.js` (puro: faixas, MockProvider, RemoteProvider, melhor horário), `src/data/occupancyConfig.js`, `src/hooks/useOccupancy.js`, `OccupancyCard` e `GymNowScreen` (rota `AcademiaAgora` na pilha da aba Início). Hoje só dados de exemplo, sempre com o selo "Dados de exemplo". Contrato do endpoint futuro em `docs/catraca.md`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
 - `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`, `check-ios-project.mjs`, `set-ios-version.sh`, `ios-upload.sh`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
@@ -51,6 +52,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 | `EXPO_PUBLIC_API_URL` | URL do backend, sem barra no fim |
 | `EXPO_PUBLIC_APP_KEY` | mesmo valor do `APP_KEY` do backend (não é segredo de verdade) |
 | `EXPO_PUBLIC_API_FIRST_TOKEN_TIMEOUT_MS` | tempo até o primeiro token antes de cair no offline; padrão 10000 |
+| `EXPO_PUBLIC_OCCUPANCY_REMOTE` | `true` liga a lotação real (precisa de `EXPO_PUBLIC_API_URL`); vazio = dados de exemplo. Nunca no Modo Demo |
 | `EXPO_PUBLIC_MARKETPLACE_WHATSAPP` | número do WhatsApp da Loja (dígitos com DDI); vazio = botão avisa que falta configurar |
 
 **Backend** (modelo em `backend/.env.example`; detalhes na tabela do `backend/README.md`). Obrigatórias para `/api/ia/chat`: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `MODEL_INPUT_USD_PER_MTOK`, `MODEL_OUTPUT_USD_PER_MTOK`, `APP_KEY`. Opcionais: `DAILY_SPEND_LIMIT_USD`, `RATE_LIMIT_PER_MIN`, `MAX_USER_TURNS`, `MAX_OUTPUT_TOKENS`, `ALLOWED_ORIGINS`, `MODEL_CACHE_WRITE_USD_PER_MTOK`, `MODEL_CACHE_READ_USD_PER_MTOK`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
