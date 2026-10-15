@@ -391,3 +391,17 @@ describe('integração (provedores)', () => {
     expect(deps).not.toMatch(/health/i);
   });
 });
+
+describe('"Resetar tudo" limpa também @duo_health', () => {
+  it('a tela de Perfil remove a chave de saúde antes de limpar o armazenamento', () => {
+    const src = readFileSync(path.join(REPO, 'src/screens/ProfileScreen.js'), 'utf8');
+    expect(src).toMatch(/AsyncStorage\.removeItem\(HEALTH_KEY\)/);
+    expect(src).toMatch(/AsyncStorage\.clear\(\)/);
+    expect(H.HEALTH_KEY).toBe('@duo_health');
+  });
+  it('as chaves @duo_* existentes continuam as mesmas (a nova só acrescenta)', () => {
+    const ctx = readFileSync(path.join(REPO, 'src/context/AppContext.js'), 'utf8');
+    for (const k of ['@duo_user', '@duo_workouts', '@duo_sessions', '@duo_xp', '@duo_streak', '@duo_achievements', '@duo_onboarded']) expect(ctx).toContain(k);
+    expect(ctx).not.toContain('@duo_health');
+  });
+});

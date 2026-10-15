@@ -9,6 +9,8 @@ import MarketplaceImage from '../components/MarketplaceImage';
 import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
 import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
+import useHealth from '../hooks/useHealth';
+import { scoreBand } from '../utils/health';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -21,6 +23,8 @@ export default function HomeScreen({ navigation }) {
     ? Math.min(((xp % (levelInfo.nextXp / levelInfo.level)) / (levelInfo.nextXp / levelInfo.level)) * 100, 100)
     : 100;
   const occupancy = useOccupancy();
+  const healthInfo = useHealth();
+  const healthBand = scoreBand(healthInfo.score);
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
 
   return (
@@ -167,6 +171,29 @@ export default function HomeScreen({ navigation }) {
         <OccupancyCard status={occupancy.status} reading={occupancy.reading} now={occupancy.now} />
       </TouchableOpacity>
 
+      {/* Saúde: Duo Score (hábitos; não é avaliação médica) */}
+      <TouchableOpacity
+        style={styles.gymCard}
+        onPress={() => navigation.navigate('Saude')}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
+      >
+        <View style={styles.gymHead}>
+          <Ionicons name="heart-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.gymTitle}>Saúde</Text>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+        </View>
+        {healthInfo.isExample && <ExampleBadge />}
+        <View style={styles.healthRow}>
+          <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
+          <View style={styles.healthSide}>
+            <Text style={styles.healthLabel}>Duo Score</Text>
+            <Text style={styles.healthBand}>{healthInfo.loading ? 'Carregando…' : healthBand.label}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
       {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
       <Text style={styles.sectionTitleStrong} accessibilityRole="header">PARA VOCÊ</Text>
       <ScrollView
@@ -289,6 +316,11 @@ const styles = StyleSheet.create({
   gymCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm, marginBottom: SPACING.md },
   gymHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   gymTitle: { flex: 1, fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
+  healthRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  healthScore: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
+  healthSide: { flex: 1 },
+  healthLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
+  healthBand: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
   sectionTitleStrong: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textSecondary, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
   forYouScroll: { marginHorizontal: -SPACING.lg },
   forYouList: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },

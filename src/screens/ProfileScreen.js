@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
+import { HEALTH_KEY } from '../utils/health';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecer',
@@ -36,6 +37,7 @@ export default function ProfileScreen({ navigation }) {
       {
         text: 'Resetar tudo', style: 'destructive',
         onPress: async () => {
+          await AsyncStorage.removeItem(HEALTH_KEY); // dados de saúde (@duo_health) também
           await AsyncStorage.clear();
           navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
         },
