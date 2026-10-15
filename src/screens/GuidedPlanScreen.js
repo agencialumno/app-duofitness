@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, BackHandler, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import { useApp } from '../context/AppContext';
@@ -7,9 +7,12 @@ import { COMBOS } from '../data/combosEquipment';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from '../utils/planOptions';
 import {
   DAYS_OPTIONS, FOCUS_OPTIONS, TIME_OPTIONS,
-  defaultSettings, getProfileChips, getProfileDefaults, missingProfileFields, parseMeasure,
+  PLAN_LABEL, defaultSettings, generateGuidedPlan, getPlanBadge, getPlanSteps, getProfileChips, getProfileDefaults,
+  missingProfileFields, parseMeasure,
 } from '../utils/guidedPlan';
-import { Chip, FooterButton, GuidedHeader, OptionCard } from '../components/guided/GuidedParts';
+import { AI_BADGE_ENABLED } from '../data/guidedConfig';
+import { isApiConfigured } from '../services/api';
+import { BuildingChecklist, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
 // "AIPersonalTrainerChat". Nada aqui altera os dados salvos até o morador tocar em "Salvar série".
@@ -20,7 +23,9 @@ export default function GuidedPlanScreen({ navigation }) {
   const [settings, setSettings] = useState(() => defaultSettings(getProfileDefaults(user)));
   const [stage, setStage] = useState('intro'); // 'intro' | 'ask' | 'building' | 'review'
   const [qIndex, setQIndex] = useState(0);
+  const [plan, setPlan] = useState(null);
 
+  const finishBuilding = useCallback(() => setStage('review'), []);
   const patch = useCallback((p) => setSettings((s) => ({ ...s, ...p })), []);
 
   const goBack = useCallback(() => {
@@ -66,13 +71,73 @@ export default function GuidedPlanScreen({ navigation }) {
         settings={settings}
         patch={patch}
         onBack={goBack}
-        onNext={() => (last ? setStage('building') : setQIndex(qIndex + 1))}
+        onNext={() => {
+          if (!last) { setQIndex(qIndex + 1); return; }
+          // O plano sai do gerador local na hora; as etapas do "Montando" mostram o que foi calculado.
+          setPlan(generateGuidedPlan(settings, user));
+          setStage('building');
+        }}
         last={last}
       />
     );
   }
 
+  if (stage === 'building' && plan) {
+    return (
+      <BuildingStage
+        settings={settings}
+        plan={plan}
+        user={user}
+        onBack={goBack}
+        onDone={finishBuilding}
+      />
+    );
+  }
+
   return null;
+}
+
+// ---------- Montando sua série: etapas ligadas a cálculos reais do gerador ----------
+
+const STEP_MS = 750;
+
+function BuildingStage({ settings, plan, user, onBack, onDone }) {
+  const steps = getPlanSteps(settings, plan, user);
+  const [visible, setVisible] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => { if (alive) setReduceMotion(!!v); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    const delay = reduceMotion ? 150 : STEP_MS;
+    if (visible >= steps.length) {
+      const t = setTimeout(onDone, reduceMotion ? 150 : 600);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setVisible((v) => v + 1), delay);
+    return () => clearTimeout(t);
+  }, [visible, steps.length, reduceMotion, onDone]);
+
+  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured(), isDemo: !!user?.isDemo });
+
+  return (
+    <View style={styles.container}>
+      <GuidedHeader onBack={onBack} progress={Math.min(visible / steps.length, 1)} caption="Montando" />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.labelRow}>
+          <TrainerLabel text={PLAN_LABEL} badge={badge} />
+        </View>
+        <Text style={styles.title} accessibilityRole="header">Montando sua série</Text>
+        <Text style={styles.subtitle}>Cada etapa abaixo é um cálculo feito agora, no seu aparelho.</Text>
+        <BuildingChecklist steps={steps} visible={visible} />
+      </ScrollView>
+      <FooterButton label="Pular" onPress={onDone} secondary icon="play-skip-forward-outline" />
+    </View>
+  );
 }
 
 // ---------- Abertura: o que já sabemos do perfil, em chips editáveis ----------
@@ -255,6 +320,7 @@ const styles = StyleSheet.create({
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 22 },
   options: { gap: SPACING.sm },
+  labelRow: { flexDirection: 'row' },
   groupTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, marginTop: SPACING.sm, textTransform: 'uppercase' },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   profileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, flexShrink: 1 },
