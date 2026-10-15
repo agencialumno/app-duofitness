@@ -13,7 +13,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - React Native + Expo, React Navigation, AsyncStorage. Local-first: tudo funciona offline.
 - Cores `#fed205` (amarelo), `#000000`, `#ffffff`; fonte Roboto; tema escuro. Tokens em `src/utils/theme.js`.
 - Bundle id: `com.duofitness.app` (Android e iOS).
-- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O build Android é o `.github/workflows/android.yml` (tag `v*` ou manual; guia em `docs/android.md`; **não renomear**, por causa do `run_number`); o `ci.yml` só valida o código. A assinatura e a versão são aplicadas pelo plugin `plugins/withAndroidRelease.js`, sem commitar nada em `android/`. Build iOS ainda não existe. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
+- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O build Android é o `.github/workflows/android.yml` (tag `v*` ou manual; guia em `docs/android.md`; **não renomear**, por causa do `run_number`); o `ci.yml` só valida o código. A assinatura e a versão são aplicadas pelo plugin `plugins/withAndroidRelease.js`, sem commitar nada em `android/`. Antes do cache e do `npm ci`, o `android.yml` valida os PNGs (`scripts/check-pngs.mjs`) e o keystore (alias, senha do keystore e da chave, sem imprimir senhas), para falhar em segundos. Build iOS ainda não existe. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
 
 ## Estrutura do repositório
 
@@ -22,7 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
-- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI, ex.: `publish-apk.mjs`), `docs/` (guias, ex.: `android.md`).
+- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do RN no SDK 51 não faz streaming).
 
 ## Regras do projeto
@@ -32,6 +32,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - **O Modo Demo (feira) nunca chama a API.** `DEMO_USER.isDemo === true` desliga qualquer chamada de rede.
 - Mudanças pequenas e explicadas; não alterar telas e funcionalidades sem pedido.
 - Textos do app em português do Brasil.
+- **Imagens PNG** (`assets/` e as citadas no `app.json` ou importadas em `src/`) precisam ser PNG de verdade, 8 bits por canal e sem entrelaçamento; o `logo.png` já quebrou o AAPT2 por ser um JPEG com extensão `.png`. Confira com `node scripts/check-pngs.mjs` (roda também no `ci.yml`).
 
 ## Chat do Personal Trainer IA (`AIPersonalTrainerScreen`)
 
@@ -53,7 +54,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 
 ## Comandos
 
-- App: `npx expo start`; checagens: `npx expo-doctor` e `npx expo install --check`.
+- App: `npx expo start`; checagens: `npx expo-doctor`, `npx expo install --check` e `node scripts/check-pngs.mjs`.
 - Backend (`cd backend`): `npm run dev`, `npm test`, `npm run typecheck`, `npm run check-catalog`.
 - Mudou `workoutGenerator.js` ou `combosEquipment.js`? Rode `npm run sync-catalog` no `backend/` (o teste de paridade e o CI falham se esquecer).
 

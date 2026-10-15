@@ -115,10 +115,51 @@ O workflow compila só `arm64-v8a` e `armeabi-v7a` (variável `ANDROID_ABIS` no 
 - **Emulador (x86_64):** edite `ANDROID_ABIS: arm64-v8a,armeabi-v7a,x86_64`.
 - **Play Store:** o AAB deve voltar a incluir **todas** as ABIs: `ANDROID_ABIS: armeabi-v7a,arm64-v8a,x86,x86_64` (o padrão do template do Expo). Faça essa troca antes de gerar o AAB que vai para a loja. Como o workflow usa a mesma variável para o APK e o AAB, o APK dessa execução também fica maior.
 
+## Checagens rápidas antes do build
+
+Duas etapas do `android.yml` rodam **antes** do cache do Gradle, do `npm ci` e do Gradle. Elas falham em segundos, com a causa na tela, em vez de derrubar o build depois de vários minutos. A ordem é: versão, secrets presentes, Node e JDK, **PNGs**, decodificar o keystore, **validar o keystore**, cache, `npm ci`, prebuild e Gradle.
+
+### 1) PNGs do app (`scripts/check-pngs.mjs`)
+
+O empacotador de recursos do Android (AAPT2) recusa PNGs fora do padrão, e esse erro só aparecia no meio do Gradle. O caso real foi o `assets/logo.png`, que era um **JPEG com extensão `.png`**.
+
+O script só usa módulos do Node (nenhuma dependência nova) e confere:
+
+- os `*.png` de `assets/`, os `.png` citados no `app.json` e os `.png` importados ou requeridos em `src/` e `App.js`;
+- **ERRO** (falha o build): assinatura PNG inválida (diz se o conteúdo é JPEG, GIF, WebP ou BMP), arquivo truncado, CRC de chunk inválido, PNG **entrelaçado** (Adam7), dados da imagem corrompidos ou incompletos (descompressão zlib e tamanho esperado) e arquivo referenciado que **não existe**;
+- **AVISO** (não falha): bits por canal diferente de 8.
+
+Cada problema aparece com o caminho do arquivo (no GitHub, como anotação `::error file=...` ou `::warning file=...`). Para rodar na sua máquina, na raiz do app:
+
+```powershell
+node scripts/check-pngs.mjs
+```
+
+Para corrigir, abra a imagem num editor e exporte de novo como PNG de verdade, 8 bits por canal (RGB ou RGBA) e sem entrelaçamento. A mesma checagem roda no job `app` do `ci.yml`, então o erro aparece já no pull request, não só no build da tag. Os testes do script ficam em `backend/test/pngcheck.test.ts` (rodam o script como processo externo, com fixtures temporárias).
+
+### 2) Keystore (alias, senha do keystore e senha da chave)
+
+O passo "Validar keystore" faz o que o Gradle fará: abre o keystore e extrai a chave para um arquivo temporário (`keytool -importkeystore` para `$RUNNER_TEMP/keycheck.p12`). Se falhar, diz **qual secret está errado**:
+
+| Situação | Mensagem aponta para |
+|---|---|
+| senha do keystore não confere | `ANDROID_KEYSTORE_PASSWORD` |
+| alias não existe | `ANDROID_KEY_ALIAS` (maiúsculas e minúsculas contam) |
+| senha da chave não confere (keystore JKS) | `ANDROID_KEY_PASSWORD` |
+| arquivo ilegível, vazio ou corrompido | `ANDROID_KEYSTORE_BASE64` |
+| keystore PKCS12 com senhas diferentes | `ANDROID_KEY_PASSWORD` (mensagem abaixo) |
+
+> Em keystore PKCS12 as senhas do keystore e da chave precisam ser iguais. Atualize ANDROID_KEY_PASSWORD com o mesmo valor de ANDROID_KEYSTORE_PASSWORD.
+
+Esse último caso existe porque o `keytool` **ignora** a senha da chave em keystore PKCS12 (o formato que ele gera hoje), mas o Gradle não: uma `ANDROID_KEY_PASSWORD` diferente passaria no `keytool` e só falharia no Gradle. O tipo do keystore é lido dos primeiros bytes do arquivo.
+
+Garantias: as senhas só passam por variáveis de ambiente (`-srcstorepass:env`, `-srckeypass:env`), a senha do arquivo temporário é aleatória e mascarada nos logs, e **nenhuma senha nem a saída crua do `keytool` é impressa** (a saída só serve para classificar o erro). O `keytool` roda em inglês (`-J-Duser.language=en`) para a classificação não depender do idioma do sistema. O `keycheck.p12` e o keystore decodificado são apagados no último passo, com `if: always()`, mesmo se algo falhar antes.
+
 ## Problemas comuns
 
 - **"Faltam secrets de assinatura: ..."**: cadastre os nomes listados.
-- **"Não consegui abrir o keystore..."**: `ANDROID_KEY_ALIAS` ou `ANDROID_KEYSTORE_PASSWORD` não conferem com o keystore. O alias diferencia maiúsculas de minúsculas.
+- **Falha em "Validar keystore"**: a mensagem diz qual secret corrigir (tabela na seção "Checagens rápidas antes do build").
+- **Falha em "Conferir PNGs do app"**: o log lista o caminho de cada PNG com problema e o motivo. Regrave a imagem como PNG de 8 bits, sem entrelaçamento.
 - **"ANDROID_KEYSTORE_BASE64 não é um base64 válido"**: refaça a conversão e cole sem aspas.
 - **"O APK foi assinado com a chave de DEBUG"**: o plugin não aplicou a assinatura de release. Confira se `./plugins/withAndroidRelease` está em `plugins` no `app.json`.
 - **Falha no Gradle ou no JDK:** o projeto está no Expo SDK 51 (React Native 0.74, Gradle 8.8, JDK 17). Se o build falhar por causa dessa combinação, não troque de SDK por conta própria: guarde o log do passo "Build (APK e AAB)" e trate numa etapa separada.

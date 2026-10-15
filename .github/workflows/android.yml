@@ -105,6 +105,91 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # ---- Checagens rápidas: falham em segundos, ANTES do cache, do npm ci e do Gradle ----
+
+      - name: Conferir PNGs do app (assinatura PNG, CRC, 8 bits, sem entrelaçamento)
+        run: node scripts/check-pngs.mjs
+
+      - name: Decodificar keystore de release
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/duofitness-release.keystore"
+          # registra o caminho antes de criar o arquivo, para o passo final de limpeza achar
+          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
+          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE" 2>/dev/null; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 não é um base64 válido (veja docs/android.md)."
+            exit 1
+          fi
+          chmod 600 "$KEYSTORE"
+
+      # Abre o keystore e extrai a chave com as senhas dos secrets, exatamente o que o Gradle fará.
+      # As senhas só passam por variáveis de ambiente (keytool :env) e a saída do keytool nunca é
+      # impressa: ela só serve para descobrir QUAL secret está errado.
+      - name: Validar keystore (alias, senha do keystore e senha da chave)
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -uo pipefail
+          CHECK="$RUNNER_TEMP/keycheck.p12"
+          rm -f "$CHECK"
+
+          fail() {
+            echo "::error::$1"
+            {
+              echo ""
+              echo "### Build interrompido: keystore inválido"
+              echo ""
+              echo "$1"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+
+          # senha descartável do arquivo temporário de destino (não é nenhuma das suas senhas)
+          CHECK_DEST_PASS="$(openssl rand -hex 16)"
+          echo "::add-mask::$CHECK_DEST_PASS"
+          export CHECK_DEST_PASS
+
+          # -J-Duser.language=en: mensagens do keytool em inglês, para a classificação abaixo não
+          # depender do idioma do sistema.
+          OUT="$(keytool -J-Duser.language=en -J-Duser.country=US -importkeystore -noprompt \
+            -srckeystore "$ANDROID_KEYSTORE_FILE" -srcalias "$ANDROID_KEY_ALIAS" \
+            -srcstorepass:env ANDROID_KEYSTORE_PASSWORD -srckeypass:env ANDROID_KEY_PASSWORD \
+            -destkeystore "$CHECK" -deststoretype PKCS12 \
+            -deststorepass:env CHECK_DEST_PASS -destkeypass:env CHECK_DEST_PASS 2>&1)"
+          RC=$?
+
+          if [ "$RC" -ne 0 ]; then
+            if printf '%s' "$OUT" | grep -qiE 'password was incorrect|tampered'; then
+              fail "A senha do keystore não confere. Atualize o secret ANDROID_KEYSTORE_PASSWORD."
+            elif printf '%s' "$OUT" | grep -qiE 'alias.*does not exist'; then
+              fail "O alias não existe no keystore. Atualize o secret ANDROID_KEY_ALIAS (maiúsculas e minúsculas contam)."
+            elif printf '%s' "$OUT" | grep -qiE 'cannot recover key|get key failed|unrecoverablekey'; then
+              fail "A senha da chave não confere. Atualize o secret ANDROID_KEY_PASSWORD."
+            elif printf '%s' "$OUT" | grep -qiE 'unrecognized keystore format|invalid keystore format|keystore file (does not exist|exists, but is empty)|not a valid|DerInputStream|Short read|ParseException'; then
+              fail "O keystore não pôde ser lido (formato inválido ou arquivo corrompido). Gere o base64 de novo e atualize o secret ANDROID_KEYSTORE_BASE64."
+            else
+              fail "O keytool não conseguiu extrair a chave (causa não identificada). Confira ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS, ANDROID_KEYSTORE_PASSWORD e ANDROID_KEY_PASSWORD."
+            fi
+          fi
+
+          # Em keystore PKCS12 o keytool IGNORA a senha da chave informada; o Gradle, não. Por isso
+          # conferimos aqui que as duas senhas são iguais. O tipo vem dos primeiros bytes do
+          # arquivo (JKS começa com FEEDFEED e JCEKS com CECECECE; o resto legível é PKCS12), sem
+          # depender do texto do keytool.
+          MAGIC="$(od -An -tx1 -N4 "$ANDROID_KEYSTORE_FILE" | tr -d ' \n')"
+          case "$MAGIC" in
+            feedfeed|cececece) TYPE="JKS" ;;
+            *) TYPE="PKCS12" ;;
+          esac
+          if [ "$TYPE" = "PKCS12" ] && [ "$ANDROID_KEYSTORE_PASSWORD" != "$ANDROID_KEY_PASSWORD" ]; then
+            fail "Em keystore PKCS12 as senhas do keystore e da chave precisam ser iguais. Atualize ANDROID_KEY_PASSWORD com o mesmo valor de ANDROID_KEYSTORE_PASSWORD."
+          fi
+          echo "Keystore válido (tipo $TYPE); alias e senhas conferem."
+
       # Cache do Gradle. Não usamos "cache: gradle" do setup-java porque ele exige arquivos
       # .gradle já presentes, e o android/ só existe depois do prebuild.
       - uses: actions/cache@v4.2.3
@@ -117,27 +202,6 @@ jobs:
             gradle-${{ runner.os }}-
 
       - run: npm ci
-
-      - name: Preparar keystore de release
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: |
-          set -euo pipefail
-          KEYSTORE="$RUNNER_TEMP/duofitness-release.keystore"
-          # registra o caminho antes de criar o arquivo, para o passo final de limpeza achar
-          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE" >> "$GITHUB_ENV"
-          if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE" 2>/dev/null; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 não é um base64 válido (veja docs/android.md)."
-            exit 1
-          fi
-          chmod 600 "$KEYSTORE"
-          if ! keytool -list -keystore "$KEYSTORE" -alias "$ANDROID_KEY_ALIAS" \
-               -storepass:env ANDROID_KEYSTORE_PASSWORD > /dev/null 2>&1; then
-            echo "::error::Não consegui abrir o keystore com ANDROID_KEY_ALIAS e ANDROID_KEYSTORE_PASSWORD. Confira os dois secrets."
-            exit 1
-          fi
 
       - name: Gerar projeto Android (expo prebuild)
         run: |
@@ -232,7 +296,10 @@ jobs:
             echo "- Esta versão (\`$VERSION_NAME\`): $(get versioned_download_url)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Sempre apaga o keystore decodificado, mesmo se algum passo acima falhar.
-      - name: Apagar keystore decodificado
+      # Sempre apaga o keystore decodificado e o arquivo temporário da validação, mesmo se algum
+      # passo acima falhar.
+      - name: Apagar keystore decodificado e arquivo temporário da validação
         if: always()
-        run: rm -f "${ANDROID_KEYSTORE_FILE:-$RUNNER_TEMP/duofitness-release.keystore}"
+        run: |
+          rm -f "${ANDROID_KEYSTORE_FILE:-$RUNNER_TEMP/duofitness-release.keystore}"
+          rm -f "$RUNNER_TEMP/keycheck.p12"
