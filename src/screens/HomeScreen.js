@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
+import MarketplaceImage from '../components/MarketplaceImage';
+import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -145,6 +147,43 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
+      <Text style={styles.sectionTitleStrong} accessibilityRole="header">PARA VOCÊ</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.forYouScroll}
+        contentContainerStyle={styles.forYouList}
+      >
+        {getDestaques(MARKETPLACE_ITEMS, 3).map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.forYouCard}
+            onPress={() => navigation.navigate('LojaDetalhe', { itemId: item.id })}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.titulo}. ${item.descricaoCurta}`}
+            accessibilityHint="Abre os detalhes do item"
+          >
+            <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={32} />
+            <View style={styles.forYouBody}>
+              <Text style={styles.forYouTitle} numberOfLines={2}>{item.titulo}</Text>
+              <Text style={styles.forYouDesc} numberOfLines={2}>{item.descricaoCurta}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      <TouchableOpacity
+        style={styles.storeBtn}
+        onPress={() => navigation.navigate('Loja')}
+        accessibilityRole="button"
+        accessibilityLabel="Ver loja"
+      >
+        <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
+        <Text style={styles.storeBtnText}>Ver loja</Text>
+        <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+      </TouchableOpacity>
+
       {/* Último treino */}
       {lastWorkout && (
         <>
@@ -227,6 +266,15 @@ const styles = StyleSheet.create({
   aiBannerIconWrap: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'center', alignItems: 'center' },
   aiBannerTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black },
   aiBannerSub: { fontSize: FONTS.sizes.xs, color: 'rgba(0,0,0,0.6)', marginTop: 2 },
+  sectionTitleStrong: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textSecondary, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
+  forYouScroll: { marginHorizontal: -SPACING.lg },
+  forYouList: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
+  forYouCard: { width: 220, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  forYouBody: { padding: SPACING.sm, gap: 2 },
+  forYouTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
+  forYouDesc: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, lineHeight: 16 },
+  storeBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, marginTop: SPACING.sm, marginBottom: SPACING.md, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.primary },
+  storeBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
   sectionTitle: { fontSize: FONTS.sizes.xs, fontWeight: '600', color: COLORS.textMuted, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
   quickActions: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
   qActionSecondary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
