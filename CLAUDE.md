@@ -22,7 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
-- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`), `docs/` (guias, ex.: `android.md`).
+- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do RN no SDK 51 não faz streaming).
 
 ## Regras do projeto
@@ -32,6 +32,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - **O Modo Demo (feira) nunca chama a API.** `DEMO_USER.isDemo === true` desliga qualquer chamada de rede.
 - Mudanças pequenas e explicadas; não alterar telas e funcionalidades sem pedido.
 - Textos do app em português do Brasil.
+- **Módulos nativos Expo no topo de `node_modules`.** O autolinking não vê módulos aninhados (no SDK 52 o `expo-file-system` aninhado fez os ícones sumirem). Mantenha `expo-file-system`, `expo-asset`, `expo-font` e `expo-keep-awake` como dependências diretas; `scripts/check-autolinking.mjs` confere (roda no `ci.yml` e no `android.yml`).
 - **Imagens PNG** (`assets/` e as citadas no `app.json` ou importadas em `src/`) precisam ser PNG de verdade, 8 bits por canal e sem entrelaçamento; o `logo.png` já quebrou o AAPT2 por ser um JPEG com extensão `.png`. Confira com `node scripts/check-pngs.mjs` (roda também no `ci.yml`).
 
 ## Chat do Personal Trainer IA (`AIPersonalTrainerScreen`)
@@ -54,7 +55,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 
 ## Comandos
 
-- App: `npx expo start`; checagens: `npx expo-doctor`, `npx expo install --check` e `node scripts/check-pngs.mjs`.
+- App: `npx expo start`; checagens: `npx expo-doctor`, `npx expo install --check` e `node scripts/check-pngs.mjs` e `node scripts/check-autolinking.mjs`.
 - Backend (`cd backend`): `npm run dev`, `npm test`, `npm run typecheck`, `npm run check-catalog`.
 - Mudou `workoutGenerator.js` ou `combosEquipment.js`? Rode `npm run sync-catalog` no `backend/` (o teste de paridade e o CI falham se esquecer).
 

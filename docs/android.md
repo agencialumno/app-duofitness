@@ -155,10 +155,17 @@ Esse último caso existe porque o `keytool` **ignora** a senha da chave em keyst
 
 Garantias: as senhas só passam por variáveis de ambiente (`-srcstorepass:env`, `-srckeypass:env`), a senha do arquivo temporário é aleatória e mascarada nos logs, e **nenhuma senha nem a saída crua do `keytool` é impressa** (a saída só serve para classificar o erro). O `keytool` roda em inglês (`-J-Duser.language=en`) para a classificação não depender do idioma do sistema. O `keycheck.p12` e o keystore decodificado são apagados no último passo, com `if: always()`, mesmo se algo falhar antes.
 
+### 3) Autolinking dos módulos Expo (`scripts/check-autolinking.mjs`)
+
+O autolinking do Expo só enxerga os pacotes que estão no **topo** de `node_modules`. No SDK 52 o npm deixou `expo-file-system` e `expo-keep-awake` aninhados em `node_modules/expo/node_modules`: eles ficaram de fora do app Android, o `expo-asset` não conseguiu gravar a fonte no cache (ele depende do `expo-file-system` para a permissão de escrita) e os ícones Ionicons sumiram em uma instalação limpa ou depois de limpar o cache.
+
+O script roda o `expo-modules-autolinking resolve --platform android` e **falha** se `expo-file-system`, `expo-asset`, `expo-font` ou `expo-keep-awake` não estiverem na lista, apontando se o pacote está aninhado ou ausente e o comando que corrige (`npx expo install <pacote>`). Roda no `android.yml` logo depois do prebuild e no job `app` do `ci.yml`, depois do `npm ci`. Na sua máquina: `node scripts/check-autolinking.mjs` (precisa de `npm install` feito). Para exigir outro módulo, inclua o nome em `REQUIRED` no começo do script. Os testes ficam em `backend/test/autolinking.test.ts`.
+
 ## Problemas comuns
 
 - **"Faltam secrets de assinatura: ..."**: cadastre os nomes listados.
 - **Falha em "Validar keystore"**: a mensagem diz qual secret corrigir (tabela na seção "Checagens rápidas antes do build").
+- **Falha em "Conferir autolinking"**: rode o `npx expo install` do pacote indicado no log, para ele virar dependência direta e subir para o topo de `node_modules`.
 - **Falha em "Conferir PNGs do app"**: o log lista o caminho de cada PNG com problema e o motivo. Regrave a imagem como PNG de 8 bits, sem entrelaçamento.
 - **"ANDROID_KEYSTORE_BASE64 não é um base64 válido"**: refaça a conversão e cole sem aspas.
 - **"O APK foi assinado com a chave de DEBUG"**: o plugin não aplicou a assinatura de release. Confira se `./plugins/withAndroidRelease` está em `plugins` no `app.json`.

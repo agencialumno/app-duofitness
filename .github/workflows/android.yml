@@ -212,6 +212,11 @@ jobs:
           grep -q "versionName \"$APP_VERSION_NAME\"" android/app/build.gradle
           grep -q "withAndroidRelease" android/app/build.gradle
 
+      # O autolinking só enxerga node_modules do topo. Módulo aninhado (como aconteceu com o
+      # expo-file-system no SDK 52) fica fora do app e quebra o carregamento da fonte dos ícones.
+      - name: Conferir autolinking (módulos Expo obrigatórios)
+        run: node scripts/check-autolinking.mjs
+
       - name: Build (APK e AAB)
         working-directory: android
         env:

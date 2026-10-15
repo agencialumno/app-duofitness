@@ -27,6 +27,9 @@ jobs:
       # Falha em segundos se algum PNG estiver fora do padrão que o build Android aceita.
       - run: node scripts/check-pngs.mjs
       - run: npm ci
+      # Falha se expo-file-system, expo-asset, expo-font ou expo-keep-awake ficarem fora do
+      # autolinking (por exemplo, aninhados em node_modules/expo/node_modules).
+      - run: node scripts/check-autolinking.mjs
       - run: npx expo-doctor
       # A raiz ainda não tem lint nem testes; --if-present roda quando existirem.
       - run: npm run --if-present lint
