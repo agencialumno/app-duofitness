@@ -14,14 +14,14 @@ permissions:
   contents: read
 
 jobs:
-  # App (raiz do repositório): Expo SDK 51.
+  # App (raiz do repositório): Expo SDK 54.
   app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions/setup-node@v4.4.0
         with:
-          node-version: 20
+          node-version: 22 # RN 0.81 (Expo SDK 54) exige Node >= 20.19.4
           cache: npm
           cache-dependency-path: package-lock.json
       # Falha em segundos se algum PNG estiver fora do padrão que o build Android aceita.

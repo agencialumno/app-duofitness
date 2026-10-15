@@ -6,7 +6,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 
 - A IA online **não está em uso** (sem crédito na API). O app funciona 100% offline.
 - O backend (`backend/`) está pronto e testado, **sem deploy**.
-- Expo SDK 51 (React Native 0.74.5). Não subir de SDK sem pedido: a escada de upgrade (52 a 57) será feita em outra branch, um SDK por vez.
+- Expo SDK 54 (React Native 0.81.5, React 19.1, nova arquitetura ligada, edge-to-edge obrigatório no Android). Node >= 20.19.4 (CI em Node 22), Gradle 8.14.x e JDK 17. Os saltos 55, 56 e 57 ficam para depois, um SDK por vez, sem pular. React Navigation segue na v6.
 
 ## Stack e identidade
 
@@ -23,7 +23,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
 - `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`), `docs/` (guias, ex.: `android.md`).
-- `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do RN no SDK 51 não faz streaming).
+- `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
 
 ## Regras do projeto
 

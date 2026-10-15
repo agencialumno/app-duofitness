@@ -12,6 +12,9 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), 'check-autolinking-'));
+  // babel-preset-expo no topo de node_modules (o caso normal)
+  mkdirSync(path.join(dir, 'node_modules', 'babel-preset-expo'), { recursive: true });
+  writeFileSync(path.join(dir, 'node_modules', 'babel-preset-expo', 'package.json'), '{"name":"babel-preset-expo","version":"0.0.0"}');
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -54,6 +57,22 @@ describe('check-autolinking.mjs', () => {
     const r = run(ALL.filter((m) => m !== 'expo-file-system'));
     expect(r.code).toBe(1);
     expect(r.out).toContain('expo-file-system não está no autolinking: está aninhado em node_modules/expo/node_modules');
+  });
+
+  it('falha quando babel-preset-expo não está no topo de node_modules (aninhado no expo)', () => {
+    rmSync(path.join(dir, 'node_modules', 'babel-preset-expo'), { recursive: true, force: true });
+    mkdirSync(path.join(dir, 'node_modules', 'expo', 'node_modules', 'babel-preset-expo'), { recursive: true });
+    const r = run(ALL);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('::error::babel-preset-expo está aninhado em node_modules/expo/node_modules');
+    expect(r.out).toContain('npx expo install babel-preset-expo');
+  });
+
+  it('falha quando babel-preset-expo não está instalado', () => {
+    rmSync(path.join(dir, 'node_modules', 'babel-preset-expo'), { recursive: true, force: true });
+    const r = run(ALL);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('::error::babel-preset-expo não está instalado');
   });
 
   it('fora do GitHub a saída é legível (ERRO) e o código de saída continua valendo', () => {
