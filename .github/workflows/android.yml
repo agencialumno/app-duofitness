@@ -120,6 +120,9 @@ jobs:
       - name: Conferir PNGs do app (assinatura PNG, CRC, 8 bits, sem entrelaçamento)
         run: node scripts/check-pngs.mjs
 
+      - name: Conferir vídeos e capas dos exercícios (extensão, formato real, nome, tamanho, mapa em dia)
+        run: node scripts/check-videos.mjs
+
       - name: Decodificar keystore de release
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

@@ -125,6 +125,9 @@ jobs:
       - name: Conferir PNGs do app (assinatura PNG, CRC, 8 bits, sem entrelaçamento)
         run: node scripts/check-pngs.mjs
 
+      - name: Conferir vídeos e capas dos exercícios (extensão, formato real, nome, tamanho, mapa em dia)
+        run: node scripts/check-videos.mjs
+
       - name: Preparar a chave da API do App Store Connect
         env:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}

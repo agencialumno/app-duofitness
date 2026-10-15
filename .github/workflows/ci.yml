@@ -26,6 +26,8 @@ jobs:
           cache-dependency-path: package-lock.json
       # Falha em segundos se algum PNG estiver fora do padrão que o build Android aceita.
       - run: node scripts/check-pngs.mjs
+      # Falha em segundos se um vídeo/capa de exercício estiver fora do padrão (docs/videos-exercicios.md).
+      - run: node scripts/check-videos.mjs
       - run: npm ci
       # Falha se expo-file-system, expo-asset, expo-font ou expo-keep-awake ficarem fora do
       # autolinking (por exemplo, aninhados em node_modules/expo/node_modules).
