@@ -13,7 +13,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - React Native + Expo, React Navigation, AsyncStorage. Local-first: tudo funciona offline.
 - Cores `#fed205` (amarelo), `#000000`, `#ffffff`; fonte Roboto; tema escuro. Tokens em `src/utils/theme.js`.
 - Bundle id: `com.duofitness.app` (Android e iOS).
-- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O build Android é o `.github/workflows/android.yml` (tag `v*` ou manual; guia em `docs/android.md`; **não renomear**, por causa do `run_number`); o `ci.yml` só valida o código. A assinatura e a versão são aplicadas pelo plugin `plugins/withAndroidRelease.js`, sem commitar nada em `android/`. Antes do cache e do `npm ci`, o `android.yml` valida os PNGs (`scripts/check-pngs.mjs`) e o keystore (alias, senha do keystore e da chave, sem imprimir senhas), para falhar em segundos. Build iOS ainda não existe. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
+- Builds: via GitHub Actions, com projetos nativos gerados por `expo prebuild`. As pastas `android/` e `ios/` ficam **fora do git** (estão no `.gitignore`). O build Android é o `.github/workflows/android.yml` (tag `v*` ou manual; guia em `docs/android.md`; **não renomear**, por causa do `run_number`); o `ci.yml` só valida o código. A assinatura e a versão são aplicadas pelo plugin `plugins/withAndroidRelease.js`, sem commitar nada em `android/`. Antes do cache e do `npm ci`, o `android.yml` valida os PNGs (`scripts/check-pngs.mjs`) e o keystore (alias, senha do keystore e da chave, sem imprimir senhas), para falhar em segundos. O build iOS é o `.github/workflows/ios.yml` (runner `macos-26` com Xcode 26, assinatura automática pela chave da API do App Store Connect, envio ao TestFlight; execução manual ou tag `ios-v*`; guia em `docs/testflight.md`; **não renomear**, por causa do `run_number`). Secrets da Apple: `APPLE_TEAM_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_KEY_ID` e `APPSTORE_PRIVATE_KEY`. O job `ios-prebuild` do `ci.yml` confere em Linux que o projeto iOS é gerado. `eas.json`, `extra.eas` e `owner` do `app.json` ficam por enquanto como plano B.
 
 ## Estrutura do repositório
 
@@ -22,7 +22,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - `src/screens/`, `src/context/AppContext.js` (estado e AsyncStorage), `src/data/` (combos, dados do demo).
 - `src/utils/workoutGenerator.js`: catálogo `EXERCISE_DB`, gerador offline `generateWorkoutPlan`, `hydratePlan` (completa um plano por ids vindo da IA) e `HIGH_IMPACT_IDS`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
-- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`), `docs/` (guias, ex.: `android.md`).
+- `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
 
 ## Regras do projeto

@@ -1,0 +1,390 @@
+# Build iOS assinado (Xcode 26) e envio ao TestFlight, fora do EAS e sem fastlane.
+#
+# - Gatilhos: execução manual (workflow_dispatch) e tag "ios-v*" (a tag sempre envia ao TestFlight).
+#   Nada roda em pull request.
+# - Projeto nativo gerado por "expo prebuild" (ios/ fica fora do git).
+# - Assinatura AUTOMÁTICA pela chave da API do App Store Connect (cloud signing, sem match).
+# - Guia completo (secrets, papel da chave, testadores internos): docs/testflight.md.
+#
+# NÃO RENOMEIE ESTE ARQUIVO: o build number usa github.run_number, contado por arquivo de workflow.
+# Renomear reinicia a contagem e o App Store Connect recusa build number repetido na mesma versão.
+name: ios
+
+on:
+  push:
+    tags: ['ios-v*']
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch ou tag a compilar (vazio = a ref escolhida em "Use workflow from")'
+        required: false
+        default: ''
+        type: string
+      upload:
+        description: 'Enviar o build ao TestFlight? (false = só gera e valida a assinatura)'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # macOS 26 (arm64): Xcode 26.6 padrão, com o SDK do iOS 26 que a Apple exige desde 28/04/2026.
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      LANG: en_US.UTF-8 # o CocoaPods falha com locale fora de UTF-8
+      NODE_OPTIONS: --max-old-space-size=4096
+      # OPCIONAIS: sem elas o build segue e o app fica 100% offline.
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_APP_KEY: ${{ secrets.EXPO_PUBLIC_APP_KEY }}
+      # Tag sempre envia; execução manual envia só com upload=true.
+      UPLOAD: ${{ (github.event_name == 'push' || inputs.upload) && 'true' || 'false' }}
+      BUNDLE_ID: com.duofitness.app
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ inputs.branch || github.ref }}
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Versão e modo (versão do app.json, build number = run_number)
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          VERSION_NAME="$(node -p "require('./app.json').expo.version")"
+          echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "IOS_BUILD_NUMBER=$RUN_NUMBER" >> "$GITHUB_ENV"
+          if [ -n "${EXPO_PUBLIC_API_URL:-}" ]; then API="sim"; else API="não (app 100% offline)"; fi
+          if [ "$UPLOAD" = "true" ]; then MODE="envia ao TestFlight"; else MODE="só valida a assinatura (sem enviar)"; fi
+          {
+            echo "## Build iOS"
+            echo ""
+            echo "- versão (app.json): \`$VERSION_NAME\`"
+            echo "- build number: \`$RUN_NUMBER\`"
+            echo "- modo: **$MODE**"
+            echo "- URL da API embutida no app: **$API**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Conferir Xcode 26 e SDK do iOS 26
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          XCODE_MAJOR="$(xcodebuild -version | sed -n 's/^Xcode \([0-9]*\).*/\1/p' | head -1)"
+          SDK_MAJOR="$(xcrun --sdk iphoneos --show-sdk-version | cut -d. -f1)"
+          if [ "${XCODE_MAJOR:-0}" -lt 26 ] || [ "${SDK_MAJOR:-0}" -lt 26 ]; then
+            echo "::error::A Apple exige Xcode 26+ e SDK do iOS 26+ (desde 28/04/2026). Este runner tem Xcode ${XCODE_MAJOR:-?} e SDK ${SDK_MAJOR:-?}. Use uma imagem macOS com Xcode 26."
+            exit 1
+          fi
+          {
+            echo "- Xcode: \`$(xcodebuild -version | head -1)\` (SDK iphoneos $(xcrun --sdk iphoneos --show-sdk-version))"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Conferir secrets da Apple
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in APPLE_TEAM_ID APPSTORE_ISSUER_ID APPSTORE_KEY_ID APPSTORE_PRIVATE_KEY; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            list="$(printf '%s, ' "${missing[@]}")"
+            list="${list%, }"
+            echo "::error::Faltam secrets da Apple: $list. Cadastre em Settings > Secrets and variables > Actions (veja docs/testflight.md)."
+            {
+              echo ""
+              echo "### Build interrompido: faltam secrets da Apple"
+              echo ""
+              echo "Secrets ausentes: \`$list\`. Veja \`docs/testflight.md\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      # ---- Checagens rápidas: falham em segundos, ANTES do npm ci, do pod install e do archive ----
+
+      - name: Conferir PNGs do app (assinatura PNG, CRC, 8 bits, sem entrelaçamento)
+        run: node scripts/check-pngs.mjs
+
+      - name: Preparar a chave da API do App Store Connect
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${APPSTORE_KEY_ID}.p8"
+          # registra o caminho antes de criar o arquivo, para o passo final de limpeza achar
+          echo "APPSTORE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+          umask 077
+          if printf '%s' "$APPSTORE_PRIVATE_KEY" | grep -q 'BEGIN PRIVATE KEY'; then
+            printf '%s\n' "$APPSTORE_PRIVATE_KEY" > "$KEY_PATH"
+          elif printf '%s' "$APPSTORE_PRIVATE_KEY" | base64 --decode > "$KEY_PATH" 2>/dev/null && grep -q 'BEGIN PRIVATE KEY' "$KEY_PATH"; then
+            : # o secret estava em base64
+          else
+            echo "::error::APPSTORE_PRIVATE_KEY não parece uma chave .p8 (conteúdo do AuthKey_XXXX.p8 inteiro, ou esse conteúdo em base64)."
+            exit 1
+          fi
+
+      # Consulta o app na API do App Store Connect com a chave: acusa credencial errada em segundos.
+      - name: Validar a chave da API (credenciais e app com.duofitness.app)
+        env:
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: node scripts/check-appstore-key.mjs --key "$APPSTORE_KEY_PATH" --bundle-id "$BUNDLE_ID"
+
+      - run: npm ci
+
+      - name: Conferir autolinking (módulos Expo obrigatórios)
+        run: node scripts/check-autolinking.mjs
+
+      - name: Gerar projeto iOS (expo prebuild)
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform ios --no-install
+          test -d ios
+          XCODEPROJ="$(find ios -maxdepth 1 -name '*.xcodeproj' | head -1)"
+          test -n "$XCODEPROJ"
+          grep -q "PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID" "$XCODEPROJ/project.pbxproj"
+          echo "Projeto iOS: $XCODEPROJ"
+
+      - name: Cache do CocoaPods
+        uses: actions/cache@v4.2.3
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: pods-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            pods-${{ runner.os }}-
+
+      - name: pod install
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          pod --version
+          pod install
+          test -n "$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)"
+
+      - name: Archive (assinatura automática pela chave da API)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -uo pipefail
+          WORKSPACE="$(find ios -maxdepth 1 -name '*.xcworkspace' | head -1)"
+          SCHEME="$(basename "$WORKSPACE" .xcworkspace)"
+          ARCHIVE="$RUNNER_TEMP/$SCHEME.xcarchive"
+          LOG_DIR="$RUNNER_TEMP/xcodebuild-logs"
+          mkdir -p "$LOG_DIR"
+          echo "XC_SCHEME=$SCHEME" >> "$GITHUB_ENV"
+          echo "XC_ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+          echo "XC_LOG_DIR=$LOG_DIR" >> "$GITHUB_ENV"
+
+          archive() {
+            # "$@" = argumentos extras (usados na segunda tentativa, sem assinar o archive)
+            xcodebuild archive \
+              -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+              -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "$APPSTORE_KEY_PATH" \
+              -authenticationKeyID "$APPSTORE_KEY_ID" \
+              -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
+              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+              MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
+              "$@"
+          }
+          show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
+
+          archive 2>&1 | tee "$LOG_DIR/archive.log" | show
+          RC=${PIPESTATUS[0]}
+
+          # Time Apple sem dispositivos: o Xcode não gera o perfil de desenvolvimento do archive.
+          # Tentamos de novo sem assinar o archive; a assinatura de distribuição acontece no export.
+          if [ "$RC" -ne 0 ] && grep -qiE "no devices from which to generate a provisioning profile|Your team has no devices" "$LOG_DIR/archive.log"; then
+            echo "::warning::Time sem dispositivos registrados: repetindo o archive sem assinar (a assinatura de distribuição fica para o export)."
+            rm -rf "$ARCHIVE"
+            archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= 2>&1 | tee "$LOG_DIR/archive-retry.log" | show
+            RC=${PIPESTATUS[0]}
+            [ "$RC" -ne 0 ] && cp "$LOG_DIR/archive-retry.log" "$LOG_DIR/archive.log"
+          fi
+          if [ "$RC" -ne 0 ]; then
+            node scripts/ios-log-hints.mjs "$LOG_DIR/archive.log" || true
+            exit "$RC"
+          fi
+          test -d "$ARCHIVE"
+
+      - name: Conferir versão e build number do archive
+        run: |
+          set -euo pipefail
+          APP="$(find "$XC_ARCHIVE/Products/Applications" -maxdepth 1 -name '*.app' | head -1)"
+          PLIST="$APP/Info.plist"
+          BID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")"
+          SHORT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
+          BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
+          MIN="$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$PLIST" 2>/dev/null || echo '?')"
+          echo "Archive: $BID versão $SHORT build $BUILD (iOS mínimo $MIN)"
+          [ "$BID" = "$BUNDLE_ID" ] || { echo "::error::Bundle id do archive ($BID) diferente de $BUNDLE_ID."; exit 1; }
+          [ "$SHORT" = "$APP_VERSION_NAME" ] || { echo "::error::Versão do archive ($SHORT) diferente da do app.json ($APP_VERSION_NAME)."; exit 1; }
+          [ "$BUILD" = "$IOS_BUILD_NUMBER" ] || { echo "::error::Build number do archive ($BUILD) diferente do run_number ($IOS_BUILD_NUMBER)."; exit 1; }
+          {
+            echo "- bundle id: \`$BID\`"
+            echo "- versão / build no archive: \`$SHORT\` / \`$BUILD\` (iOS mínimo $MIN)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Exporta o .ipa com a assinatura de DISTRIBUIÇÃO (cloud signing) sem enviar nada: é a
+      # validação da assinatura. Com upload=false o build termina aqui.
+      - name: Exportar o .ipa e validar a assinatura de distribuição
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -uo pipefail
+          EXPORT_DIR="$RUNNER_TEMP/ipa-export"
+          rm -rf "$EXPORT_DIR"
+          OPTS="$RUNNER_TEMP/ExportOptions-export.plist"
+          cat > "$OPTS" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
+          xcodebuild -exportArchive \
+            -archivePath "$XC_ARCHIVE" -exportPath "$EXPORT_DIR" -exportOptionsPlist "$OPTS" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$APPSTORE_KEY_PATH" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
+            2>&1 | tee "$XC_LOG_DIR/export.log" | show
+          RC=${PIPESTATUS[0]}
+          if [ "$RC" -ne 0 ]; then
+            node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" || true
+            exit "$RC"
+          fi
+
+          IPA="$(find "$EXPORT_DIR" -maxdepth 1 -name '*.ipa' | head -1)"
+          [ -n "$IPA" ] || { echo "::error::O export não gerou o .ipa."; exit 1; }
+          UNZIP_DIR="$RUNNER_TEMP/ipa-unzipped"
+          rm -rf "$UNZIP_DIR"; mkdir -p "$UNZIP_DIR"
+          unzip -q "$IPA" -d "$UNZIP_DIR"
+          APP="$(find "$UNZIP_DIR/Payload" -maxdepth 1 -name '*.app' | head -1)"
+
+          # 1) a assinatura precisa estar íntegra (app e frameworks)
+          codesign --verify --deep --strict "$APP" || { echo "::error::A assinatura do app não passou no codesign --verify."; exit 1; }
+          # 2) identidade e time (nada secreto: certificado e time são públicos no .ipa)
+          SIGN_INFO="$(codesign -dvv "$APP" 2>&1)"
+          AUTHORITY="$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^Authority=//p' | head -1)"
+          TEAM="$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^TeamIdentifier=//p' | head -1)"
+          echo "Assinado por: $AUTHORITY (time $TEAM)"
+          case "$AUTHORITY" in
+            *"Apple Distribution"*|*"iPhone Distribution"*) ;;
+            *) echo "::error::O app não foi assinado com certificado de DISTRIBUIÇÃO (veio: $AUTHORITY)."; exit 1 ;;
+          esac
+          [ "$TEAM" = "$APPLE_TEAM_ID" ] || { echo "::error::TeamIdentifier do app ($TEAM) diferente de APPLE_TEAM_ID."; exit 1; }
+          # 3) perfil embutido: de App Store (sem get-task-allow) e para este app
+          security cms -D -i "$APP/embedded.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
+          APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")"
+          TASK_ALLOW="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:get-task-allow' "$RUNNER_TEMP/profile.plist")"
+          EXPIRES="$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$RUNNER_TEMP/profile.plist")"
+          echo "Perfil: $PROFILE_NAME | $APP_ID | get-task-allow=$TASK_ALLOW | expira em $EXPIRES"
+          [ "$APP_ID" = "$APPLE_TEAM_ID.$BUNDLE_ID" ] || { echo "::error::application-identifier do perfil ($APP_ID) diferente de $APPLE_TEAM_ID.$BUNDLE_ID."; exit 1; }
+          [ "$TASK_ALLOW" = "false" ] || { echo "::error::O perfil é de desenvolvimento (get-task-allow=true), não de distribuição."; exit 1; }
+          {
+            echo "- assinatura de distribuição validada: \`$AUTHORITY\`, time \`$TEAM\`"
+            echo "- perfil: \`$PROFILE_NAME\` (expira em $EXPIRES)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enviar ao TestFlight
+        if: env.UPLOAD == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -uo pipefail
+          OPTS="$RUNNER_TEMP/ExportOptions-upload.plist"
+          cat > "$OPTS" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
+          xcodebuild -exportArchive \
+            -archivePath "$XC_ARCHIVE" -exportPath "$RUNNER_TEMP/ipa-upload" -exportOptionsPlist "$OPTS" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$APPSTORE_KEY_PATH" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
+            2>&1 | tee "$XC_LOG_DIR/upload.log" | show
+          RC=${PIPESTATUS[0]}
+          if [ "$RC" -ne 0 ]; then
+            node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" || true
+            exit "$RC"
+          fi
+          {
+            echo ""
+            echo "### Enviado ao TestFlight"
+            echo ""
+            echo "Versão \`$APP_VERSION_NAME\` (build \`$IOS_BUILD_NUMBER\`). O App Store Connect leva de 5 a 30 minutos para processar o build; depois ele aparece em TestFlight. Veja \`docs/testflight.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sem envio (upload=false)
+        if: env.UPLOAD != 'true'
+        run: |
+          {
+            echo ""
+            echo "### Nada foi enviado ao TestFlight"
+            echo ""
+            echo "Modo de validação: o archive foi gerado e a assinatura de distribuição conferida. Rode de novo com \`upload=true\` (ou suba a tag \`ios-vX.Y.Z\`) para enviar."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Logs só do xcodebuild (sem segredos), guardados por pouco tempo, só quando algo falha.
+      - uses: actions/upload-artifact@v4.6.2
+        if: failure()
+        with:
+          name: xcodebuild-logs-${{ github.run_number }}
+          path: ${{ runner.temp }}/xcodebuild-logs
+          retention-days: 3
+          if-no-files-found: ignore
+
+      # Sempre apaga a chave da API e os arquivos temporários, mesmo se algum passo falhar.
+      - name: Apagar a chave da API e arquivos temporários
+        if: always()
+        run: |
+          rm -f "${APPSTORE_KEY_PATH:-$RUNNER_TEMP/AuthKey_none.p8}"
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8
+          rm -rf "$RUNNER_TEMP/ipa-export" "$RUNNER_TEMP/ipa-upload" "$RUNNER_TEMP/ipa-unzipped"
+          rm -f "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP"/ExportOptions-*.plist
