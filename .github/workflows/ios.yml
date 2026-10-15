@@ -353,6 +353,8 @@ jobs:
 
           IPA="$(find "$EXPORT_DIR" -maxdepth 1 -name '*.ipa' | head -1)"
           [ -n "$IPA" ] || { echo "::error::O export não gerou o .ipa."; exit 1; }
+          # este é o .ipa que o passo de envio sobe (o mesmo que as verificações abaixo conferem)
+          echo "XC_IPA=$IPA" >> "$GITHUB_ENV"
           UNZIP_DIR="$RUNNER_TEMP/ipa-unzipped"
           rm -rf "$UNZIP_DIR"; mkdir -p "$UNZIP_DIR"
           unzip -q "$IPA" -d "$UNZIP_DIR"
@@ -384,53 +386,21 @@ jobs:
             echo "- perfil: \`$PROFILE_NAME\` (expira em $EXPIRES)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Enviar ao TestFlight
-        if: env.UPLOAD == 'true'
+      # Valida (altool --validate-app) e, com upload=true, envia (altool --upload-app) o MESMO .ipa que o
+      # export acima gerou e verificou. O envio pelo "xcodebuild -exportArchive" com destination=upload
+      # falhava na autenticação ("No Accounts with App Store Connect Access") mesmo com a chave
+      # funcionando para assinar. Detalhes e tratamento de erros: scripts/ios-upload.sh.
+      - name: Validar o .ipa e enviar ao TestFlight (altool)
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
-          set +e # veja o passo do archive: o erro do xcodebuild é tratado abaixo
           set -uo pipefail
-          OPTS="$RUNNER_TEMP/ExportOptions-upload.plist"
-          cat > "$OPTS" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>uploadSymbols</key><true/>
-            <key>manageAppVersionAndBuildNumber</key><false/>
-          </dict>
-          </plist>
-          PLIST
-          show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
-          xcodebuild -exportArchive \
-            -archivePath "$XC_ARCHIVE" -exportPath "$RUNNER_TEMP/ipa-upload" -exportOptionsPlist "$OPTS" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$APPSTORE_KEY_PATH" \
-            -authenticationKeyID "$APPSTORE_KEY_ID" \
-            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
-            2>&1 | tee "$XC_LOG_DIR/upload.log" | show
-          RC=${PIPESTATUS[0]}
-          if [ "$RC" -ne 0 ]; then
-            if [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
-              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" --unsigned || true
-            else
-              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" || true
-            fi
-            exit "$RC"
+          if [ "$UPLOAD" = "true" ]; then
+            bash scripts/ios-upload.sh "$XC_IPA"
+          else
+            bash scripts/ios-upload.sh "$XC_IPA" --validate-only
           fi
-          {
-            echo ""
-            echo "### Enviado ao TestFlight"
-            echo ""
-            echo "Versão \`$APP_VERSION_NAME\` (build \`$IOS_BUILD_NUMBER\`). O App Store Connect leva de 5 a 30 minutos para processar o build; depois ele aparece em TestFlight. Veja \`docs/testflight.md\`."
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sem envio (upload=false)
         if: env.UPLOAD != 'true'
@@ -439,7 +409,7 @@ jobs:
             echo ""
             echo "### Nada foi enviado ao TestFlight"
             echo ""
-            echo "Modo de validação: o archive foi gerado e a assinatura de distribuição conferida. Rode de novo com \`upload=true\` (ou suba a tag \`ios-vX.Y.Z\`) para enviar."
+            echo "Modo de validação: o archive foi gerado, a assinatura de distribuição conferida e o .ipa validado no App Store Connect (altool --validate-app). Rode de novo com \`upload=true\` (ou suba a tag \`ios-vX.Y.Z\`) para enviar."
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Logs só do xcodebuild (sem segredos), guardados por pouco tempo, só quando algo falha.
@@ -457,5 +427,7 @@ jobs:
         run: |
           rm -f "${APPSTORE_KEY_PATH:-$RUNNER_TEMP/AuthKey_none.p8}"
           rm -f "$RUNNER_TEMP"/AuthKey_*.p8
-          rm -rf "$RUNNER_TEMP/ipa-export" "$RUNNER_TEMP/ipa-upload" "$RUNNER_TEMP/ipa-unzipped"
+          # cópias da chave que o altool lê (o ios-upload.sh já apaga na saída; aqui é a garantia)
+          rm -f "$RUNNER_TEMP"/altool-private-keys/AuthKey_*.p8 "$HOME"/.appstoreconnect/private_keys/AuthKey_*.p8
+          rm -rf "$RUNNER_TEMP/ipa-export" "$RUNNER_TEMP/ipa-unzipped"
           rm -f "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP"/ExportOptions-*.plist

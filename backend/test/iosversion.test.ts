@@ -219,7 +219,7 @@ describe.skipIf(!hasBash)('ios.yml: passo "Gravar versão e build number no Info
       'Archive (assinatura automática',
       'Conferir versão e build number do archive',
       'Exportar o .ipa e validar a assinatura',
-      'Enviar ao TestFlight',
+      'Validar o .ipa e enviar ao TestFlight (altool)',
     ].map((n) => yml.indexOf(`- name: ${n}`));
     expect(order.every((i) => i > -1)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
@@ -232,7 +232,11 @@ describe.skipIf(!hasBash)('ios.yml: passo "Gravar versão e build number no Info
     for (const needle of ['codesign --verify --deep --strict', 'Apple Distribution', 'get-task-allow', 'application-identifier', 'TeamIdentifier']) {
       expect(exportBlock).toContain(needle);
     }
-    expect(stepBlock(yml, 'Enviar ao TestFlight')).toMatch(/^\s{8}if: env\.UPLOAD == 'true'/m);
+    // o passo do altool também roda sempre (com upload=false só valida, sem enviar)
+    const altoolBlock = stepBlock(yml, 'Validar o .ipa e enviar ao TestFlight (altool)');
+    expect(altoolBlock).not.toMatch(/^\s{8}if:/m);
+    expect(altoolBlock).toContain('--validate-only');
+    expect(altoolBlock).toContain('"$XC_IPA"');
     expect(stepBlock(yml, 'Conferir versão e build number do archive')).not.toMatch(/^\s{8}if:/m);
   });
 });

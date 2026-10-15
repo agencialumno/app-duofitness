@@ -56,6 +56,23 @@ const RULES = [
     msg: 'Falta a declaração de criptografia. O app.json já define ios.infoPlist.ITSAppUsesNonExemptEncryption=false; confira o Info.plist gerado.',
   },
   {
+    // altool / iTMSTransporter / exportArchive: a chave não chegou ao serviço de envio
+    re: /No Accounts with App Store Connect Access|Authentication credentials are missing or invalid|NOT_AUTHORIZED|Unable to authenticate with App Store Connect|Failed to find an? (API )?(private )?key/i,
+    msg: 'O envio ao App Store Connect não conseguiu autenticar. O workflow envia com o altool usando a chave da API (AuthKey_<KEYID>.p8 em API_PRIVATE_KEYS_DIR). Confira: APPSTORE_KEY_ID e APPSTORE_ISSUER_ID são da MESMA chave que APPSTORE_PRIVATE_KEY; a chave é de EQUIPE (Team Key) com papel App Manager ou Admin; e o app com.duofitness.app existe nesta conta. (O xcodebuild -exportArchive com destination upload não usa a chave da API para enviar; por isso o envio é feito pelo altool.)',
+  },
+  {
+    re: /required agreement|agreement (is )?(missing|has expired|pending)|Program License Agreement|accept the latest|ITMS-90(12[0-9]|1[3-9][0-9])[^\n]{0,40}agreement/i,
+    msg: 'Há um acordo pendente na conta Apple (o Contrato de Licença do Programa ou um acordo do App Store Connect mudou). Só o Account Holder consegue aceitar: App Store Connect > Business (ou developer.apple.com/account) > aceitar os acordos pendentes. Depois rode o workflow de novo.',
+  },
+  {
+    re: /ITMS-9071[0-9]|ITMS-90022|ITMS-90023|ITMS-90032|ITMS-90704|ITMS-90236|Missing required icon file|alpha channel|Invalid large app icon|Invalid Image/i,
+    msg: 'A Apple recusou o ícone do app. Esperado: PNG 1024x1024, sem transparência (sem canal alfa) e sem cantos arredondados. Confira assets/icon.png com "node scripts/check-pngs.mjs" (ele deve ser RGB) e rode o prebuild de novo.',
+  },
+  {
+    re: /Invalid Info\.plist|The Info\.plist (file )?is missing|Missing Info\.plist value|ITMS-9005[67]|ITMS-90(060|083)|Invalid Bundle[^\n]{0,60}Info\.plist/i,
+    msg: 'A Apple recusou o Info.plist do app. Veja nas linhas "Apple: ITMS-..." acima as chaves citadas (CFBundleVersion, CFBundleShortVersionString, MinimumOSVersion...). O workflow grava a versão e o build number no Info.plist gerado (scripts/set-ios-version.sh); o resto vem do app.json (ios.infoPlist).',
+  },
+  {
     re: /already been used|ITMS-90189|Redundant Binary Upload|bundle version must be higher|ITMS-4238/i,
     msg: 'O número do build já foi usado para esta versão. O build number é o run_number do workflow: não renomeie o ios.yml (a contagem reinicia) e suba a versão no app.json se precisar recomeçar.',
   },

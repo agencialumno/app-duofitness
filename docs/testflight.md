@@ -5,6 +5,7 @@ O workflow [`.github/workflows/ios.yml`](../.github/workflows/ios.yml) gera o ap
 - **Runner:** `macos-26` (arm64), com Xcode 26.6 como padrão e o SDK do iOS 26. Desde 28/04/2026 a Apple só aceita no App Store Connect apps compilados com Xcode 26 ou mais novo. O workflow confere a versão e para cedo se o runner tiver um Xcode mais antigo.
 - **Projeto nativo:** gerado em cada execução por `npx expo prebuild --platform ios --no-install` (a pasta `ios/` fica fora do git), depois `pod install`.
 - **Assinatura:** automática, pela chave da API do App Store Connect (`xcodebuild -allowProvisioningUpdates` com `-authenticationKeyPath/ID/IssuerID`). É o *cloud signing*: a Apple guarda o certificado de distribuição, e o runner não precisa de certificado nem de perfil em arquivo.
+- **Envio:** o `.ipa` que o export gerou e verificou é validado e enviado com o `altool` (`--validate-app` e depois `--upload-app`, com `--type ios --apiKey --apiIssuer`), por `scripts/ios-upload.sh`. O envio pelo próprio `xcodebuild -exportArchive` (`destination: upload`) falhava com *No Accounts with App Store Connect Access* mesmo com a chave funcionando para assinar, então foi removido.
 - **Versão e build:** a versão vem do `app.json` (`expo.version`). O build number é o `github.run_number`. O Expo grava `CFBundleShortVersionString` e `CFBundleVersion` no `Info.plist` com valores literais do `app.json` (`ios.buildNumber` "1"), e o `Info.plist` não usa `$(CURRENT_PROJECT_VERSION)`; por isso o workflow grava os dois valores no `Info.plist` **gerado** (`scripts/set-ios-version.sh`, com o PlistBuddy), logo depois do prebuild. O `app.json` versionado não muda, e o passo "Conferir versão e build number do archive" confirma o resultado no archive.
 - **Gatilhos:** execução manual (*Actions → ios → Run workflow*) e tag `ios-v*`. Nada roda em pull request.
 
@@ -40,7 +41,7 @@ O passo "Validar a chave da API" consulta o app `com.duofitness.app` pelo App St
 
 1. Confirme que o app **Duo Fitness** existe no App Store Connect com o bundle id `com.duofitness.app` (já existe).
 2. *Actions → ios → Run workflow*. Deixe `upload` **desmarcado**. Opcionalmente informe `branch` (vazio = a ref escolhida em *Use workflow from*).
-3. Acompanhe o resumo do job. Com `upload=false` o workflow gera o archive, exporta o `.ipa` com a assinatura de **distribuição** e confere: `codesign --verify`, certificado *Apple Distribution*, Team ID, perfil de App Store (`get-task-allow` falso) e o `application-identifier`. Nada é enviado.
+3. Acompanhe o resumo do job. Com `upload=false` o workflow gera o archive, exporta o `.ipa` com a assinatura de **distribuição** e confere: `codesign --verify`, certificado *Apple Distribution*, Team ID, perfil de App Store (`get-task-allow` falso) e o `application-identifier`. Depois valida o `.ipa` no App Store Connect (`altool --validate-app`), que já acusa ícone, `Info.plist`, build number repetido ou acordo pendente. Nada é enviado.
 4. Rode de novo com `upload` **marcado** para enviar ao TestFlight. Ou use a tag, que sempre envia:
    ```bash
    git tag ios-v0.1.0
@@ -86,6 +87,11 @@ Observações:
 | *O time Apple não tem dispositivos registrados* | O Xcode exige um dispositivo para gerar o perfil de desenvolvimento do archive. O workflow repete o archive **sem assinar** e deixa a assinatura de distribuição para o export (a chave precisa ter papel Admin no primeiro build). Para evitar esse caminho, registre um iPhone em *developer.apple.com → Certificates, Identifiers & Profiles → Devices → +* (nome e UDID do aparelho; o UDID aparece no Finder ao selecionar o iPhone no Mac, ou em Ajustes → Geral → Sobre). |
 | *ITMS-90725 / SDK Version Issue* | O build não foi feito com Xcode 26. Confira o passo "Conferir Xcode 26" e a imagem `macos-26`. |
 | *O número do build já foi usado* | Não renomeie `ios.yml`; suba a versão no `app.json` se precisar recomeçar a contagem. |
+| *No Accounts with App Store Connect Access* / *Authentication credentials are missing or invalid* | O envio não autenticou. Confira que `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID` e `APPSTORE_PRIVATE_KEY` são da mesma chave de equipe (papel App Manager ou Admin) e que o app existe na conta. O `altool` lê a chave `AuthKey_<KEYID>.p8` de `API_PRIVATE_KEYS_DIR` (e de `~/.appstoreconnect/private_keys`); o script copia o `.p8` para lá só durante o envio e apaga depois. |
+| *acordo pendente* (*required agreement is missing or has expired*) | Só o Account Holder aceita: App Store Connect → Business (ou developer.apple.com/account) → acordos pendentes. Depois rode de novo. |
+| *recusou o ícone* (ITMS-90022, ITMS-9071x, canal alfa) | O ícone precisa ser PNG 1024x1024 sem transparência. Rode `node scripts/check-pngs.mjs` e confira `assets/icon.png`. |
+| *recusou o Info.plist* (ITMS-90056/90057...) | Veja as linhas `Apple: ITMS-...` no log: elas citam a chave inválida. Versão e build number são gravados por `scripts/set-ios-version.sh`; o resto vem do `app.json` (`ios.infoPlist`). |
+| *sem a confirmação 'No errors uploading'* | No Xcode 26 o `altool` já foi visto saindo com código 0 mesmo com falha. O script só dá o envio por feito se a saída trouxer `No errors uploading`. Confira o TestFlight antes de rodar de novo. |
 | *Não reconheci a causa no log* | Baixe o artifact `xcodebuild-logs-<n>` da execução (guardado por 3 dias, só com a saída do `xcodebuild`) e procure a primeira linha com `error:`. |
 
 ## Limites desta configuração
@@ -93,3 +99,4 @@ Observações:
 - O `ios.yml` foi escrito e conferido (YAML, shell e os scripts de apoio com testes), mas **ainda não rodou em um runner macOS**. Na primeira execução podem aparecer ajustes finos; por isso a primeira rodada deve ser com `upload=false`.
 - O `prebuild` iOS não roda no Windows. Ele é validado no job `ios-prebuild` do `ci.yml` (Linux) e dentro do próprio `ios.yml`.
 - O `xcodebuild` em runner novo pode pedir confirmação de plugins ou macros; o workflow não os usa.
+- A página de referência do `altool` da Apple marca `--upload-app` como **obsoleto** (a substituta é `--upload-package`, que exige o Apple ID numérico do app, o bundle id e a versão). O script confere em tempo de execução, com `xcrun altool --help`, se `--upload-app` e `--validate-app` existem neste Xcode; se não existirem, usa o `xcrun iTMSTransporter` (`-m verify` e `-m upload`, com `-apiKey` e `-apiIssuer`). O log mostra qual ferramenta foi usada.

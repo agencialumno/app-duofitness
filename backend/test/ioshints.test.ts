@@ -111,3 +111,29 @@ describe('ios-log-hints.mjs: archive sem assinatura', () => {
     expect(r.stdout).toContain('archive SEM assinatura');
   });
 });
+
+describe('ios-log-hints.mjs: envio com altool', () => {
+  it('"No Accounts with App Store Connect Access" (erro real do envio pelo xcodebuild)', () => {
+    const r = hints('error: exportArchive No Accounts with App Store Connect Access\n');
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('não conseguiu autenticar');
+    expect(r.out).toContain('API_PRIVATE_KEYS_DIR');
+    expect(r.out).toContain('altool');
+  });
+
+  it('acordo pendente aponta o Account Holder', () => {
+    const r = hints('*** Error: Unable to upload: a required agreement is missing or has expired.\n');
+    expect(r.out).toContain('acordo pendente');
+    expect(r.out).toContain('Account Holder');
+  });
+
+  it('ícone inválido só por código ITMS (a palavra "icon" solta no log do build não dispara)', () => {
+    expect(hints('ERROR ITMS-90022: Missing required icon file\n').out).toContain('recusou o ícone');
+    expect(hints('CompileAssetCatalog AppIcon.appiconset icon-1024.png\n').out).not.toContain('recusou o ícone');
+  });
+
+  it('Info.plist inválido', () => {
+    const r = hints('ERROR ITMS-90056: Invalid Info.plist - the CFBundleVersion is missing\n');
+    expect(r.out).toContain('recusou o Info.plist');
+  });
+});
