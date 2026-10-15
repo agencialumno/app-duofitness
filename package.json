@@ -5,7 +5,9 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "gen:media": "node scripts/gen-exercise-media.mjs",
+    "check:videos": "node scripts/check-videos.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
