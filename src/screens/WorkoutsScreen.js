@@ -53,7 +53,7 @@ export default function WorkoutsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
+        <FlatList showsVerticalScrollIndicator={false}
           data={workouts}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}

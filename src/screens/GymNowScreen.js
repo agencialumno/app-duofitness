@@ -30,7 +30,7 @@ export default function GymNowScreen({ navigation }) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xxl }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xxl }]}>
         <View style={styles.card}>
           {showExample && <ExampleBadge />}
           <OccupancyCard status={status} reading={reading} now={now} large />

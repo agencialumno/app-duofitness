@@ -47,7 +47,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
 
       {/* Avatar */}
       <View style={styles.profileHeader}>

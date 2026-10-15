@@ -64,7 +64,7 @@ export default function EditBodyDataScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
           {/* Peso e altura */}
           <View style={styles.field}>

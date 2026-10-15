@@ -116,7 +116,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Animated.View style={{ opacity: flashAnim }}>
           <View style={styles.exerciseCard}>
             <View style={styles.exerciseIconWrap}>

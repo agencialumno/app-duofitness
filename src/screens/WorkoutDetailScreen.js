@@ -29,7 +29,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {workout.serie && (
           <Text style={styles.serieLabel}>SÉRIE {workout.serie}</Text>
         )}

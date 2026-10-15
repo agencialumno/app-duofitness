@@ -65,7 +65,7 @@ export default function StoreDetailScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       {back}
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.imageWrap}>
           <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={56} />
         </View>

@@ -186,7 +186,7 @@ function BuildingStage({ settings, plan, user, onBack, onDone }) {
   return (
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} progress={Math.min(visible / steps.length, 1)} caption="Montando" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.labelRow}>
           <TrainerLabel text={PLAN_LABEL} badge={badge} />
         </View>
@@ -225,7 +225,7 @@ function ReviewStage({ settings, plan, user, onBack, onSwap, onAdjust, onSave, s
   return (
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} caption="Revisão" progress={1} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.labelRow}>
           <TrainerLabel text={PLAN_LABEL} badge={badge} />
         </View>
@@ -358,7 +358,7 @@ function IntroStage({ settings, patch, onBack, onStart, onOpenChat }) {
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} caption="Série guiada" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title} accessibilityRole="header">Vamos montar sua série</Text>
           <Text style={styles.subtitle}>
             {missing.length === 0
@@ -485,7 +485,7 @@ function AskStage({ question, index, total, settings, patch, onBack, onNext, las
   return (
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} progress={(index + 1) / total} caption={`Pergunta ${index + 1} de ${total}`} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text style={styles.title} accessibilityRole="header">{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <View style={styles.options} accessibilityRole="radiogroup">{body}</View>

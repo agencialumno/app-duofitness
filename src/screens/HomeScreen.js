@@ -34,7 +34,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* Modo Demo: faixa fixa no topo (já cobre a área segura de cima) */}
       {user?.isDemo && <DemoBanner navigation={navigation} />}
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.content}>
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: user?.isDemo ? SPACING.sm : insets.top + SPACING.sm }]}>

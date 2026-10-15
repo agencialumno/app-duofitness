@@ -45,7 +45,7 @@ export default function CreateWorkoutScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <TextInput
           style={styles.input}
           value={name}

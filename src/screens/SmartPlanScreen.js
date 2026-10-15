@@ -143,7 +143,7 @@ export default function SmartPlanScreen({ navigation }) {
   // Resultado
   if (done && plan) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={[styles.doneContent, { paddingTop: insets.top + SPACING.sm }]}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={[styles.doneContent, { paddingTop: insets.top + SPACING.sm }]}>
         <View style={styles.doneHeader}>
           <View style={styles.doneIconWrap}>
             <Ionicons name="checkmark" size={32} color={COLORS.black} />
@@ -232,7 +232,7 @@ export default function SmartPlanScreen({ navigation }) {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text style={styles.question}>{q.question}</Text>
         <Text style={styles.questionSub}>{q.sub}</Text>
 

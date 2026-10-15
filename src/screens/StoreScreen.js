@@ -41,7 +41,7 @@ export default function StoreScreen({ navigation }) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.chips} accessibilityRole="tablist">
           {chips.map((c) => {
             const active = c.id === categoria;

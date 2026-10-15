@@ -16,7 +16,7 @@ export default function ExerciseDetailScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
             <Ionicons name="fitness-outline" size={40} color={COLORS.primary} />
