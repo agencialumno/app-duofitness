@@ -16,11 +16,26 @@ import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
 import SmartPlanScreen from '../screens/SmartPlanScreen';
 import AIPersonalTrainerScreen from '../screens/AIPersonalTrainerScreen';
 import EditBodyDataScreen from '../screens/EditBodyDataScreen';
+import StoreScreen from '../screens/StoreScreen';
+import StoreDetailScreen from '../screens/StoreDetailScreen';
 
 const Tab = createBottomTabNavigator();
+const HomeStack = createStackNavigator();
 const WorkoutStack = createStackNavigator();
 const ExerciseStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+
+// A aba Início é uma pilha: a Home e a vitrine (Loja e o detalhe do item). Fica DENTRO do MainNavigator
+// para existir também no Modo Demo, onde as abas moram dentro do OnboardingNavigator.
+function HomeStackNav() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStack.Screen name="Loja" component={StoreScreen} />
+      <HomeStack.Screen name="LojaDetalhe" component={StoreDetailScreen} />
+    </HomeStack.Navigator>
+  );
+}
 
 function WorkoutStackNav() {
   return (
@@ -82,7 +97,7 @@ export default function MainNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Início' }} />
+      <Tab.Screen name="Home" component={HomeStackNav} options={{ tabBarLabel: 'Início' }} />
       <Tab.Screen name="Workouts" component={WorkoutStackNav} options={{ tabBarLabel: 'Treinos' }} />
       <Tab.Screen name="Exercises" component={ExerciseStackNav} options={{ tabBarLabel: 'Exercícios' }} />
       <Tab.Screen name="Profile" component={ProfileStackNav} options={{ tabBarLabel: 'Perfil' }} />
