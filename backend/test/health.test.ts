@@ -280,7 +280,9 @@ describe('relatório semanal e recomendações', () => {
     const c = Object.fromEntries(rep.categories.map((x: { id: string }) => [x.id, x]));
     expect(c.consistency.value).toBe(67);
     expect(c.hydration.value).toBeNull();
-    expect(c.hydration.label).toBe('Sem dados');
+    expect(c.hydration.grade).toBe('Sem dados');
+    expect(c.consistency.label).toBe('Consistência');
+    expect(c.consistency.grade).toBe('Bom');
     expect(c.progress.value).not.toBeNull();
   });
   it('2 a 3 recomendações, sem repetir', () => {

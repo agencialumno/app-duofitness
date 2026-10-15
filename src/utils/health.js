@@ -313,8 +313,8 @@ export function scoreBand(score) {
 // ---------- Relatório semanal ----------
 
 function grade(value) {
-  if (value === null || value === undefined) return { value: null, label: 'Sem dados' };
-  return { value, label: scoreBand(value).label };
+  if (value === null || value === undefined) return { value: null, grade: 'Sem dados' };
+  return { value, grade: scoreBand(value).label };
 }
 
 // Nota por categoria (consistência, hidratação, progresso) e 2 a 3 recomendações por regras.
