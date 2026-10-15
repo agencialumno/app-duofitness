@@ -9,7 +9,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { generateWorkoutPlan, hydratePlan } from '../utils/workoutGenerator';
 import { calculateIMC, getIMCCategory } from '../utils/imc';
-import { COMBOS, getComboEquipment } from '../data/combosEquipment';
+import { getComboEquipment } from '../data/combosEquipment';
+import {
+  GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS, COMBO_OPTIONS,
+  matchMulti, matchSingle, extractNumbers,
+} from '../utils/planOptions';
 import { isApiConfigured, checkHealth, chatStream } from '../services/api';
 
 // Este roteiro roda 100% no aparelho, sem depender de internet — pensado para
@@ -24,42 +28,6 @@ import { isApiConfigured, checkHealth, chatStream } from '../services/api';
 // perguntas rápidas (combo, limitação e, se faltar, nível) a conversa passa para
 // a IA real, em streaming. Se a chamada falhar ou demorar, o app continua no
 // roteiro offline com o que já foi respondido. O Modo Demo nunca usa a API.
-
-const GOAL_OPTIONS = [
-  { id: 'lose_weight', label: 'Emagrecer', keywords: ['emagre', 'perder peso', 'queimar', 'secar'] },
-  { id: 'gain_muscle', label: 'Ganhar massa', keywords: ['massa', 'hipertro', 'muscul', 'força', 'forca'] },
-  { id: 'maintain', label: 'Condicionamento', keywords: ['condic', 'resistê', 'resist', 'fôlego', 'folego'] },
-  { id: 'health', label: 'Saúde geral', keywords: ['saúde', 'saude', 'bem-estar', 'bem estar', 'qualidade de vida'] },
-];
-
-const LEVEL_OPTIONS = [
-  { id: 'beginner', label: 'Iniciante', keywords: ['inici', 'começando', 'comecando', 'novo no treino', 'nunca treinei'] },
-  { id: 'intermediate', label: 'Intermediário', keywords: ['intermed'] },
-  { id: 'advanced', label: 'Avançado', keywords: ['avan'] },
-];
-
-const LIMITATION_OPTIONS = [
-  { id: 'none', label: 'Nenhuma', keywords: ['nenhuma', 'não tenho', 'nao tenho', 'sem limita', 'sem lesão', 'sem lesao'] },
-  { id: 'knee', label: 'Joelho', keywords: ['joelho'] },
-  { id: 'shoulder', label: 'Ombro', keywords: ['ombro'] },
-  { id: 'back', label: 'Lombar/Costas', keywords: ['lombar', 'costas'] },
-];
-
-const COMBO_OPTIONS = COMBOS.map(c => ({ id: c.id, label: c.label, keywords: [c.id, c.label.toLowerCase()] }));
-
-function matchMulti(text, options) {
-  const t = text.toLowerCase();
-  return options.filter(o => o.keywords.some(k => t.includes(k))).map(o => o.id);
-}
-
-function matchSingle(text, options) {
-  return matchMulti(text, options)[0];
-}
-
-function extractNumbers(text) {
-  const found = text.match(/\d+(?:[.,]\d+)?/g);
-  return found ? found.map(n => parseFloat(n.replace(',', '.'))) : [];
-}
 
 const STEP_BODY = {
   id: 'body',
