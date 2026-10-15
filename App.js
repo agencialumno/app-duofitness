@@ -6,9 +6,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from './src/context/AppContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function App() {
   const [isOnboarded, setIsOnboarded] = useState(null);
+  // Pré-carrega a fonte dos ícones antes de renderizar. Se falhar, registra o erro e
+  // segue renderizando o app mesmo assim (sem travar).
+  const [fontsLoaded, fontError] = useFonts(Ionicons.font);
+
+  useEffect(() => {
+    if (fontError) console.error('Falha ao carregar a fonte dos ícones:', fontError);
+  }, [fontError]);
 
   useEffect(() => {
     checkOnboarding();
@@ -19,7 +28,7 @@ export default function App() {
     setIsOnboarded(val === 'true');
   };
 
-  if (isOnboarded === null) return null;
+  if (isOnboarded === null || (!fontsLoaded && !fontError)) return null;
 
   return (
     <SafeAreaProvider>
