@@ -1,0 +1,275 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { BackHandler, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
+import { useApp } from '../context/AppContext';
+import { COMBOS } from '../data/combosEquipment';
+import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from '../utils/planOptions';
+import {
+  DAYS_OPTIONS, FOCUS_OPTIONS, TIME_OPTIONS,
+  defaultSettings, getProfileChips, getProfileDefaults, missingProfileFields, parseMeasure,
+} from '../utils/guidedPlan';
+import { Chip, FooterButton, GuidedHeader, OptionCard } from '../components/guided/GuidedParts';
+
+// Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
+// "AIPersonalTrainerChat". Nada aqui altera os dados salvos até o morador tocar em "Salvar série".
+const QUESTIONS = ['schedule', 'combo', 'limitation', 'focus'];
+
+export default function GuidedPlanScreen({ navigation }) {
+  const { user } = useApp();
+  const [settings, setSettings] = useState(() => defaultSettings(getProfileDefaults(user)));
+  const [stage, setStage] = useState('intro'); // 'intro' | 'ask' | 'building' | 'review'
+  const [qIndex, setQIndex] = useState(0);
+
+  const patch = useCallback((p) => setSettings((s) => ({ ...s, ...p })), []);
+
+  const goBack = useCallback(() => {
+    if (stage === 'ask') {
+      if (qIndex > 0) setQIndex(qIndex - 1);
+      else setStage('intro');
+      return true;
+    }
+    if (stage === 'building' || stage === 'review') {
+      setQIndex(QUESTIONS.length - 1);
+      setStage('ask');
+      return true;
+    }
+    navigation.goBack();
+    return true;
+  }, [stage, qIndex, navigation]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', goBack);
+    return () => sub.remove();
+  }, [goBack]);
+
+  if (stage === 'intro') {
+    return (
+      <IntroStage
+        settings={settings}
+        patch={patch}
+        onBack={goBack}
+        onStart={() => { setQIndex(0); setStage('ask'); }}
+        onOpenChat={() => navigation.navigate('AIPersonalTrainerChat')}
+      />
+    );
+  }
+
+  if (stage === 'ask') {
+    const last = qIndex === QUESTIONS.length - 1;
+    return (
+      <AskStage
+        key={QUESTIONS[qIndex]}
+        question={QUESTIONS[qIndex]}
+        index={qIndex}
+        total={QUESTIONS.length}
+        settings={settings}
+        patch={patch}
+        onBack={goBack}
+        onNext={() => (last ? setStage('building') : setQIndex(qIndex + 1))}
+        last={last}
+      />
+    );
+  }
+
+  return null;
+}
+
+// ---------- Abertura: o que já sabemos do perfil, em chips editáveis ----------
+
+function IntroStage({ settings, patch, onBack, onStart, onOpenChat }) {
+  const [editing, setEditing] = useState(null);
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+  const missing = missingProfileFields(settings);
+  const chips = getProfileChips(settings);
+
+  const open = (field) => {
+    setError('');
+    if (editing === field) { setEditing(null); return; }
+    setEditing(field);
+    setText(field === 'weight' || field === 'height' ? String(settings[field] ?? '') : '');
+  };
+
+  const saveMeasure = (field) => {
+    const range = field === 'weight' ? { min: 30, max: 300 } : { min: 100, max: 250 };
+    const v = parseMeasure(text, range);
+    if (v === null) {
+      setError(field === 'weight' ? 'Informe o peso entre 30 e 300 kg.' : 'Informe a altura entre 100 e 250 cm.');
+      return;
+    }
+    patch({ [field]: v });
+    setEditing(null);
+    setError('');
+  };
+
+  const toggleGoal = (id) => {
+    const goals = settings.goals.includes(id) ? settings.goals.filter((g) => g !== id) : [...settings.goals, id];
+    patch({ goals });
+  };
+
+  return (
+    <View style={styles.container}>
+      <GuidedHeader onBack={onBack} caption="Série guiada" />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title} accessibilityRole="header">Vamos montar sua série</Text>
+          <Text style={styles.subtitle}>
+            {missing.length === 0
+              ? 'Já sabemos isto de você. Toque em um item para mudar, só para esta série.'
+              : 'Complete os itens em amarelo para continuar. Valem só para esta série.'}
+          </Text>
+
+          <View style={styles.chipsWrap}>
+            {chips.map((c) => (
+              <TouchableOpacity
+                key={c.field}
+                style={[styles.profileChip, !c.value && styles.profileChipMissing, editing === c.field && styles.profileChipActive]}
+                onPress={() => open(c.field)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.label}: ${c.value || 'não informado'}. Toque para editar.`}
+              >
+                <Text style={styles.profileChipLabel}>{c.label}</Text>
+                <Text style={[styles.profileChipValue, !c.value && styles.profileChipValueMissing]}>{c.value || 'Informar'}</Text>
+                <Ionicons name="create-outline" size={14} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {(editing === 'weight' || editing === 'height') && (
+            <View style={styles.editor}>
+              <Text style={styles.editorLabel}>{editing === 'weight' ? 'Peso (kg)' : 'Altura (cm)'}</Text>
+              <View style={styles.editorRow}>
+                <TextInput
+                  style={styles.input}
+                  value={text}
+                  onChangeText={setText}
+                  keyboardType="decimal-pad"
+                  placeholder={editing === 'weight' ? 'Ex.: 78' : 'Ex.: 175'}
+                  placeholderTextColor={COLORS.textSecondary}
+                  accessibilityLabel={editing === 'weight' ? 'Peso em quilos' : 'Altura em centímetros'}
+                  onSubmitEditing={() => saveMeasure(editing)}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity style={styles.okBtn} onPress={() => saveMeasure(editing)} accessibilityRole="button" accessibilityLabel="Confirmar">
+                  <Text style={styles.okBtnText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+            </View>
+          )}
+
+          {editing === 'goals' && (
+            <View style={styles.editor}>
+              <Text style={styles.editorLabel}>Objetivos (pode escolher mais de um)</Text>
+              <View style={styles.chipsWrap}>
+                {GOAL_OPTIONS.map((g) => (
+                  <Chip key={g.id} label={g.label} selected={settings.goals.includes(g.id)} onPress={() => toggleGoal(g.id)} />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {editing === 'level' && (
+            <View style={styles.editor}>
+              <Text style={styles.editorLabel}>Nível de experiência</Text>
+              <View style={styles.chipsWrap}>
+                {LEVEL_OPTIONS.map((l) => (
+                  <Chip key={l.id} label={l.label} selected={settings.level === l.id} onPress={() => patch({ level: l.id })} />
+                ))}
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.linkBtn} onPress={onOpenChat} accessibilityRole="button" accessibilityLabel="Usar o chat antigo do Personal Trainer">
+            <Ionicons name="chatbubbles-outline" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.linkText}>Prefere conversar? Usar o chat antigo</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <FooterButton label="Começar" onPress={onStart} disabled={missing.length > 0} icon="arrow-forward" />
+    </View>
+  );
+}
+
+// ---------- Uma pergunta por tela ----------
+
+function AskStage({ question, index, total, settings, patch, onBack, onNext, last }) {
+  let title; let subtitle; let body; let ready;
+
+  if (question === 'schedule') {
+    title = 'Quantos dias e quanto tempo?';
+    subtitle = 'Escolha os dias de treino por semana e a duração de cada sessão.';
+    ready = true;
+    body = (
+      <>
+        <Text style={styles.groupTitle}>Dias por semana</Text>
+        {DAYS_OPTIONS.map((o) => (
+          <OptionCard key={o.id} label={o.label} hint={o.hint} selected={settings.days === o.id} onPress={() => patch({ days: o.id })} />
+        ))}
+        <Text style={styles.groupTitle}>Tempo por sessão</Text>
+        {TIME_OPTIONS.map((o) => (
+          <OptionCard key={o.id} label={o.label} hint={o.hint} selected={settings.time === o.id} onPress={() => patch({ time: o.id })} />
+        ))}
+      </>
+    );
+  } else if (question === 'combo') {
+    title = 'Qual é o combo da academia?';
+    subtitle = 'Ele define quais máquinas entram na sua série.';
+    ready = !!settings.combo;
+    body = COMBOS.map((c) => (
+      <OptionCard key={c.id} label={c.label} hint={c.description} selected={settings.combo === c.id} onPress={() => patch({ combo: c.id })} icon="barbell-outline" />
+    ));
+  } else if (question === 'limitation') {
+    title = 'Tem alguma limitação?';
+    subtitle = 'Vamos evitar exercícios que sobrecarregam a região.';
+    ready = !!settings.limitation;
+    body = LIMITATION_OPTIONS.map((l) => (
+      <OptionCard key={l.id} label={l.label} selected={settings.limitation === l.id} onPress={() => patch({ limitation: l.id })} />
+    ));
+  } else {
+    title = 'Quer dar mais foco a algo?';
+    subtitle = 'Pode deixar equilibrado. Você ainda poderá ajustar no fim.';
+    ready = true;
+    body = FOCUS_OPTIONS.map((f) => (
+      <OptionCard key={f.id} label={f.label} hint={f.hint} selected={settings.focus === f.id} onPress={() => patch({ focus: f.id })} />
+    ));
+  }
+
+  return (
+    <View style={styles.container}>
+      <GuidedHeader onBack={onBack} progress={(index + 1) / total} caption={`Pergunta ${index + 1} de ${total}`} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title} accessibilityRole="header">{title}</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+        <View style={styles.options} accessibilityRole="radiogroup">{body}</View>
+      </ScrollView>
+      <FooterButton label={last ? 'Montar minha série' : 'Continuar'} onPress={onNext} disabled={!ready} icon={last ? 'sparkles' : 'arrow-forward'} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  content: { padding: SPACING.lg, paddingTop: SPACING.md, gap: SPACING.md },
+  title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
+  subtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 22 },
+  options: { gap: SPACING.sm },
+  groupTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, marginTop: SPACING.sm, textTransform: 'uppercase' },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  profileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, flexShrink: 1 },
+  profileChipMissing: { borderColor: COLORS.primary },
+  profileChipActive: { backgroundColor: '#1A1700', borderColor: COLORS.primary },
+  profileChipLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+  profileChipValue: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white, flexShrink: 1 },
+  profileChipValueMissing: { color: COLORS.primary },
+  editor: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
+  editorLabel: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
+  editorRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
+  input: { flex: 1, minHeight: 48, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bgCardAlt, color: COLORS.white, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.md },
+  okBtn: { minHeight: 48, minWidth: 64, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary, paddingHorizontal: SPACING.md },
+  okBtnText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black },
+  error: { fontSize: FONTS.sizes.sm, color: COLORS.error },
+  linkBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+  linkText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textDecorationLine: 'underline', flexShrink: 1 },
+});
