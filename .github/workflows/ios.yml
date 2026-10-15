@@ -169,6 +169,24 @@ jobs:
           echo "::endgroup::"
           node scripts/check-ios-project.mjs --bundle-id "$BUNDLE_ID"
 
+      # O Expo grava CFBundleVersion e CFBundleShortVersionString no Info.plist com os valores LITERAIS
+      # do app.json (ios.buildNumber "1"); o Info.plist não usa $(CURRENT_PROJECT_VERSION). Por isso
+      # MARKETING_VERSION/CURRENT_PROJECT_VERSION passados ao xcodebuild não têm efeito. Gravamos os
+      # valores no Info.plist GERADO (o app.json versionado não muda); o passo "Conferir versão e build
+      # number do archive" é a prova final.
+      - name: Gravar versão e build number no Info.plist
+        run: |
+          set -euo pipefail
+          XCODEPROJ="$(find ios -maxdepth 1 -name '*.xcodeproj' | head -1)"
+          if [ -z "$XCODEPROJ" ]; then
+            echo "::error::Nenhum .xcodeproj em ios/. Esperado: o projeto gerado pelo expo prebuild."
+            exit 1
+          fi
+          PROJECT_NAME="$(basename "$XCODEPROJ" .xcodeproj)"
+          PLIST="ios/$PROJECT_NAME/Info.plist"
+          echo "Info.plist: $PLIST"
+          bash scripts/set-ios-version.sh "$PLIST" "$APP_VERSION_NAME" "$IOS_BUILD_NUMBER"
+
       - name: Cache do CocoaPods
         uses: actions/cache@v4.2.3
         with:
@@ -219,7 +237,7 @@ jobs:
               -authenticationKeyID "$APPSTORE_KEY_ID" \
               -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
               DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
-              MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER"
+              MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" # sem efeito no Expo (o Info.plist tem valores literais); a versão real vem do passo "Gravar versão e build number"
           }
           # 2ª tentativa (só se o time não tem dispositivos): archive SEM assinatura, sem falar com a
           # Apple. A assinatura de distribuição (cloud signing) acontece no exportArchive.
