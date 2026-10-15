@@ -10,6 +10,8 @@ import { EXERCISE_MEDIA, getExerciseMedia } from '../../src/data/exerciseVideos.
 import { EXERCISE_DB, generateWorkoutPlan } from '../../src/utils/workoutGenerator.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import { COMBOS } from '../../src/data/combosEquipment.js';
+// @ts-expect-error módulo JS do app, sem tipos
+import { isExerciseVideosEnabled } from '../../src/data/exerciseVideosConfig.js';
 // @ts-expect-error módulo JS sem tipos
 import * as M from '../../scripts/lib/media.mjs';
 // @ts-expect-error módulo JS sem tipos
@@ -124,5 +126,35 @@ describe('lista de gravação', () => {
   it('o documento descreve o padrão: MP4 H.264, 480x480, sem áudio, 3 a 6 s, 150 a 400 KB, capa até 80 KB', () => {
     const doc = readFileSync(path.join(REPO, 'docs/videos-exercicios.md'), 'utf8');
     for (const t of ['H.264', '480x480', 'sem áudio', '3 a 6 s', '150 a 400 KB', '80 KB', 'npm run gen:media', 'JPEG']) expect(doc).toContain(t);
+  });
+});
+
+describe('flag EXPO_PUBLIC_EXERCISE_VIDEOS e acessibilidade', () => {
+  it('ligada por padrão; só "false" (ou "0") desliga', () => {
+    for (const v of [undefined, null, '', 'true', '1', 'sim', 'TRUE', ' true ']) expect(isExerciseVideosEnabled(v), String(v)).toBe(true);
+    for (const v of ['false', 'FALSE', ' False ', '0']) expect(isExerciseVideosEnabled(v), v).toBe(false);
+  });
+  it('com a flag desligada a área inteira (título e conteúdo) sai da tela do exercício', () => {
+    const src = readFileSync(path.join(REPO, 'src/screens/ExerciseDetailScreen.js'), 'utf8');
+    expect(src).toMatch(/EXERCISE_VIDEOS_ENABLED && \(/);
+    const block = src.slice(src.indexOf('EXERCISE_VIDEOS_ENABLED && ('));
+    expect(block.slice(0, block.indexOf(')}'))).toContain('Como fazer');
+    // o passo a passo e a dica continuam como estavam
+    expect(src).toContain('Como executar');
+    expect(src).toContain('Dica do personal');
+  });
+  it('texto lido pelo leitor de tela, selo e Reduzir movimento', () => {
+    const src = readFileSync(path.join(REPO, 'src/components/ExerciseMedia.js'), 'utf8');
+    expect(src).toContain('Vídeo de demonstração de ${name}');
+    expect(src).toMatch(/em breve`/);
+    expect(src).toContain('Vídeo em breve');
+    expect(src).toMatch(/aspectRatio: 1/);
+    expect(src).toMatch(/isReduceMotionEnabled/);
+    expect(src).toMatch(/autoplay: !reduceMotion/);
+    expect(src).toMatch(/accessibilityLabel=\{label\}/);
+  });
+  it('a flag aparece no .env.example como opcional', () => {
+    const env = readFileSync(path.join(REPO, '.env.example'), 'utf8');
+    expect(env).toMatch(/EXPO_PUBLIC_EXERCISE_VIDEOS/);
   });
 });
