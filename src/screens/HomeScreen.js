@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
 import MarketplaceImage from '../components/MarketplaceImage';
 import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
+import useOccupancy from '../hooks/useOccupancy';
+import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -18,6 +20,7 @@ export default function HomeScreen({ navigation }) {
   const xpProgress = levelInfo.nextXp
     ? Math.min(((xp % (levelInfo.nextXp / levelInfo.level)) / (levelInfo.nextXp / levelInfo.level)) * 100, 100)
     : 100;
+  const occupancy = useOccupancy();
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
 
   return (
@@ -147,6 +150,23 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Academia agora: lotação (só números agregados; dados de exemplo ficam rotulados) */}
+      <TouchableOpacity
+        style={styles.gymCard}
+        onPress={() => navigation.navigate('AcademiaAgora')}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Academia agora. Abre a lotação da academia."
+      >
+        <View style={styles.gymHead}>
+          <Ionicons name="people-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.gymTitle}>Academia agora</Text>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+        </View>
+        {occupancy.isMock && <ExampleBadge />}
+        <OccupancyCard status={occupancy.status} reading={occupancy.reading} now={occupancy.now} />
+      </TouchableOpacity>
+
       {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
       <Text style={styles.sectionTitleStrong} accessibilityRole="header">PARA VOCÊ</Text>
       <ScrollView
@@ -266,6 +286,9 @@ const styles = StyleSheet.create({
   aiBannerIconWrap: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'center', alignItems: 'center' },
   aiBannerTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black },
   aiBannerSub: { fontSize: FONTS.sizes.xs, color: 'rgba(0,0,0,0.6)', marginTop: 2 },
+  gymCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm, marginBottom: SPACING.md },
+  gymHead: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  gymTitle: { flex: 1, fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   sectionTitleStrong: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textSecondary, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
   forYouScroll: { marginHorizontal: -SPACING.lg },
   forYouList: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },

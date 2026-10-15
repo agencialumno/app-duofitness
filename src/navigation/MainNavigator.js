@@ -18,6 +18,7 @@ import AIPersonalTrainerScreen from '../screens/AIPersonalTrainerScreen';
 import EditBodyDataScreen from '../screens/EditBodyDataScreen';
 import StoreScreen from '../screens/StoreScreen';
 import StoreDetailScreen from '../screens/StoreDetailScreen';
+import GymNowScreen from '../screens/GymNowScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
@@ -33,6 +34,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Loja" component={StoreScreen} />
       <HomeStack.Screen name="LojaDetalhe" component={StoreDetailScreen} />
+      <HomeStack.Screen name="AcademiaAgora" component={GymNowScreen} />
     </HomeStack.Navigator>
   );
 }
