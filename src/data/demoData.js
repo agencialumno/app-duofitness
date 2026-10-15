@@ -126,10 +126,12 @@ export const DEMO_WORKOUTS = [
   },
 ];
 
-// Gera 9 sessões concluídas nos últimos ~12 dias, alternando entre as 3 séries.
+// Gera 9 sessões concluídas, alternando entre as 3 séries: um treino 10 dias atrás e depois 8 dias SEGUIDOS
+// (de 8 dias atrás até ontem). Assim a sequência calculada pela Saúde (dias seguidos pelas datas) dá 8,
+// o mesmo número do contador DEMO_STREAK mostrado na Home. Um teste (demostreak.test.ts) confere.
 function buildDemoSessions(now = Date.now()) {
   const workoutIds = ['demo_serie_a', 'demo_serie_b', 'demo_serie_c'];
-  const daysAgo = [12, 10, 9, 7, 6, 4, 3, 2, 1];
+  const daysAgo = [10, 8, 7, 6, 5, 4, 3, 2, 1];
   return daysAgo.map((d, i) => ({
     id: `demo_session_${i}`,
     workoutId: workoutIds[i % workoutIds.length],
@@ -147,8 +149,8 @@ export const DEMO_XP = 450;
 export const DEMO_STREAK = 8;
 
 export const DEMO_ACHIEVEMENTS = [
-  { id: 'first_workout', title: 'Primeira série!', icon: '🏆', unlockedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString() },
-  { id: 'streak_3', title: '3 dias seguidos', icon: '⚡', unlockedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'first_workout', title: 'Primeira série!', icon: '🏆', unlockedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'streak_3', title: '3 dias seguidos', icon: '⚡', unlockedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() },
   { id: 'week_warrior', title: 'Guerreiro da semana', icon: '🔥', unlockedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
   { id: 'streak_7', title: 'Semana perfeita', icon: '🌟', unlockedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
 ];
@@ -163,6 +165,6 @@ export function getFreshDemoData(now = Date.now()) {
     sessions: buildDemoSessions(now),
     xp: DEMO_XP,
     streak: DEMO_STREAK,
-    achievements: DEMO_ACHIEVEMENTS.map((a, i) => ({ ...a, unlockedAt: iso([12, 9, 3, 2][i] ?? 0) })),
+    achievements: DEMO_ACHIEVEMENTS.map((a, i) => ({ ...a, unlockedAt: iso([10, 6, 3, 2][i] ?? 0) })),
   };
 }

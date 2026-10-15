@@ -82,9 +82,9 @@ describe('dados de exemplo "frescos"', () => {
     expect(new Date(d.user.joinedAt).getTime()).toBe(NOW - 32 * DAY);
     expect(d.sessions).toHaveLength(9);
     expect(new Date(d.sessions[d.sessions.length - 1].completedAt).getTime()).toBe(NOW - 1 * DAY);
-    expect(new Date(d.sessions[0].completedAt).getTime()).toBe(NOW - 12 * DAY);
+    expect(new Date(d.sessions[0].completedAt).getTime()).toBe(NOW - 10 * DAY);
     expect(new Date(d.workouts[0].createdAt).getTime()).toBe(NOW - 32 * DAY);
-    expect(d.achievements.map((a: { unlockedAt: string }) => new Date(a.unlockedAt).getTime())).toEqual([NOW - 12 * DAY, NOW - 9 * DAY, NOW - 3 * DAY, NOW - 2 * DAY]);
+    expect(d.achievements.map((a: { unlockedAt: string }) => new Date(a.unlockedAt).getTime())).toEqual([NOW - 10 * DAY, NOW - 6 * DAY, NOW - 3 * DAY, NOW - 2 * DAY]);
   });
   it('dias depois, a sessão mais recente continua "de ontem" (nada fica velho)', () => {
     const later = getFreshDemoData(NOW + 30 * DAY);
