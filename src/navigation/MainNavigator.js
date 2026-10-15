@@ -28,7 +28,7 @@ const WorkoutStack = createStackNavigator();
 const ExerciseStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-// A aba Início é uma pilha: a Home e a vitrine (Loja e o detalhe do item). Fica DENTRO do MainNavigator
+// A aba Início é uma pilha: a Home e a vitrine (marketplace e o detalhe do item; as rotas seguem com os nomes internos Loja e LojaDetalhe). Fica DENTRO do MainNavigator
 // para existir também no Modo Demo, onde as abas moram dentro do OnboardingNavigator.
 function HomeStackNav() {
   return (

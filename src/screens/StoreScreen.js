@@ -14,7 +14,7 @@ import {
   getCategoria,
 } from '../data/marketplace';
 
-// Loja = VITRINE de parceiros: sem pagamento nem entrega no app. Funciona 100% offline (dados locais).
+// Marketplace = VITRINE de parceiros: sem pagamento nem entrega no app. Funciona 100% offline (dados locais).
 export default function StoreScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [categoria, setCategoria] = useState(TODAS);
@@ -36,7 +36,7 @@ export default function StoreScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.title} accessibilityRole="header">Loja</Text>
+          <Text style={styles.title} accessibilityRole="header">Marketplace</Text>
           <Text style={styles.subtitle}>Vitrine de parceiros do Duo Fitness</Text>
         </View>
       </View>

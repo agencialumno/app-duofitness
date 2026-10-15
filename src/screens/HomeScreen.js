@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, PixelRatio } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -23,6 +23,8 @@ export default function HomeScreen({ navigation }) {
   const xpProgress = levelInfo.nextXp
     ? Math.min(((xp % (levelInfo.nextXp / levelInfo.level)) / (levelInfo.nextXp / levelInfo.level)) * 100, 100)
     : 100;
+  // Com texto grande (acima de 130%) os três atalhos da ação rápida ficam um por linha, sem cortar o rótulo.
+  const bigText = PixelRatio.getFontScale() > 1.3;
   const occupancy = useOccupancy();
   const healthInfo = useHealth();
   const healthBand = scoreBand(healthInfo.score);
@@ -143,27 +145,27 @@ export default function HomeScreen({ navigation }) {
       <Text style={styles.sectionTitle}>AÇÃO RÁPIDA</Text>
       <View style={styles.quickActions}>
         <TouchableOpacity
-          style={styles.qActionSecondary}
+          style={[styles.qActionSecondary, bigText && styles.qActionFull]}
           onPress={() => navigation.navigate('Workouts', { screen: 'SmartPlan' })}
         >
           <Ionicons name="options-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Gerador rápido</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.qActionSecondary}
+          style={[styles.qActionSecondary, bigText && styles.qActionFull]}
           onPress={() => navigation.navigate('Workouts', { screen: 'CreateWorkout' })}
         >
           <Ionicons name="add-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Criar manualmente</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.qActionSecondary}
+          style={[styles.qActionSecondary, bigText && styles.qActionFull]}
           onPress={() => navigation.navigate('Loja')}
           accessibilityRole="button"
-          accessibilityLabel="Loja"
+          accessibilityLabel="Marketplace"
         >
           <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
-          <Text style={styles.qActionSecondaryText}>Loja</Text>
+          <Text style={styles.qActionSecondaryText}>Marketplace</Text>
         </TouchableOpacity>
       </View>
 
@@ -214,10 +216,10 @@ export default function HomeScreen({ navigation }) {
         style={styles.storeBtn}
         onPress={() => navigation.navigate('Loja')}
         accessibilityRole="button"
-        accessibilityLabel="Ver loja"
+        accessibilityLabel="Ver marketplace"
       >
         <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
-        <Text style={styles.storeBtnText}>Ver loja</Text>
+        <Text style={styles.storeBtnText}>Ver marketplace</Text>
         <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
       </TouchableOpacity>
 
@@ -347,7 +349,9 @@ const styles = StyleSheet.create({
   storeBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
   sectionTitle: { fontSize: FONTS.sizes.xs, fontWeight: '600', color: COLORS.textMuted, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
   quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.md },
-  qActionSecondary: { flex: 1, minWidth: 96, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, paddingVertical: SPACING.md, paddingHorizontal: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  // Ícone em cima e rótulo embaixo: "Marketplace" (o mais longo) cabe em 320 px e com texto grande, sem corte.
+  qActionSecondary: { flex: 1, minWidth: 100, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, paddingVertical: SPACING.md, paddingHorizontal: 4, borderWidth: 1, borderColor: COLORS.border },
+  qActionFull: { minWidth: '100%' },
   qActionSecondaryText: { flexShrink: 1, textAlign: 'center', fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.primary },
   workoutCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.md },
   workoutCardIcon: { width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center' },

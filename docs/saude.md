@@ -108,7 +108,7 @@ Hoje existe só a **estrutura**, desligada por `EXPO_PUBLIC_HEALTH_INTEGRATION=f
 **Em qualquer plataforma**
 - Dados lidos continuam no aparelho; qualquer envio a servidor exige consentimento próprio, base legal (LGPD) e revisão.
 - Menores de 18 anos: não ligar integração de peso nem metas.
-- Não usar dados de saúde para publicidade nem compartilhar com a Loja ou parceiros.
+- Não usar dados de saúde para publicidade nem compartilhar com o marketplace ou parceiros.
 
 ## Testes
 

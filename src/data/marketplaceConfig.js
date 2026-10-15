@@ -1,4 +1,4 @@
-// Configuração da vitrine (marketplace). A Loja do Duo Fitness é só uma VITRINE: não há pagamento nem
+// Configuração da vitrine (marketplace). O marketplace do Duo Fitness é só uma VITRINE: não há pagamento nem
 // entrega no app; o contato com o parceiro acontece fora (WhatsApp ou link).
 
 export const MARKETPLACE_CONFIG = {
@@ -8,7 +8,7 @@ export const MARKETPLACE_CONFIG = {
   whatsappNumber: String(process.env.EXPO_PUBLIC_MARKETPLACE_WHATSAPP || '').replace(/\D/g, ''),
 
   // Mensagem pré-preenchida. {titulo} vira o título do item.
-  whatsappMessage: 'Olá! Vi "{titulo}" na loja do app Duo Fitness e gostaria de saber mais.',
+  whatsappMessage: 'Olá! Vi "{titulo}" no marketplace do app Duo Fitness e gostaria de saber mais.',
 
   // Aviso exibido no detalhe de cada item.
   partnerNotice: 'Anúncio de parceiro. O Duo Fitness não vende nem entrega estes itens.',

@@ -124,10 +124,10 @@ describe('textos: sem promessa de saúde, dosagem ou resultado', () => {
 
 describe('WhatsApp', () => {
   it('monta https://wa.me/<número>?text=<mensagem codificada>', () => {
-    const url = M.buildWhatsAppUrl('5511999998888', 'Olá! Vi "Kit & acessórios" na loja.');
-    expect(url).toBe('https://wa.me/5511999998888?text=' + encodeURIComponent('Olá! Vi "Kit & acessórios" na loja.'));
+    const url = M.buildWhatsAppUrl('5511999998888', 'Olá! Vi "Kit & acessórios" no marketplace.');
+    expect(url).toBe('https://wa.me/5511999998888?text=' + encodeURIComponent('Olá! Vi "Kit & acessórios" no marketplace.'));
     expect(url).not.toContain(' '); // espaços, aspas, & e acentos ficam codificados
-    expect(decodeURIComponent(url.split('?text=')[1])).toBe('Olá! Vi "Kit & acessórios" na loja.');
+    expect(decodeURIComponent(url.split('?text=')[1])).toBe('Olá! Vi "Kit & acessórios" no marketplace.');
   });
 
   it('limpa o número (só dígitos) e recusa número curto ou vazio', () => {
