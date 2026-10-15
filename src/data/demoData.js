@@ -127,13 +127,13 @@ export const DEMO_WORKOUTS = [
 ];
 
 // Gera 9 sessões concluídas nos últimos ~12 dias, alternando entre as 3 séries.
-function buildDemoSessions() {
+function buildDemoSessions(now = Date.now()) {
   const workoutIds = ['demo_serie_a', 'demo_serie_b', 'demo_serie_c'];
   const daysAgo = [12, 10, 9, 7, 6, 4, 3, 2, 1];
   return daysAgo.map((d, i) => ({
     id: `demo_session_${i}`,
     workoutId: workoutIds[i % workoutIds.length],
-    completedAt: new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString(),
+    completedAt: new Date(now - d * 24 * 60 * 60 * 1000).toISOString(),
     xpEarned: 50,
   }));
 }
@@ -152,3 +152,17 @@ export const DEMO_ACHIEVEMENTS = [
   { id: 'week_warrior', title: 'Guerreiro da semana', icon: '🔥', unlockedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
   { id: 'streak_7', title: 'Semana perfeita', icon: '🌟', unlockedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
 ];
+// Dados de exemplo com as datas recalculadas a partir de "agora". As constantes DEMO_* acima são
+// calculadas uma vez, quando o app abre; "Reiniciar demo" usa esta função para as datas
+// relativas (sessões, conquistas, "membro desde") voltarem a ser de hoje.
+export function getFreshDemoData(now = Date.now()) {
+  const iso = (daysAgo) => new Date(now - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+  return {
+    user: { ...DEMO_USER, joinedAt: iso(32) },
+    workouts: DEMO_WORKOUTS.map((w) => ({ ...w, createdAt: iso(32) })),
+    sessions: buildDemoSessions(now),
+    xp: DEMO_XP,
+    streak: DEMO_STREAK,
+    achievements: DEMO_ACHIEVEMENTS.map((a, i) => ({ ...a, unlockedAt: iso([12, 9, 3, 2][i] ?? 0) })),
+  };
+}

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEMO_USER, DEMO_WORKOUTS, DEMO_SESSIONS, DEMO_XP, DEMO_STREAK, DEMO_ACHIEVEMENTS } from '../data/demoData';
+import { getFreshDemoData } from '../data/demoData';
+import { canOfferDemo, clearAllDuoData, restartDemoData, writeDemoData } from '../utils/demoSession';
 
 const AppContext = createContext({});
 
@@ -127,21 +128,43 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-    const loadDemoData = async () => {
-    setUser(DEMO_USER);
-    setWorkouts(DEMO_WORKOUTS);
-    setCompletedSessions(DEMO_SESSIONS);
-    setXp(DEMO_XP);
-    setStreak(DEMO_STREAK);
-    setAchievements(DEMO_ACHIEVEMENTS);
+  const applyData = (d) => {
+    setUser(d.user);
+    setWorkouts(d.workouts);
+    setCompletedSessions(d.sessions);
+    setXp(d.xp);
+    setStreak(d.streak);
+    setAchievements(d.achievements);
+  };
 
-    await AsyncStorage.setItem('@duo_user', JSON.stringify(DEMO_USER));
-    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(DEMO_WORKOUTS));
-    await AsyncStorage.setItem('@duo_sessions', JSON.stringify(DEMO_SESSIONS));
-    await AsyncStorage.setItem('@duo_xp', DEMO_XP.toString());
-    await AsyncStorage.setItem('@duo_streak', DEMO_STREAK.toString());
-    await AsyncStorage.setItem('@duo_achievements', JSON.stringify(DEMO_ACHIEVEMENTS));
-    await AsyncStorage.setItem('@duo_onboarded', 'true');
+  // Carrega os dados de exemplo. Recusa (devolve false) se houver perfil real salvo: o demo nunca
+  // sobrescreve dados de verdade.
+  const loadDemoData = async () => {
+    const stored = await AsyncStorage.getItem('@duo_user');
+    if (!canOfferDemo(stored)) return false;
+    const data = getFreshDemoData();
+    applyData(data);
+    await writeDemoData(AsyncStorage, data);
+    return true;
+  };
+
+  // "Reiniciar demo": apaga o que existe e recarrega os dados de exemplo com as datas de hoje.
+  const restartDemo = async () => {
+    const data = getFreshDemoData();
+    const ok = await restartDemoData(AsyncStorage, data);
+    if (ok) applyData(data);
+    return ok;
+  };
+
+  // Apaga TODAS as chaves @duo_* e zera o estado em memória (usado por "Sair" do demo e "Resetar tudo").
+  const resetAll = async () => {
+    await clearAllDuoData(AsyncStorage);
+    setUser(null);
+    setWorkouts([]);
+    setCompletedSessions([]);
+    setXp(0);
+    setStreak(0);
+    setAchievements([]);
   };
 
   const getLevel = () => {
@@ -161,7 +184,7 @@ export const AppProvider = ({ children }) => {
             xp, streak, achievements,
       getLevel,
       refreshData: loadData,
-      loadDemoData,
+      loadDemoData, restartDemo, resetAll,
     }}>
       {children}
     </AppContext.Provider>
