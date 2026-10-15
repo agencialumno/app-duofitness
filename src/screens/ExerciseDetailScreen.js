@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import ExerciseMedia from '../components/ExerciseMedia';
 
 export default function ExerciseDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -59,6 +60,12 @@ export default function ExerciseDetailScreen({ navigation, route }) {
             <Text style={styles.description}>{ex.description}</Text>
           </View>
         )}
+
+        {/* Como fazer: capa ou placeholder "Vídeo em breve" (ponto de extensão do player em ExerciseMedia) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">Como fazer</Text>
+          <ExerciseMedia exercise={ex} />
+        </View>
 
         {ex.instructions && (
           <View style={styles.section}>
