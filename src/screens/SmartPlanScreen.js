@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { generateWorkoutPlan } from '../utils/workoutGenerator';
@@ -74,6 +75,7 @@ const QUESTIONS = [
 ];
 
 export default function SmartPlanScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { addWorkouts, user } = useApp();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -141,7 +143,7 @@ export default function SmartPlanScreen({ navigation }) {
   // Resultado
   if (done && plan) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.doneContent}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.doneContent, { paddingTop: insets.top + SPACING.sm }]}>
         <View style={styles.doneHeader}>
           <View style={styles.doneIconWrap}>
             <Ionicons name="checkmark" size={32} color={COLORS.black} />
@@ -205,7 +207,7 @@ export default function SmartPlanScreen({ navigation }) {
   // Questionário
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity
           onPress={() => step > 0 ? setStep(s => s - 1) : navigation.goBack()}
           style={styles.backBtn}
@@ -277,7 +279,7 @@ export default function SmartPlanScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.lg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg },
   backBtn: { padding: SPACING.xs },
   progressWrap: { flex: 1, gap: 6 },
   progressBg: { height: 3, backgroundColor: COLORS.border, borderRadius: 2 },
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center', gap: SPACING.md, padding: SPACING.xl },
   loadingTitle: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white },
   loadingSub: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 24 },
-  doneContent: { padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl, paddingBottom: SPACING.xxl },
+  doneContent: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   doneHeader: { alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.xl },
   doneIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: SPACING.sm },
   doneTitle: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },

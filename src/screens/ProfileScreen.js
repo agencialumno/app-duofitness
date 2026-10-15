@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,7 @@ function formatGoals(goals) {
 }
 
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user, xp, streak, achievements, completedSessions, workouts, getLevel } = useApp();
   const levelInfo = getLevel();
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
@@ -42,7 +44,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
 
       {/* Avatar */}
       <View style={styles.profileHeader}>
@@ -189,7 +191,7 @@ export default function ProfileScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl, paddingBottom: SPACING.xxl, gap: SPACING.lg },
+  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl, gap: SPACING.lg },
   profileHeader: { alignItems: 'center', gap: SPACING.sm },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.black, borderWidth: 2, borderColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarLogo: { width: 72, height: 72 },

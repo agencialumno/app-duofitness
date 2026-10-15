@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { EXERCISES, CATEGORIES } from '../data/exercises';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function CreateWorkoutScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { addWorkout } = useApp();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Full Body');
@@ -33,7 +35,7 @@ export default function CreateWorkoutScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
           <Ionicons name="close" size={24} color={COLORS.textSecondary} />
         </TouchableOpacity>
@@ -117,7 +119,7 @@ export default function CreateWorkoutScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   closeBtn: { padding: SPACING.xs },
   title: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white },
   saveBtn: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },

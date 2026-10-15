@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ExerciseDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { exercise: ex } = route.params;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
@@ -86,7 +88,7 @@ export default function ExerciseDetailScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl },
+  header: { padding: SPACING.lg },
   backBtn: { padding: SPACING.xs },
   content: { padding: SPACING.lg, paddingTop: 0, paddingBottom: SPACING.xxl, gap: SPACING.lg },
   hero: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.md },

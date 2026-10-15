@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Animated } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ActiveWorkoutScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { workout } = route.params;
   const { completeSession } = useApp();
   const exercises = workout.exercises || [];
@@ -99,7 +101,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => Alert.alert('Sair do treino', 'Seu progresso será perdido.', [
           { text: 'Continuar', style: 'cancel' },
           { text: 'Sair', style: 'destructive', onPress: () => navigation.goBack() },
@@ -170,7 +172,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
   timer: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white },
   exCounter: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, fontWeight: '600' },
   progressBar: { height: 3, backgroundColor: COLORS.border, marginHorizontal: SPACING.lg },

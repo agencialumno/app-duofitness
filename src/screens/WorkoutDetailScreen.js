@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function WorkoutDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { workout } = route.params;
   const { deleteWorkout, completedSessions } = useApp();
   const sessionCount = completedSessions.filter(s => s.workoutId === workout.id).length;
@@ -18,7 +20,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
@@ -71,7 +73,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg, paddingTop: SPACING.xl + SPACING.xl },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
   backBtn: { padding: SPACING.xs },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   serieLabel: { fontSize: FONTS.sizes.xs, color: COLORS.primary, fontWeight: '700', letterSpacing: 2, marginBottom: 4 },

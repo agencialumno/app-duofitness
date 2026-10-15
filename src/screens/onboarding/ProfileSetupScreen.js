@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const GOALS = [
@@ -14,6 +15,7 @@ const GOALS = [
 ];
 
 export default function ProfileSetupScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [goals, setGoals] = useState([]);
 
@@ -26,7 +28,7 @@ export default function ProfileSetupScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
           </TouchableOpacity>
@@ -98,7 +100,7 @@ export default function ProfileSetupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.xl, paddingTop: SPACING.xl },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.xl },
   backBtn: { padding: SPACING.xs },
   stepDots: { flexDirection: 'row', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.border },

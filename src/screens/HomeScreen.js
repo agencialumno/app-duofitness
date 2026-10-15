@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
 
 export default function HomeScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { user, xp, streak, getLevel, workouts, completedSessions, achievements } = useApp();
   const levelInfo = getLevel();
   const today = new Date().toDateString();
@@ -20,7 +22,7 @@ export default function HomeScreen({ navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <View>
           <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0]}</Text>
           <Text style={styles.subGreeting}>
@@ -191,7 +193,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg, paddingTop: SPACING.xl + SPACING.lg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg },
   greeting: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subGreeting: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 2 },
   streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1A0F00', borderWidth: 1, borderColor: '#3A2A00', borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs },
