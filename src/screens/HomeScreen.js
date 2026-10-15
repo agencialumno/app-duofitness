@@ -156,6 +156,15 @@ export default function HomeScreen({ navigation }) {
           <Ionicons name="add-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Criar manualmente</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.qActionSecondary}
+          onPress={() => navigation.navigate('Loja')}
+          accessibilityRole="button"
+          accessibilityLabel="Loja"
+        >
+          <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.qActionSecondaryText}>Loja</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Academia agora: lotação (só números agregados; dados de exemplo ficam rotulados) */}
@@ -173,29 +182,6 @@ export default function HomeScreen({ navigation }) {
         </View>
         {occupancy.isMock && <ExampleBadge />}
         <OccupancyCard status={occupancy.status} reading={occupancy.reading} now={occupancy.now} />
-      </TouchableOpacity>
-
-      {/* Saúde: Duo Score (hábitos; não é avaliação médica) */}
-      <TouchableOpacity
-        style={styles.gymCard}
-        onPress={() => navigation.navigate('Saude')}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
-      >
-        <View style={styles.gymHead}>
-          <Ionicons name="heart-outline" size={18} color={COLORS.primary} />
-          <Text style={styles.gymTitle}>Saúde</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
-        </View>
-        {healthInfo.isExample && <ExampleBadge />}
-        <View style={styles.healthRow}>
-          <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
-          <View style={styles.healthSide}>
-            <Text style={styles.healthLabel}>Duo Score</Text>
-            <Text style={styles.healthBand}>{healthInfo.loading ? 'Carregando…' : healthBand.label}</Text>
-          </View>
-        </View>
       </TouchableOpacity>
 
       {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
@@ -233,6 +219,29 @@ export default function HomeScreen({ navigation }) {
         <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
         <Text style={styles.storeBtnText}>Ver loja</Text>
         <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+      </TouchableOpacity>
+
+      {/* Saúde: Duo Score (hábitos; não é avaliação médica) */}
+      <TouchableOpacity
+        style={styles.gymCard}
+        onPress={() => navigation.navigate('Saude')}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
+      >
+        <View style={styles.gymHead}>
+          <Ionicons name="heart-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.gymTitle}>Saúde</Text>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+        </View>
+        {healthInfo.isExample && <ExampleBadge />}
+        <View style={styles.healthRow}>
+          <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
+          <View style={styles.healthSide}>
+            <Text style={styles.healthLabel}>Duo Score</Text>
+            <Text style={styles.healthBand}>{healthInfo.loading ? 'Carregando…' : healthBand.label}</Text>
+          </View>
+        </View>
       </TouchableOpacity>
 
       {/* Último treino */}
@@ -337,8 +346,8 @@ const styles = StyleSheet.create({
   storeBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, marginTop: SPACING.sm, marginBottom: SPACING.md, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.primary },
   storeBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
   sectionTitle: { fontSize: FONTS.sizes.xs, fontWeight: '600', color: COLORS.textMuted, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
-  quickActions: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
-  qActionSecondary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
+  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.md },
+  qActionSecondary: { flex: 1, minWidth: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
   qActionSecondaryText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.primary },
   workoutCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.md },
   workoutCardIcon: { width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center' },
