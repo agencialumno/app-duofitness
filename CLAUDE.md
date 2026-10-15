@@ -28,6 +28,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - Modo Demo (feira): faixa "Modo Demo: dados de exemplo" na Home e cartão no Perfil, com "Reiniciar demo" (apaga as `@duo_*` e recarrega o exemplo com datas de hoje) e "Sair" (apaga todas as `@duo_*`, zera o estado e volta às boas-vindas, sem Alert). Lógica pura em `src/utils/demoSession.js`; navegação em `src/navigation/resetNavigation.js`; a raiz registra `Onboarding` e `Main` sempre. O link do demo nas boas-vindas só aparece sem perfil real salvo e `loadDemoData` recusa gravar sobre perfil real.
 - Anunciar no marketplace: formulário em `src/screens/AdvertiseScreen.js` (rota `AnunciarMarketplace`), lógica pura em `src/utils/advertise.js`, destinatário em `src/data/advertiseConfig.js` (`MARKETPLACE_CONTACT_EMAIL`). Vira um e-mail via `mailto:` (fallback `Share.share`); nada é gravado no aparelho; no Modo Demo só mostra a prévia. Detalhes em `docs/marketplace.md`.
 - Listas roláveis (`ScrollView`, `FlatList`, `SectionList`) sempre com `showsVerticalScrollIndicator={false}` (e o horizontal nas listas horizontais); o teste `scrollindicators.test.ts` varre `src/` e falha se faltar.
+- Vídeos dos exercícios (estrutura pronta, sem arquivos ainda, sem player): arquivos em `assets/exercicios/<id>.mp4` e `<id>.jpg`; o mapa `src/data/exerciseVideos.js` é **gerado** por `npm run gen:media` (require estático só do que existe, o bundle nunca quebra) e conferido por `scripts/check-videos.mjs` (roda no `ci.yml`, `android.yml` e `ios.yml`). `src/components/ExerciseMedia.js` é a área "Como fazer" do detalhe (capa ou placeholder "Vídeo em breve"; ponto de extensão `renderVideo` para o `expo-video`, que fica para depois). Padrão dos arquivos e lista de gravação em `docs/videos-exercicios.md`.
 - `src/utils/imc.js`: IMC e recomendações (`avoidHighImpact` etc.).
 - `plugins/` (config plugins do Expo), `scripts/` (utilitários do CI: `publish-apk.mjs`, `check-pngs.mjs`, `check-autolinking.mjs`, `check-appstore-key.mjs`, `ios-log-hints.mjs`, `check-ios-project.mjs`, `set-ios-version.sh`, `ios-upload.sh`), `docs/` (guias, ex.: `android.md`).
 - `src/services/api.js` e `src/utils/sse.js`: cliente da API (SSE por XMLHttpRequest, porque o `fetch` do React Native não expõe o corpo da resposta em streaming).
@@ -61,13 +62,14 @@ Os atalhos "Personal Trainer IA" (rota `AIPersonalTrainer`) abrem a **série gui
 | `EXPO_PUBLIC_API_FIRST_TOKEN_TIMEOUT_MS` | tempo até o primeiro token antes de cair no offline; padrão 10000 |
 | `EXPO_PUBLIC_OCCUPANCY_REMOTE` | `true` liga a lotação real (precisa de `EXPO_PUBLIC_API_URL`); vazio = dados de exemplo. Nunca no Modo Demo |
 | `EXPO_PUBLIC_MARKETPLACE_WHATSAPP` | número do WhatsApp do marketplace (dígitos com DDI); vazio = botão avisa que falta configurar |
+| `EXPO_PUBLIC_EXERCISE_VIDEOS` | ligada por padrão; `false` esconde a área "Como fazer" do exercício. Depois de mudar um `EXPO_PUBLIC_*` localmente, rode o Metro com `--clear` (o cache guarda o valor antigo) |
 | `EXPO_PUBLIC_HEALTH_INTEGRATION` | `false` (padrão): integração com Apple Saúde / Health Connect desligada (só stubs) |
 
 **Backend** (modelo em `backend/.env.example`; detalhes na tabela do `backend/README.md`). Obrigatórias para `/api/ia/chat`: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `MODEL_INPUT_USD_PER_MTOK`, `MODEL_OUTPUT_USD_PER_MTOK`, `APP_KEY`. Opcionais: `DAILY_SPEND_LIMIT_USD`, `RATE_LIMIT_PER_MIN`, `MAX_USER_TURNS`, `MAX_OUTPUT_TOKENS`, `ALLOWED_ORIGINS`, `MODEL_CACHE_WRITE_USD_PER_MTOK`, `MODEL_CACHE_READ_USD_PER_MTOK`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
 ## Comandos
 
-- App: `npx expo start`; checagens: `npx expo-doctor`, `npx expo install --check` e `node scripts/check-pngs.mjs` e `node scripts/check-autolinking.mjs`.
+- App: `npx expo start`; checagens: `npx expo-doctor`, `npx expo install --check` e `node scripts/check-pngs.mjs` e `node scripts/check-autolinking.mjs` e `node scripts/check-videos.mjs`; `npm run gen:media` regenera o mapa de vídeos.
 - Backend (`cd backend`): `npm run dev`, `npm test`, `npm run typecheck`, `npm run check-catalog`.
 - Mudou `workoutGenerator.js` ou `combosEquipment.js`? Rode `npm run sync-catalog` no `backend/` (o teste de paridade e o CI falham se esquecer).
 
