@@ -195,6 +195,10 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
+          # O shell dos passos do Actions é "bash -e". Aqui o erro do xcodebuild PRECISA ser tratado
+          # por nós (ler PIPESTATUS, decidir se repete o archive, rodar o ios-log-hints), então o
+          # errexit fica DESLIGADO neste passo. "set -uo pipefail" sozinho não o desliga.
+          set +e
           set -uo pipefail
           WORKSPACE="$(find ios -maxdepth 1 -name '*.xcworkspace' | head -1)"
           SCHEME="$(basename "$WORKSPACE" .xcworkspace)"
@@ -205,8 +209,8 @@ jobs:
           echo "XC_ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
           echo "XC_LOG_DIR=$LOG_DIR" >> "$GITHUB_ENV"
 
-          archive() {
-            # "$@" = argumentos extras (usados na segunda tentativa, sem assinar o archive)
+          # 1ª tentativa: archive ASSINADO (assinatura automática pela chave da API).
+          archive_signed() {
             xcodebuild archive \
               -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
               -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
@@ -215,28 +219,48 @@ jobs:
               -authenticationKeyID "$APPSTORE_KEY_ID" \
               -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
               DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+              MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER"
+          }
+          # 2ª tentativa (só se o time não tem dispositivos): archive SEM assinatura, sem falar com a
+          # Apple. A assinatura de distribuição (cloud signing) acontece no exportArchive.
+          archive_unsigned() {
+            xcodebuild archive \
+              -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+              -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
+              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
               MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
-              "$@"
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=
           }
           show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
 
-          archive 2>&1 | tee "$LOG_DIR/archive.log" | show
+          archive_signed 2>&1 | tee "$LOG_DIR/archive.log" | show
           RC=${PIPESTATUS[0]}
+          HINT_LOG="$LOG_DIR/archive.log"
 
-          # Time Apple sem dispositivos: o Xcode não gera o perfil de desenvolvimento do archive.
-          # Tentamos de novo sem assinar o archive; a assinatura de distribuição acontece no export.
           if [ "$RC" -ne 0 ] && grep -qiE "no devices from which to generate a provisioning profile|Your team has no devices" "$LOG_DIR/archive.log"; then
-            echo "::warning::Time sem dispositivos registrados: repetindo o archive sem assinar (a assinatura de distribuição fica para o export)."
+            echo "::warning::O time Apple não tem dispositivos registrados: o Xcode não gera o perfil de desenvolvimento do archive. Repetindo o archive SEM assinar; a assinatura de distribuição fica para o export. Para evitar este caminho, registre um iPhone em developer.apple.com > Certificates, Identifiers & Profiles > Devices."
             rm -rf "$ARCHIVE"
-            archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= 2>&1 | tee "$LOG_DIR/archive-retry.log" | show
+            echo "XC_ARCHIVE_UNSIGNED=true" >> "$GITHUB_ENV"
+            archive_unsigned 2>&1 | tee "$LOG_DIR/archive-unsigned.log" | show
             RC=${PIPESTATUS[0]}
-            [ "$RC" -ne 0 ] && cp "$LOG_DIR/archive-retry.log" "$LOG_DIR/archive.log"
+            # para as dicas, vale o log das duas tentativas
+            cat "$LOG_DIR/archive.log" "$LOG_DIR/archive-unsigned.log" > "$LOG_DIR/archive-all.log"
+            HINT_LOG="$LOG_DIR/archive-all.log"
+            if [ "$RC" -eq 0 ]; then
+              {
+                echo "- archive feito **sem assinatura** (o time Apple não tem dispositivos); a assinatura de distribuição acontece no export. Registrar um iPhone no portal da Apple evita este caminho."
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
           fi
+
           if [ "$RC" -ne 0 ]; then
-            node scripts/ios-log-hints.mjs "$LOG_DIR/archive.log" || true
+            node scripts/ios-log-hints.mjs "$HINT_LOG" || true
             exit "$RC"
           fi
-          test -d "$ARCHIVE"
+          if [ ! -d "$ARCHIVE" ]; then
+            echo "::error::O xcodebuild terminou sem erro, mas o archive não existe em $ARCHIVE."
+            exit 1
+          fi
 
       - name: Conferir versão e build number do archive
         run: |
@@ -268,6 +292,9 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
+          # errexit desligado enquanto o xcodebuild roda (veja o passo do archive); religado logo
+          # depois de tratar o erro, para as checagens de assinatura abaixo falharem alto.
+          set +e
           set -uo pipefail
           EXPORT_DIR="$RUNNER_TEMP/ipa-export"
           rm -rf "$EXPORT_DIR"
@@ -296,9 +323,15 @@ jobs:
             2>&1 | tee "$XC_LOG_DIR/export.log" | show
           RC=${PIPESTATUS[0]}
           if [ "$RC" -ne 0 ]; then
-            node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" || true
+            if [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
+              echo "::error::O export falhou depois de um archive SEM assinatura (time sem dispositivos): é aqui que a assinatura de distribuição é criada pela chave da API."
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" --unsigned || true
+            else
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" || true
+            fi
             exit "$RC"
           fi
+          set -e
 
           IPA="$(find "$EXPORT_DIR" -maxdepth 1 -name '*.ipa' | head -1)"
           [ -n "$IPA" ] || { echo "::error::O export não gerou o .ipa."; exit 1; }
@@ -340,6 +373,7 @@ jobs:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
           APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
         run: |
+          set +e # veja o passo do archive: o erro do xcodebuild é tratado abaixo
           set -uo pipefail
           OPTS="$RUNNER_TEMP/ExportOptions-upload.plist"
           cat > "$OPTS" <<PLIST
@@ -366,7 +400,11 @@ jobs:
             2>&1 | tee "$XC_LOG_DIR/upload.log" | show
           RC=${PIPESTATUS[0]}
           if [ "$RC" -ne 0 ]; then
-            node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" || true
+            if [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" --unsigned || true
+            else
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/upload.log" || true
+            fi
             exit "$RC"
           fi
           {

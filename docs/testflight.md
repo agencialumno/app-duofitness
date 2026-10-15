@@ -83,7 +83,7 @@ Observações:
 | *A chave é válida, mas não tem permissão (403)* | Use uma chave de equipe com papel App Manager ou Admin. |
 | *o app com bundle id ... não foi encontrado nesta conta* | Crie o app no App Store Connect com o bundle id `com.duofitness.app`. |
 | *A chave da API não tem permissão para o cloud signing* | Gere uma chave com papel **Admin** e atualize os três secrets. |
-| *O time Apple não tem dispositivos registrados* | O workflow já repete o archive sem assinar. Se persistir, registre um dispositivo em *developer.apple.com → Certificates, Identifiers & Profiles → Devices*. |
+| *O time Apple não tem dispositivos registrados* | O Xcode exige um dispositivo para gerar o perfil de desenvolvimento do archive. O workflow repete o archive **sem assinar** e deixa a assinatura de distribuição para o export (a chave precisa ter papel Admin no primeiro build). Para evitar esse caminho, registre um iPhone em *developer.apple.com → Certificates, Identifiers & Profiles → Devices → +* (nome e UDID do aparelho; o UDID aparece no Finder ao selecionar o iPhone no Mac, ou em Ajustes → Geral → Sobre). |
 | *ITMS-90725 / SDK Version Issue* | O build não foi feito com Xcode 26. Confira o passo "Conferir Xcode 26" e a imagem `macos-26`. |
 | *O número do build já foi usado* | Não renomeie `ios.yml`; suba a versão no `app.json` se precisar recomeçar a contagem. |
 | *Não reconheci a causa no log* | Baixe o artifact `xcodebuild-logs-<n>` da execução (guardado por 3 dias, só com a saída do `xcodebuild`) e procure a primeira linha com `error:`. |

@@ -77,3 +77,37 @@ describe('ios-log-hints.mjs', () => {
     expect(r.stdout).toContain('Não consegui ler o log');
   });
 });
+
+describe('ios-log-hints.mjs: archive sem assinatura', () => {
+  it('"sem dispositivos" manda registrar um iPhone, com o caminho no portal e como achar o UDID', () => {
+    const r = hints("error: Your team has no devices from which to generate a provisioning profile.\nerror: No profiles for 'com.duofitness.app' were found\n");
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('REGISTRE UM iPhone');
+    expect(r.out).toContain('Certificates, Identifiers & Profiles > Devices');
+    expect(r.out).toContain('UDID');
+  });
+
+  it('"No profiles" junto com "sem dispositivos" não vira uma segunda causa (é consequência)', () => {
+    const r = hints("error: Your team has no devices from which to generate a provisioning profile.\nerror: No profiles for 'com.duofitness.app' were found\n");
+    expect(r.out).not.toContain('Não foi possível obter o perfil de provisionamento');
+    // sozinho, "No profiles" continua tendo a sua dica
+    expect(hints("error: No profiles for 'com.duofitness.app' were found\n").out).toContain('perfil de provisionamento');
+  });
+
+  it('--unsigned acrescenta a dica do archive sem assinatura, mesmo sem outra causa conhecida', () => {
+    const file = path.join(dir, 'u.log');
+    writeFileSync(file, 'nada conhecido aqui\n');
+    const r = spawnSync(process.execPath, [SCRIPT, file, '--unsigned'], { encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'true' } });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('archive SEM assinatura');
+    expect(r.stdout).toContain('Registrar um iPhone no portal da Apple');
+  });
+
+  it('o flag pode vir antes do arquivo', () => {
+    const file = path.join(dir, 'u2.log');
+    writeFileSync(file, 'error: Cloud signing permission error\n');
+    const r = spawnSync(process.execPath, [SCRIPT, '--unsigned', file], { encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'true' } });
+    expect(r.stdout).toContain('papel ADMIN');
+    expect(r.stdout).toContain('archive SEM assinatura');
+  });
+});
