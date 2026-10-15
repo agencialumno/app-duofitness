@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -53,6 +54,9 @@ function ProfileStackNav() {
 }
 
 export default function MainNavigator() {
+  // A barra de abas respeita a área segura: barra de navegação do Android (edge-to-edge) e
+  // indicador home do iPhone.
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -61,8 +65,8 @@ export default function MainNavigator() {
           backgroundColor: '#0F0F0F',
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarActiveTintColor: COLORS.primary,
