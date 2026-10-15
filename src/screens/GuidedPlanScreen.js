@@ -7,11 +7,12 @@ import { COMBOS } from '../data/combosEquipment';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from '../utils/planOptions';
 import {
   DAYS_OPTIONS, FOCUS_OPTIONS, TIME_OPTIONS,
-  PLAN_LABEL, defaultSettings, generateGuidedPlan, getPlanBadge, getPlanSteps, getProfileChips, getProfileDefaults,
-  missingProfileFields, parseMeasure,
+  PLAN_LABEL, buildReasons, defaultSettings, generateGuidedPlan, getPlanBadge, getPlanSteps, getProfileChips,
+  getProfileDefaults, missingProfileFields, parseMeasure, swapExercise,
 } from '../utils/guidedPlan';
 import { AI_BADGE_ENABLED } from '../data/guidedConfig';
 import { isApiConfigured } from '../services/api';
+import SeriesCard from '../components/guided/SeriesCard';
 import { BuildingChecklist, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
@@ -26,6 +27,9 @@ export default function GuidedPlanScreen({ navigation }) {
   const [plan, setPlan] = useState(null);
 
   const finishBuilding = useCallback(() => setStage('review'), []);
+  const swap = useCallback((serieIndex, exerciseId, newId) => {
+    setPlan((p) => (p ? { ...p, workouts: swapExercise(p.workouts, serieIndex, exerciseId, newId, settings, user) } : p));
+  }, [settings, user]);
   const patch = useCallback((p) => setSettings((s) => ({ ...s, ...p })), []);
 
   const goBack = useCallback(() => {
@@ -94,6 +98,18 @@ export default function GuidedPlanScreen({ navigation }) {
     );
   }
 
+  if (stage === 'review' && plan) {
+    return (
+      <ReviewStage
+        settings={settings}
+        plan={plan}
+        user={user}
+        onBack={goBack}
+        onSwap={swap}
+      />
+    );
+  }
+
   return null;
 }
 
@@ -136,6 +152,51 @@ function BuildingStage({ settings, plan, user, onBack, onDone }) {
         <BuildingChecklist steps={steps} visible={visible} />
       </ScrollView>
       <FooterButton label="Pular" onPress={onDone} secondary icon="play-skip-forward-outline" />
+    </View>
+  );
+}
+
+// ---------- Revisão: por que esta série, cartões A/B/C e troca de exercício ----------
+
+function ReviewStage({ settings, plan, user, onBack, onSwap }) {
+  const reasons = buildReasons(settings, plan, user);
+  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured(), isDemo: !!user?.isDemo });
+  const combo = COMBOS.find((c) => c.id === settings.combo);
+  const summary = [
+    `${settings.days} ${settings.days === 1 ? 'dia' : 'dias'}`,
+    `${settings.time} min`,
+    `Combo ${combo?.label}`,
+  ];
+
+  return (
+    <View style={styles.container}>
+      <GuidedHeader onBack={onBack} caption="Revisão" progress={1} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.labelRow}>
+          <TrainerLabel text={PLAN_LABEL} badge={badge} />
+        </View>
+        <Text style={styles.title} accessibilityRole="header">Sua série está pronta</Text>
+        <View style={styles.chipsWrap}>
+          {summary.map((t) => (
+            <View key={t} style={styles.summaryChip}><Text style={styles.summaryChipText}>{t}</Text></View>
+          ))}
+        </View>
+
+        <View style={styles.reasonsCard}>
+          <Text style={styles.groupTitle}>Por que esta série</Text>
+          {reasons.map((r) => (
+            <View key={r} style={styles.reasonRow}>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+              <Text style={styles.reasonText}>{r}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.groupTitle}>Suas séries</Text>
+        {plan.workouts.map((w, i) => (
+          <SeriesCard key={w.serie} workouts={plan.workouts} index={i} settings={settings} user={user} onSwap={onSwap} initiallyOpen={i === 0} />
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -321,6 +382,11 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 22 },
   options: { gap: SPACING.sm },
   labelRow: { flexDirection: 'row' },
+  summaryChip: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 2, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCardAlt },
+  summaryChipText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
+  reasonsCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
+  reasonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
+  reasonText: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.white, lineHeight: 22 },
   groupTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, marginTop: SPACING.sm, textTransform: 'uppercase' },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   profileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, flexShrink: 1 },
