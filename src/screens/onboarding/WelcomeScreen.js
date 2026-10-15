@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { canOfferDemo } from '../../utils/demoSession';
 
 const { width } = Dimensions.get('window');
 
@@ -16,8 +18,19 @@ const FEATURES = [
 export default function WelcomeScreen({ navigation }) {
   const { loadDemoData } = useApp();
 
+  // O link do demo só aparece sem perfil real salvo: o demo nunca sobrescreve dados de verdade.
+  const [demoAllowed, setDemoAllowed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem('@duo_user')
+      .then((stored) => { if (alive) setDemoAllowed(canOfferDemo(stored)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const startDemo = async () => {
-    await loadDemoData();
+    const ok = await loadDemoData();
+    if (!ok) { setDemoAllowed(false); return; }
     navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
   };
 
@@ -52,9 +65,11 @@ export default function WelcomeScreen({ navigation }) {
           <Text style={styles.btnText}>Começar agora</Text>
         </TouchableOpacity>
         <Text style={styles.footerNote}>Gratuito · Sem anúncios · Sem assinatura</Text>
-        <TouchableOpacity onPress={startDemo} activeOpacity={0.6}>
-          <Text style={styles.demoLink}>Modo Demo (vendedor)</Text>
-        </TouchableOpacity>
+        {demoAllowed && (
+          <TouchableOpacity onPress={startDemo} activeOpacity={0.6}>
+            <Text style={styles.demoLink}>Modo Demo (vendedor)</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

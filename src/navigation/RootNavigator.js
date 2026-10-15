@@ -7,12 +7,11 @@ const Stack = createStackNavigator();
 
 export default function RootNavigator({ isOnboarded }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isOnboarded ? (
-        <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
-      ) : (
-        <Stack.Screen name="Main" component={MainNavigator} />
-      )}
+    // As duas rotas existem sempre, para "Sair do demo" e "Resetar tudo" conseguirem voltar às
+    // boas-vindas mesmo depois de o app ser reaberto já com o perfil salvo.
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isOnboarded ? 'Main' : 'Onboarding'}>
+      <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
+      <Stack.Screen name="Main" component={MainNavigator} />
     </Stack.Navigator>
   );
 }
