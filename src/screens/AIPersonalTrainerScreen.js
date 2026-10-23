@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
-import { generateWorkoutPlan, hydratePlan } from '../utils/workoutGenerator';
+import { generatePlanForAge, hydratePlanForAge } from '../utils/planForAge';
 import { calculateIMC, getIMCCategory } from '../utils/imc';
 import { getComboEquipment } from '../data/combosEquipment';
 import {
@@ -279,7 +279,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
         const merged = { ...acc, ...collected };
         const imc = calculateIMC(merged.weight, merged.height);
         const imcInfo = imc ? getIMCCategory(imc) : null;
-        const generated = hydratePlan(plan, {
+        const generated = hydratePlanForAge(plan, {
           goals: merged.goals,
           gender: user?.gender,
           ageGroup: user?.ageGroup,
@@ -375,7 +375,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
       const imc = calculateIMC(allAnswers.weight, allAnswers.height);
       const imcInfo = imc ? getIMCCategory(imc) : null;
 
-      const generated = generateWorkoutPlan({
+      const generated = generatePlanForAge({
         goals: allAnswers.goals,
         level: allAnswers.level,
         days: allAnswers.days,

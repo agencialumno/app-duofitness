@@ -8,9 +8,9 @@ import {
   filterByLevel,
   filterByLimitation,
   filterHighImpact,
-  generateWorkoutPlan,
 } from './workoutGenerator';
-import { calculateIMC, getIMCCategory, getIMCRecommendations } from './imc';
+import { calculateIMC, getIMCCategory } from './imc';
+import { effectiveGoals, generatePlanForAge, recommendationsForAge } from './planForAge';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from './planOptions';
 
@@ -142,7 +142,7 @@ function imcCategoryId(settings) {
 }
 
 function recsFor(settings, user) {
-  return getIMCRecommendations(imcCategoryId(settings), settings.goals, user?.gender, user?.ageGroup);
+  return recommendationsForAge(imcCategoryId(settings), settings.goals, user?.gender, user?.ageGroup);
 }
 
 // Troca exercícios do fim da série por glúteos do combo (até `perSerie` por série).
@@ -172,7 +172,7 @@ export function generateGuidedPlan(settings, user) {
   const imcInfo = imc ? getIMCCategory(imc) : null;
   const recs = recsFor(settings, user);
 
-  let workouts = generateWorkoutPlan({
+  let workouts = generatePlanForAge({
     goals: settings.goals,
     level: settings.level,
     days: settings.days,
@@ -380,7 +380,7 @@ export function buildReasons(settings, plan, user) {
   }
 
   // 3) Objetivo
-  const goals = settings.goals || [];
+  const goals = effectiveGoals(settings.goals || [], user?.ageGroup); // menor de 18: "Emagrecer" vale como "Saúde geral"
   const maxSets = Math.max(...exercises.map((e) => e.sets || 0), 0);
   const rests = exercises.map((e) => e.rest || 0).filter(Boolean);
   const avgRest = rests.length ? Math.round(rests.reduce((a, b) => a + b, 0) / rests.length) : 0;
@@ -414,7 +414,7 @@ export function getPlanSteps(settings, plan, user) {
   const poolCount = Object.values(EXERCISE_DB).reduce((n, list) => n + eligible(list, settings, recs).length, 0);
   const groups = new Set(exercises.filter((e) => e.category !== 'Cardio').map((e) => e.category));
   const lim = settings.limitation && settings.limitation !== 'none' ? labelOf(LIMITATION_OPTIONS, settings.limitation) : null;
-  const goalNames = (settings.goals || []).map((g) => labelOf(GOAL_OPTIONS, g)).filter(Boolean).join(', ');
+  const goalNames = effectiveGoals(settings.goals || [], user?.ageGroup).map((g) => labelOf(GOAL_OPTIONS, g)).filter(Boolean).join(', ');
 
   return [
     {

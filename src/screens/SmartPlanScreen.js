@@ -6,7 +6,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
-import { generateWorkoutPlan } from '../utils/workoutGenerator';
+import { generatePlanForAge } from '../utils/planForAge';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
 import InfoButton from '../components/InfoButton';
 import { displayNotes } from '../utils/noteText';
@@ -113,7 +113,7 @@ export default function SmartPlanScreen({ navigation }) {
     if (!canNext) return;
     if (isLast) {
       setGenerating(true);
-      const generated = generateWorkoutPlan({
+      const generated = generatePlanForAge({
         ...answers,
         equipment: getComboEquipment(answers.combo),
         goals: user?.goals,

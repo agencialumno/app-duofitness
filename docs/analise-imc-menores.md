@@ -1,6 +1,6 @@
 # Menores de 18 anos: onde a categoria de IMC de ADULTO influencia o gerador (análise)
 
-**Status:** somente análise. **Nada foi alterado.** As opções (seção 4) esperam a sua decisão.
+**Status:** a combinação **A + E** foi **aplicada** (seção 6). As seções 1 a 5 descrevem a situação ANTES da mudança.
 
 ## 1. Como a categoria chega ao gerador
 
@@ -66,3 +66,24 @@ Na Saúde, menores já não têm meta nem recomendação de peso; no gerador, o 
 
 O script usado (leitura apenas) carrega `imc.js` e `workoutGenerator.js` com o Babel do projeto e imprime as tabelas da seção 2; os números acima vêm dele.
 Se a decisão for aplicar A, B ou C, o teste de regressão equivalente entra junto, em Vitest.
+
+## 6. Aplicado: opção A + E (ponto central `src/utils/planForAge.js`)
+
+Sem editar `workoutGenerator.js` nem `imc.js` (um teste confere). Todos os pontos de chamada passam por `planForAge.js`
+(`generatePlanForAge`, `hydratePlanForAge`, `recommendationsForAge`, `effectiveGoals`); um teste varre `src/` e falha se alguém chamar o gerador direto.
+
+- **Adultos** (`ageGroup` diferente de `under18`): os valores passam sem mudança. Provado por: série idêntica à do gerador direto (todos os combos, categorias, objetivos, sexos e faixas), hash das 1440 recomendações de adulto, e o hash das 1728 combinações de `imc.js` continua o mesmo.
+- **Menores de 18:** a categoria de IMC de adulto é descartada (séries, descanso, cardio e notas não dependem dela) e "Emagrecer" vale como "Saúde geral", igual à área Saúde. O ajuste próprio de menores (volume até 0,9, sem impacto, nota de supervisão) continua em `imc.js`.
+- Os dados gravados (`@duo_user.imcCategory`) não mudam; o ajuste é feito na hora de montar a série.
+
+Antes (gerador direto) -> depois (`planForAge`), menor de 18, ELITE, iniciante, 3 dias, 60 min, série A:
+
+| Categoria | Objetivo | Cardio no início | Séries (média) | Descanso | Exercícios | Notas |
+|---|---|---|---|---|---|---|
+| abaixo do peso | - | não | 3,11 | 83 s -> 53 s | 9 | 3 -> 1 |
+| sobrepeso | - | sim -> não | 3,11 | 40 s -> 53 s | 10 -> 9 | 3 -> 1 |
+| obesidade I e II | - | não | 2,11 -> 3,11 | 83 s -> 53 s | 9 | 3 -> 1 |
+| qualquer | Emagrecer | sim -> não | (2,11 -> 3,11 em obesidade) | 33 s -> 53 s | 10 -> 9 | menos 2 |
+| nenhuma / normal | qualquer | sem mudança | sem mudança | sem mudança | sem mudança | sem mudança |
+
+Adulto (26-35), mesma configuração: todas as linhas idênticas antes e depois (ex.: sobrepeso 40 s com cardio; Emagrecer 33 s com cardio; obesidade 2,11 séries e 83 s).
