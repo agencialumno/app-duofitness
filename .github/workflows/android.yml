@@ -35,6 +35,11 @@ jobs:
       EXPO_PUBLIC_APP_KEY: ${{ secrets.EXPO_PUBLIC_APP_KEY }}
       # Variável (não secret) do repositório: o número vai dentro do app, qualquer pessoa consegue ler. Opcional.
       EXPO_PUBLIC_MARKETPLACE_WHATSAPP: ${{ vars.EXPO_PUBLIC_MARKETPLACE_WHATSAPP }}
+      # Contas (e-mail, Google e Apple): variáveis OPCIONAIS do repositório (não são segredo). Vazio = DESLIGADO,
+      # e o app fica idêntico ao de antes. Ligar só com EXPO_PUBLIC_AUTH_ENABLED=true.
+      EXPO_PUBLIC_AUTH_ENABLED: ${{ vars.EXPO_PUBLIC_AUTH_ENABLED }}
+      EXPO_PUBLIC_TERMS_URL: ${{ vars.EXPO_PUBLIC_TERMS_URL }}
+      EXPO_PUBLIC_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_PRIVACY_URL }}
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4.2.2
@@ -71,6 +76,7 @@ jobs:
             echo "- URL da API embutida no app: **$API**"
             echo "- APP_KEY embutida no app: **$KEY**"
             echo "- WhatsApp da loja embutido: **$WPP**"
+            echo "- Contas (EXPO_PUBLIC_AUTH_ENABLED): **$([ "${EXPO_PUBLIC_AUTH_ENABLED:-}" = "true" ] && echo ligadas || echo desligadas)**"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Conferir secrets de assinatura

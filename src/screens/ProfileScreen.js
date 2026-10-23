@@ -8,6 +8,7 @@ import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import { DemoCard } from '../components/DemoControls';
+import AccountCard from '../components/auth/AccountCard';
 import { resetToWelcome } from '../navigation/resetNavigation';
 import { computeStreak } from '../utils/health';
 
@@ -196,6 +197,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
       </View>
 
+      {!user?.isDemo && <AccountCard />}
       {user?.isDemo && <DemoCard navigation={navigation} />}
 
       <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>

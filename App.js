@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from './src/context/AppContext';
+import { AuthStateProvider } from './src/auth/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { createForcedError } from './src/utils/errorTestFlag';
@@ -49,12 +50,14 @@ function AppRoot() {
   if (isOnboarded === null || (!fontsLoaded && !fontError)) return null;
 
   return (
-    <AppProvider>
-      <NavigationContainer>
-        <StatusBar style="light" backgroundColor="#000000" />
-        <RootNavigator isOnboarded={isOnboarded} />
-      </NavigationContainer>
-    </AppProvider>
+    <AuthStateProvider>
+      <AppProvider>
+        <NavigationContainer>
+          <StatusBar style="light" backgroundColor="#000000" />
+          <RootNavigator isOnboarded={isOnboarded} />
+        </NavigationContainer>
+      </AppProvider>
+    </AuthStateProvider>
   );
 }
 
