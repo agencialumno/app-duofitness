@@ -216,9 +216,10 @@ describe.skipIf(!hasBash)('ios.yml: passo "Gravar versão e build number no Info
       'Conferir o projeto iOS gerado',
       'Gravar versão e build number no Info.plist',
       'pod install',
-      'Archive (assinatura automática',
+      'Archive (sem assinatura por padrão; sign_archive=true assina automático)',
       'Conferir versão e build number do archive',
-      'Exportar o .ipa e validar a assinatura',
+      'Exportar o .ipa e validar a assinatura de distribuição',
+      'Conferir os entitlements do .ipa (comparação com o projeto)',
       'Validar o .ipa e enviar ao TestFlight (altool)',
     ].map((n) => yml.indexOf(`- name: ${n}`));
     expect(order.every((i) => i > -1)).toBe(true);
