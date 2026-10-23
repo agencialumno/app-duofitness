@@ -39,13 +39,40 @@ ffmpeg -i squat.mp4 -frames:v 1 -q:v 5 squat.jpg
 O mapa é **gerado** porque o Metro exige `require()` estático: nunca se aponta para um arquivo que não existe, então o
 bundle não quebra. Se apagar um arquivo, rode `npm run gen:media` de novo.
 
-## Ponto de extensão (player)
+## Player (expo-video)
 
-`src/components/ExerciseMedia.js` mostra a capa (ou o placeholder). Quando o `expo-video` for adotado (dependência nativa,
-exige novo build), passe `renderVideo` para o componente (ou troque o miolo dele) usando `media.video`. O parâmetro
-`autoplay` já vem falso quando o aparelho está com "Reduzir movimento".
+Com um vídeo no mapa gerado, `src/components/ExerciseMedia.js` usa `src/components/ExerciseVideoPlayer.js` (expo-video):
+
+- quadrado 1:1, `contentFit="cover"`, **loop**, **sem áudio** (`muted`) e sem interromper a música do usuário
+  (`audioMixingMode = "mixWithOthers"`); **sem controles nativos e sem Picture-in-Picture**; só reprodução em primeiro plano
+  (o plugin do expo-video **não** entra no `app.json`: ele só serve para segundo plano e PiP);
+- **autoplay** ao abrir a tela (quando o vídeo já está pronto); **pausa** ao perder o foco da tela e ao ir para o segundo plano;
+  libera o player ao sair;
+- botão **Pausar/Tocar** com rótulo para o leitor de tela ("Pausar vídeo de demonstração de ...");
+- **Reduzir movimento** ligado: mostra a capa e só toca quando a pessoa tocar no botão;
+- falha ao carregar: volta à capa (ou ao placeholder), sem mensagem de erro.
+
+Sem vídeo no mapa, o comportamento é o de sempre: capa ou placeholder com o selo "Vídeo em breve". `renderVideo`
+(prop do `ExerciseMedia`) troca o player por outro componente (usado nos testes).
 
 Flag `EXPO_PUBLIC_EXERCISE_VIDEOS`: ligada por padrão; com `false` a área "Como fazer" inteira some.
+
+## Testar UM vídeo no aparelho (sem commitar)
+
+Não há vídeo no repositório. Para ver o player num iPhone ou Android:
+
+1. Crie uma **branch descartável**: `git switch -c teste-video-plank`.
+2. Grave ou converta **um** vídeo no padrão acima (480x480, H.264, sem áudio, 3 a 6 s, até 400 KB) e salve:
+   - `assets/exercicios/plank.mp4`
+   - `assets/exercicios/plank.jpg` (capa JPEG até 80 KB)
+
+   (`plank` = Prancha Isométrica, o exercício mais usado nas séries A, B e C em todos os combos. Qualquer id da lista abaixo serve.)
+3. `npm run gen:media` e `node scripts/check-videos.mjs` (deve passar, sem erros).
+4. Gere o build de teste (`android.yml` ou `ios.yml` nessa branch). **Não** faça merge nem push dessa branch para a principal.
+5. No app: Exercícios → Prancha Isométrica → "Como fazer".
+6. Terminou: apague a branch (`git switch -` e `git branch -D teste-video-plank`). O mapa e os arquivos só existiram nela.
+
+Se você só quiser conferir o resto da estrutura, o `scripts/check-videos.mjs` e o mapa gerado já estão cobertos por testes com arquivos sintéticos.
 
 ## Lista de gravação
 
