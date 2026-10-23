@@ -6,7 +6,7 @@ import path from 'node:path';
 // ---------- Linhas de erro "cruas" (quando nenhuma causa foi reconhecida) ----------
 // NUNCA mostram conteúdo de arquivos do Firebase nem segredos: linhas suspeitas são omitidas e valores longos mascarados.
 export const ERROR_LINE_RE = /error:|Undefined symbol|No such module|fatal error|PhaseScriptExecution failed/i;
-const SENSITIVE_LINE_RE = /API_KEY|CLIENT_ID|REVERSED_CLIENT_ID|GCM_SENDER_ID|GOOGLE_APP_ID|current_key|mobilesdk_app_id|apiKey|AIza[0-9A-Za-z_-]{10,}|BEGIN [A-Z ]*PRIVATE KEY|service_account|<key>|<string>/i;
+const SENSITIVE_LINE_RE = /API_KEY|CLIENT_ID|REVERSED_CLIENT_ID|GCM_SENDER_ID|GOOGLE_APP_ID|current_key|mobilesdk_app_id|apiKey|AIza[0-9A-Za-z_-]{10,}|BEGIN [A-Z ]*PRIVATE KEY|service[_]account|<key>|<string>/i;
 
 export function sanitizeLine(line) {
   let s = String(line).replace(/\r/g, '').slice(0, 400);

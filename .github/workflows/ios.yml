@@ -183,8 +183,21 @@ jobs:
       # inofensivo aqui: o npm ci já rodou e nenhum passo seguinte lê esses scripts.
       - name: Gerar projeto iOS (expo prebuild)
         run: |
-          set -euo pipefail
-          npx expo prebuild --platform ios --no-install
+          set -uo pipefail
+          # O log vai para a mesma pasta do artifact xcodebuild-logs, que sobe também quando o prebuild ou o pod install falham.
+          LOG_DIR="$RUNNER_TEMP/xcodebuild-logs"
+          mkdir -p "$LOG_DIR"
+          npx expo prebuild --platform ios --no-install 2>&1 | tee "$LOG_DIR/prebuild.log"
+          RC=${PIPESTATUS[0]}
+          if [ "$RC" -ne 0 ]; then
+            node scripts/ios-log-hints.mjs "$LOG_DIR/prebuild.log" --stage prebuild || true
+            exit "$RC"
+          fi
+
+      # Só com Firebase: prova que o Podfile gerado tem o remédio do RNFB (forceStaticLinking e os ajustes do plugin).
+      - name: Conferir o Podfile do Firebase
+        if: env.FIREBASE_ENABLED == 'true'
+        run: node scripts/check-firebase-podfile.mjs
 
       # Cada checagem diz qual falhou e o que era esperado (nada de "grep -q" mudo sob set -e).
       - name: Conferir o projeto iOS gerado
@@ -225,9 +238,16 @@ jobs:
       - name: pod install
         working-directory: ios
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          LOG_DIR="$RUNNER_TEMP/xcodebuild-logs"
+          mkdir -p "$LOG_DIR"
           pod --version
-          pod install
+          pod install 2>&1 | tee "$LOG_DIR/pod-install.log"
+          RC=${PIPESTATUS[0]}
+          if [ "$RC" -ne 0 ]; then
+            node ../scripts/ios-log-hints.mjs "$LOG_DIR/pod-install.log" --stage pod-install || true
+            exit "$RC"
+          fi
           if [ -z "$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)" ]; then
             echo "::error::O pod install terminou, mas não gerou o .xcworkspace em ios/. Esperado: ios/<Nome>.xcworkspace."
             ls -la
@@ -299,7 +319,7 @@ jobs:
           fi
 
           if [ "$RC" -ne 0 ]; then
-            node scripts/ios-log-hints.mjs "$HINT_LOG" || true
+            node scripts/ios-log-hints.mjs "$HINT_LOG" --stage archive || true
             exit "$RC"
           fi
           if [ ! -d "$ARCHIVE" ]; then
@@ -438,6 +458,17 @@ jobs:
             echo ""
             echo "Modo de validação: o archive foi gerado, a assinatura de distribuição conferida e o .ipa validado no App Store Connect (altool --validate-app). Rode de novo com \`upload=true\` (ou suba a tag \`ios-vX.Y.Z\`) para enviar."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Diagnóstico do Pods (sem segredos) junto dos logs, e sanitização dos logs ANTES do artifact: linhas que pareçam
+      # conteúdo de arquivos do Firebase ou segredos são omitidas. O GoogleService-Info.plist nunca é copiado.
+      - name: Preparar logs para o artifact (diagnóstico do Podfile e sanitização)
+        if: failure()
+        run: |
+          LOG_DIR="$RUNNER_TEMP/xcodebuild-logs"
+          mkdir -p "$LOG_DIR/diag"
+          cp ios/Podfile ios/Podfile.properties.json ios/Podfile.lock "$LOG_DIR/diag/" 2>/dev/null || true
+          node scripts/ios-log-hints.mjs --sanitize-dir "$LOG_DIR"
+          node scripts/ios-log-hints.mjs --sanitize-dir "$LOG_DIR/diag"
 
       # Logs só do xcodebuild (sem segredos), guardados por pouco tempo, só quando algo falha.
       - uses: actions/upload-artifact@v4.6.2

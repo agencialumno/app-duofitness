@@ -94,6 +94,7 @@ beforeEach(() => {
   mkdirSync(path.join(work, 'ios', 'DuoFitness.xcworkspace'), { recursive: true });
   mkdirSync(path.join(work, 'scripts'), { recursive: true });
   writeFileSync(path.join(work, 'scripts', 'ios-log-hints.mjs'), readFileSync(HINTS));
+  writeFileSync(path.join(work, 'scripts', 'ios-log-sanitize.mjs'), readFileSync(path.join(REPO, 'scripts/ios-log-sanitize.mjs'))); // importado pelo ios-log-hints
   mkdirSync(path.join(work, 'tmp'), { recursive: true });
   for (const f of ['calls.txt', 'github_env.txt', 'summary.md']) writeFileSync(path.join(work, f), '');
 });
