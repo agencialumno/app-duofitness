@@ -90,3 +90,13 @@ Sintoma: `expo-apple-authentication` e `expo-crypto` "não estão instalados" no
 - Mensagem final do check, quando falha com Firebase: "Ordem esperada dos passos com Firebase: npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking", mais a causa (em `node_modules` mas fora do `package.json`).
 
 **Verificado localmente (simulação do CI):** instalador com a flag; `check-autolinking` nas duas plataformas com a flag (passa) e sem (passa, 9 módulos); `expo-doctor` 18/18 e `expo install --check` ok com os módulos no `package.json`; prebuild do Android com Firebase aplica o Google Services; testes de ordem que executam o `firebase-prepare` de verdade sobre o YAML real (3 cenários por workflow). **Não verificado:** a execução real no GitHub Actions e o `pod install`/compilação do iOS.
+
+## Correção do archive iOS com Firebase (erro do RNFBApp, exit 65)
+
+Sintoma: `include of non-modular header inside framework module 'RNFBApp...'` (RCTConvert.h, RCTBridgeModule.h, RCTEventEmitter.h; `-Werror,-Wnon-modular-include-in-framework-module`) e `PrecompileModule ... RNFBApp`, depois de o `pod install` passar (React-Core-prebuilt presente).
+
+Remédio documentado (5 linhas): (1) `expo-build-properties` com `useFrameworks: static` + `forceStaticLinking: [RNFBApp, RNFBAuth]` (RNFB #8657, Expo #39607/PR #39742); (2) reserva: `buildReactNativeFromSource: true` (lento); (3) o podspec do RNFB 23.8.8 ainda lê `$RNFirebaseAsStaticFramework`; (4) o `CLANG_ALLOW_NON_MODULAR_INCLUDES...` é relatado por usuários, mas a Expo desaconselha usar em todos os pods, então ficou só nos pods RNFB*; (5) RNFB 24+/Expo 55+ muda o quadro (SPM/dinâmico), esta correção é da geração Expo 54 / RNFB 23.x.
+
+O que mudou (só com `FIREBASE_ENABLED=true`; builds sem a flag intactos, provado por teste e pelo job `ios-prebuild` do CI): `plugins/withFirebaseOptional.js` (forceStaticLinking), `plugins/withFirebaseIosFix.js` (Podfile idempotente, falha com mensagem clara se o template mudar), `scripts/ios-log-hints.mjs` (nova causa + 40 linhas de erro sanitizadas) e `scripts/ios-log-sanitize.mjs`, `scripts/check-firebase-podfile.mjs`, `ios.yml` (logs do prebuild e do pod install no artifact; Podfile conferido; logs sanitizados) e `ci.yml` (job `ios-prebuild-firebase`: iOS com plist falso, `ruby -c`, idempotência). Medições em `docs/medicoes-fase0.md` (seção 5).
+
+**Não verificado:** a compilação do archive em macOS. Se ela falhar agora com um erro nativo DIFERENTE do Firebase/RNFBApp, o combinado é parar e escrever `docs/avaliacao-sdk-js.md` (não escrito: a condição não ocorreu).

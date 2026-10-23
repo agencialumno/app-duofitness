@@ -55,3 +55,36 @@ Referência (histórico dos builds assinados antes desta etapa, execuções manu
 - Política de senha: [Google Identity Platform](https://docs.cloud.google.com/identity-platform/docs/password-policy?hl=en); limites do Auth: [firebase.google.com/docs/auth/limits](https://firebase.google.com/docs/auth/limits).
 - Diretriz 4.8: [fórum de desenvolvedores da Apple](https://developer.apple.com/forums/thread/762647) (texto oficial: developer.apple.com/app-store/review/guidelines).
 - Incidentes (ANPD): [Mattos Filho](https://www.mattosfilho.com.br/unico/regulamento-incidente-seguranca/), [CERT.br](https://forum.cert.br/forum2024/slides/forumcsirts2024-opiceblum.pdf).
+
+## 5. iOS com Firebase (conta-firebase) x sem Firebase (conta-ui): medição real
+
+Fonte: execuções do `ios.yml` (manual, `upload=false` na conta-firebase; a conta-ui enviou ao TestFlight), lidas depois com `gh run view` (somente leitura).
+
+| | conta-ui (run 39947928953) | conta-firebase (run 39953174483, **falhou no archive**) | Razão |
+|---|---|---|---|
+| `pod install` | 35 s | 88 s | **2,5x** |
+| Archive (assinatura automática) | 213 s (ok) | 191 s e **FALHOU** (exit 65) | sem comparação (o archive quebrou) |
+| Job inteiro | 459 s (inclui export e envio ao TestFlight) | 322 s (parou no archive) | sem comparação |
+
+Leitura contra o critério combinado ("o build iOS ficar **mais de 2x** mais lento **ou quebrar**: reavaliar o SDK JS antes de seguir"):
+- **Quebrou** (erro do RNFBApp: "include of non-modular header inside framework module", com o React Native pré-compilado). O critério de saída foi **atingido** nesta primeira tentativa.
+- O `pod install` já está a **2,5x** (acima de 2x), embora seja só ~1 minuto; o que decide é o archive (a compilação), ainda **não medido** com sucesso.
+- Por decisão sua, antes de reavaliar o SDK foi aplicado o remédio documentado (ver abaixo). **Próxima medição:** rodar o `ios.yml` (`upload=false`) na conta-firebase e preencher a coluna "depois da correção":
+
+| | conta-ui | conta-firebase DEPOIS da correção | Razão (limite: 2x) |
+|---|---|---|---|
+| `pod install` | 35 s | _preencher_ | |
+| Archive | 213 s | _preencher_ | |
+| Resultado | ok | _preencher_ | |
+
+Se o archive passar, mas a razão da compilação for maior que 2x, ou se falhar com erro nativo DIFERENTE do Firebase/RNFBApp, **pare** e use `docs/avaliacao-sdk-js.md` (só será escrito nesse caso, sem implementar nada).
+
+### Remédio documentado para o erro "non-modular header" (RNFB com frameworks estáticos, Expo SDK 54)
+
+1. RNFB #8657 (central, "Solved!") e Expo #39607 (fechado em 26/09/2025, PR #39742): usar `expo-build-properties` com `ios.useFrameworks: "static"` **e** `ios.forceStaticLinking: ["RNFBApp", "RNFBAuth", ...]` (só os pods RNFB usados). Os pods RNFB viram bibliotecas estáticas e deixam de ser frameworks, então o header não modular do React Native pré-compilado deixa de ser erro. A documentação do `expo-build-properties` descreve `forceStaticLinking` exatamente para "pods... especialmente os binários pré-compilados do React Native" que falham por headers não modulares.
+2. Reserva documentada: `ios.buildReactNativeFromSource: true` (compila o RN do código-fonte; "aumenta bastante o tempo de build", 10 a 13 min no EAS segundo os relatos).
+3. O RNFB não documenta mais o `$RNFirebaseAsStaticFramework` para este caso, mas o podspec da 23.8.8 ainda o lê (`s.static_framework`); foi acrescentado como cinto e suspensório.
+4. `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES` em post_install é relatado por usuários (Expo #39607, #8960), mas um mantenedor da Expo **desaconselha** (pode causar outros erros) e um usuário relatou que não resolveu. Foi aplicado só nos pods `RNFB*`, e não em todos.
+5. Aviso: o RNFB 24+/Expo 55+ muda o quadro (SPM, `useFrameworks: "dynamic"`, sem `forceStaticLinking`). Esta correção vale para a geração Expo 54 / RNFB 23.x fixada aqui.
+
+Implementação: `plugins/withFirebaseOptional.js` (forceStaticLinking) e `plugins/withFirebaseIosFix.js` (Podfile), só com `FIREBASE_ENABLED=true`; verificada no CI Linux (`ios-prebuild-firebase`: `ruby -c`, `scripts/check-firebase-podfile.mjs`, idempotência) e no `ios.yml` (passo "Conferir o Podfile do Firebase"). A compilação real só o macOS confirma.

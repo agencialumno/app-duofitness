@@ -71,3 +71,7 @@ Pré-requisito: um build com `EXPO_PUBLIC_AUTH_ENABLED=true` e, para Firebase re
 7. **VoiceOver/TalkBack:** a checklist anuncia "N de 7 requisitos" sem repetir a cada tecla; o campo focado fica visível com o teclado aberto; fonte grande no sistema não corta nada.
 8. **Perfil > Conta:** e-mail e status; "Sair da conta" mantém os treinos; "Excluir conta" pede senha e a palavra EXCLUIR; depois a conta não entra mais. Com Apple: a exclusão revoga o token (conferir em Ajustes > Apple ID > Entrar com Apple).
 9. **Modo Demo:** nenhum cartão de conta, nenhuma chamada de rede.
+
+## 7. Se o `ios.yml` com Firebase falhar de novo
+
+Baixe o artifact `xcodebuild-logs-<run>` (sobe em qualquer falha, inclusive do prebuild e do pod install; já sanitizado) e leia o resumo do job: o `ios-log-hints` diz a causa e a ação, ou mostra as primeiras 40 linhas de erro. Confira no resumo a linha "Podfile COM Firebase: ok". Depois de uma execução bem-sucedida, preencha a tabela "depois da correção" em `docs/medicoes-fase0.md` (limite: 2x).
