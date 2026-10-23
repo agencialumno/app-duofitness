@@ -1,41 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { AccessibilityInfo, Image, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import { getExerciseMedia } from '../data/exerciseVideos';
+import { useReduceMotionState } from '../hooks/useReduceMotion';
+import { getTestVideoSource } from '../utils/mediaTestFlag';
+import ExerciseVideoPlayer from './ExerciseVideoPlayer';
 
-// Área "Como fazer" do exercício: quadrada (1:1, proporção fixa), com a capa se existir ou um placeholder
-// escuro com ícone amarelo e o selo "Vídeo em breve".
-//
-// PONTO DE EXTENSÃO DO PLAYER: quando o expo-video entrar (dependência nativa, exige novo build), passe
-// `renderVideo` (ou troque o miolo deste componente). Ele recebe { media, exercise, autoplay } e devolve o player
-// (usando media.video e media.poster). Sem `renderVideo`, ou sem arquivo de vídeo, aparece a capa/placeholder.
-// Formato e como adicionar arquivos: docs/videos-exercicios.md.
-
-// "Reduzir movimento" do sistema: o player futuro não deve iniciar sozinho nem ficar em loop com ele ligado.
-function useReduceMotion() {
-  const [reduce, setReduce] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => { if (alive) setReduce(!!v); }).catch(() => {});
-    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => setReduce(!!v));
-    return () => { alive = false; sub?.remove?.(); };
-  }, []);
-  return reduce;
-}
-
+// Área "Como fazer" do exercício: quadrada (1:1, proporção fixa).
+//   - Com vídeo no mapa gerado (src/data/exerciseVideos.js): player (ExerciseVideoPlayer, expo-video).
+//   - Sem vídeo: a capa se existir, senão um placeholder escuro com ícone amarelo e o selo "Vídeo em breve".
+//   - Vídeo que falha ao carregar: volta à capa/placeholder, sem mensagem de erro.
+// `renderVideo` (opcional) substitui o player: recebe { media, exercise, autoplay, onFail } e devolve o elemento
+// (usado nos testes). Formato e como adicionar arquivos: docs/videos-exercicios.md.
 export default function ExerciseMedia({ exercise, renderVideo }) {
-  const media = getExerciseMedia(exercise?.id);
   const name = exercise?.name || 'exercício';
-  const reduceMotion = useReduceMotion();
+  const { reduce: reduceMotion, known: motionKnown } = useReduceMotionState();
+  const [failed, setFailed] = useState(false);
 
-  // `autoplay` é falso com "Reduzir movimento": o player mostra a capa parada e o usuário toca para reproduzir.
-  if (media?.video && typeof renderVideo === 'function') {
-    return <View style={styles.box}>{renderVideo({ media, exercise, autoplay: !reduceMotion })}</View>;
+  let media = getExerciseMedia(exercise?.id);
+  // Teste na web (?duoTestVideo=1): um vídeo criado pelo próprio teste no navegador. Inerte em iOS e Android.
+  const testVideo = getTestVideoSource({
+    platformOS: Platform.OS,
+    search: typeof window !== 'undefined' && window.location ? window.location.search : '',
+    uri: typeof window !== 'undefined' ? window.__duoTestVideoUri : undefined,
+  });
+  if (!media && testVideo) media = { video: testVideo, poster: null, duracaoSeg: null, alt: `Vídeo de demonstração de ${name}` };
+
+  if (media?.video && !failed) {
+    const onFail = () => setFailed(true);
+    return (
+      <View style={styles.box} testID="exercise-media-video">
+        {typeof renderVideo === 'function'
+          ? renderVideo({ media, exercise, autoplay: !reduceMotion, onFail })
+          : <ExerciseVideoPlayer media={media} exercise={exercise} reduceMotion={reduceMotion} motionKnown={motionKnown} onFail={onFail} />}
+      </View>
+    );
   }
 
-  // Texto lido pelo VoiceOver/TalkBack (e texto alternativo da capa).
-  const label = `${media?.alt || `Vídeo de demonstração de ${name}`} em breve`;
+  // Capa ou placeholder. Se havia vídeo e ele falhou, não há selo "em breve" (o arquivo existe).
+  const base = media?.alt || `Vídeo de demonstração de ${name}`;
+  const label = failed ? `${base} indisponível no momento` : `${base} em breve`;
 
   return (
     <View style={styles.box} accessible accessibilityRole="image" accessibilityLabel={label} testID="exercise-media">
@@ -46,10 +51,12 @@ export default function ExerciseMedia({ exercise, renderVideo }) {
           <Ionicons name="play-circle-outline" size={56} color={COLORS.primary} />
         </View>
       )}
-      <View style={styles.badge}>
-        <Ionicons name="videocam-outline" size={14} color={COLORS.black} />
-        <Text style={styles.badgeText}>Vídeo em breve</Text>
-      </View>
+      {!failed && (
+        <View style={styles.badge}>
+          <Ionicons name="videocam-outline" size={14} color={COLORS.black} />
+          <Text style={styles.badgeText}>Vídeo em breve</Text>
+        </View>
+      )}
     </View>
   );
 }

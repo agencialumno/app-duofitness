@@ -23,6 +23,9 @@ export default defineConfig({
   // Stubs só para os módulos de React Native que o backend não tem (usados por testes de componentes).
   resolve: {
     alias: {
+      '@react-navigation/native': stub('navigation.ts'),
+      '@expo/vector-icons': stub('vector-icons.ts'),
+      'expo-video': stub('expo-video.ts'),
       'react-native-safe-area-context': stub('safe-area.ts'),
       '@react-native-async-storage/async-storage': stub('async-storage.ts'),
       'react-native': stub('react-native.ts'),
