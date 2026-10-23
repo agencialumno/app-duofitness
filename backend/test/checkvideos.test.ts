@@ -255,10 +255,11 @@ describe('integração com o CI', () => {
       expect(v, f).toBeLessThan(y.indexOf('run: npm ci'));
     }
   });
-  it('package.json tem gen:media e check:videos, e nenhuma dependência nova de vídeo', () => {
+  it('package.json tem gen:media e check:videos e só o expo-video como biblioteca de vídeo', () => {
     const pkg = JSON.parse(read('package.json'));
     expect(pkg.scripts['gen:media']).toBe('node scripts/gen-exercise-media.mjs');
     expect(pkg.scripts['check:videos']).toBe('node scripts/check-videos.mjs');
-    expect(Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).join(' ')).not.toMatch(/expo-video|expo-av|video/i);
+    const deps = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+    expect(deps.filter((d) => /video|expo-av|player/i.test(d))).toEqual(['expo-video']);
   });
 });
