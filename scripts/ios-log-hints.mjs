@@ -6,11 +6,33 @@
 //   --unsigned  o archive foi feito SEM assinatura (time Apple sem dispositivos); acrescenta a dica de
 //               registrar um iPhone para voltar ao caminho normal.
 // Saída: código 0 se achou alguma causa conhecida, 1 se não reconheceu nada.
-import { readFileSync } from 'node:fs';
+//
+// Outros usos:
+//   node scripts/ios-log-hints.mjs --sanitize-dir <pasta>   reescreve no lugar os .log da pasta, omitindo linhas que possam
+//                                                          ter conteúdo de arquivos do Firebase ou segredos (antes de subir o artifact)
+//   --stage <nome>   rótulo da etapa (prebuild, pod-install, archive...) usado na mensagem de "causa não reconhecida"
+// Quando NENHUMA causa é reconhecida, imprime as primeiras 40 linhas com "error:", "Undefined symbol", "No such module",
+// "fatal error" ou "PhaseScriptExecution failed", sanitizadas (ver scripts/ios-log-sanitize.mjs), e as grava no resumo do job.
+import { appendFileSync, readFileSync } from 'node:fs';
+import { extractErrorLines, sanitizeDir } from './ios-log-sanitize.mjs';
 
 const args = process.argv.slice(2);
+const sanitizeIdx = args.indexOf('--sanitize-dir');
+if (sanitizeIdx > -1) {
+  const dir = args[sanitizeIdx + 1];
+  try {
+    const r = sanitizeDir(dir);
+    console.log(`Logs sanitizados em ${dir}: ${r.files} arquivo(s), ${r.changed} com linhas omitidas.`);
+    process.exit(0);
+  } catch (e) {
+    console.log(`Não consegui sanitizar ${dir}: ${String(e.message).split('\n')[0]}`);
+    process.exit(0);
+  }
+}
+const stageIdx = args.indexOf('--stage');
+const stage = stageIdx > -1 ? args[stageIdx + 1] : 'xcodebuild';
 const unsigned = args.includes('--unsigned');
-const file = args.find((a) => !a.startsWith('--'));
+const file = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--stage');
 if (!file) {
   console.error('Uso: node scripts/ios-log-hints.mjs <arquivo-de-log>');
   process.exit(2);
@@ -76,6 +98,21 @@ const RULES = [
     re: /already been used|ITMS-90189|Redundant Binary Upload|bundle version must be higher|ITMS-4238/i,
     msg: 'O número do build já foi usado para esta versão. O build number é o run_number do workflow: não renomeie o ios.yml (a contagem reinicia) e suba a versão no app.json se precisar recomeçar.',
   },
+  {
+    id: 'rnfb-nao-modular',
+    re: /include of non-modular header inside framework module|Wnon-modular-include-in-framework-module|PrecompileModule[^\n]*RNFB|ExplicitPrecompiledModules\/RNFB/i,
+    msg: 'CAUSA: o pod do React Native Firebase (RNFBApp/RNFBAuth) foi compilado como FRAMEWORK (use_frameworks static) e importa headers do React Native pré-compilado (RCTConvert.h, RCTBridgeModule.h...), que não são modulares; com -Werror isso vira erro. AÇÃO: confira no passo "Conferir o Podfile do Firebase" (resumo do job) que o Podfile.properties.json tem ios.forceStaticLinking com RNFBApp e RNFBAuth (remédio documentado do RNFB #8657 e do Expo #39607) e que o Podfile tem os marcadores [withFirebaseIosFix] (plugins/withFirebaseIosFix.js). Se persistir com tudo isso presente, o recurso documentado de reserva é expo-build-properties ios.buildReactNativeFromSource=true (compila o React Native do código-fonte; build bem mais lento). Se ainda assim falhar, pare e reavalie o Firebase JS SDK (critério combinado).',
+  },
+  {
+    id: 'rn-modulemap',
+    re: /React-use-frameworks\.modulemap|module map file '[^']*React[^']*' not found/i,
+    msg: 'CAUSA (relatada no RNFB #8960, ainda não confirmada para o SDK 54): o React Native pré-compilado (React-Core-prebuilt) com use_frameworks static perdeu o module map. AÇÃO: use a reserva documentada ios.buildReactNativeFromSource=true no expo-build-properties (ou RCT_USE_PREBUILT_RNCORE=0 no ambiente do pod install) e registre o resultado em docs/medicoes-fase0.md.',
+  },
+  {
+    id: 'pods-swift-estatico',
+    re: /Swift pods? cannot yet be integrated as static libraries|does not define modules\. To opt into those targets generating module maps/i,
+    msg: 'CAUSA: um pod Swift do Firebase precisa de módulos e o Podfile não está com use_frameworks. AÇÃO: confira se o Podfile.properties.json tem ios.useFrameworks=static (plugin withFirebaseOptional, só com FIREBASE_ENABLED=true e o arquivo GoogleService-Info.plist) e se o passo de preparo do Firebase rodou antes do prebuild.',
+  },
 ];
 
 let found = false;
@@ -100,6 +137,16 @@ for (const line of itms) {
 }
 
 if (!found) {
-  out('Não reconheci a causa no log do xcodebuild. Baixe o artifact "xcodebuild-logs" desta execução e procure a primeira linha com "error:".');
+  out(`Não reconheci a causa no log (${stage}). Baixe o artifact "xcodebuild-logs" desta execução e procure a primeira linha com "error:". Abaixo, as primeiras linhas de erro (sanitizadas).`);
+  const lines = extractErrorLines(log, 40);
+  if (lines.length === 0) lines.push('(nenhuma linha com error:, Undefined symbol, No such module, fatal error ou PhaseScriptExecution failed)');
+  console.log(`::group::Primeiras linhas de erro (${stage})`);
+  for (const l of lines) console.log(l);
+  console.log('::endgroup::');
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    try {
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### Primeiras linhas de erro (${stage}, sanitizadas)\n\n\`\`\`\n${lines.join('\n')}\n\`\`\`\n`);
+    } catch { /* resumo indisponível */ }
+  }
 }
 process.exit(found ? 0 : 1);
