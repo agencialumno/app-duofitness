@@ -4,7 +4,7 @@ Nada aqui é aplicado automaticamente. **Nenhum segredo** fica neste diretório 
 
 | Arquivo | Para quê |
 |---|---|
-| `native-deps.json` | versões EXATAS dos módulos nativos de conta, instalados só com `FIREBASE_ENABLED=true` por `scripts/install-firebase-deps.mjs` (`--no-save`) |
+| `native-deps.json` | versões EXATAS dos módulos nativos de conta, lido por `scripts/install-firebase-deps.mjs`, que só roda com `FIREBASE_ENABLED=true` e grava no `package.json` do workspace do CI (`--save-exact`; o autolinking só enxerga `dependencies`). Módulos do Expo: versão do SDK (`bundledNativeModules.json`); demais: versão exata deste arquivo |
 | `firestore.rules` | regras de **referência** do Firestore (o Firestore ainda não existe no projeto) |
 | `storage.rules` | regras de **referência** do Storage (o Storage ainda não existe no projeto) |
 
@@ -15,12 +15,12 @@ Nada aqui é aplicado automaticamente. **Nenhum segredo** fica neste diretório 
 3. O workflow roda `scripts/firebase-prepare.mjs <plataforma>`: decodifica para `.firebase-config/` (ignorado pelo git), valida o
    pacote/bundle id `com.duofitness.app`, mascara a chave de API nos logs e liga `FIREBASE_ENABLED` para os passos seguintes.
    Sem o secret, o build segue SEM Firebase (aviso no log).
-4. `scripts/install-firebase-deps.mjs` instala os módulos nativos; o plugin `plugins/withFirebaseOptional.js` aplica
+4. `scripts/install-firebase-deps.mjs` instala os módulos nativos (antes do prebuild e do `check-autolinking.mjs --platform <android|ios>`); o plugin `plugins/withFirebaseOptional.js` aplica
    Google Services (Android), frameworks estáticos, Apple e URL scheme do Google (iOS) só se o arquivo da plataforma existir.
 5. Ao fim do job (mesmo com falha) `scripts/firebase-prepare.mjs cleanup` apaga os arquivos.
 
 Para desenvolver localmente com Firebase: `FIREBASE_ENABLED=true node scripts/install-firebase-deps.mjs`, coloque os arquivos em
-`.firebase-config/` (ignorado pelo git) e rode o prebuild com `FIREBASE_ENABLED=true`.
+`.firebase-config/` (ignorado pelo git) e rode o prebuild com `FIREBASE_ENABLED=true`. O instalador altera `package.json` e `package-lock.json` localmente: ao terminar, `git checkout package.json package-lock.json && npm prune`.
 
 ## Versões
 

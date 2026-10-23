@@ -2,7 +2,7 @@
 
 Nada abaixo foi feito por mim: exige as suas contas (Firebase, Google Cloud, Apple, GitHub), o seu aparelho ou o seu advogado.
 Os builds de hoje seguem idênticos enquanto `EXPO_PUBLIC_AUTH_ENABLED` e `FIREBASE_ENABLED` estiverem vazias.
-Os módulos nativos do Firebase NÃO estão no `package.json`: o workflow só os instala com `FIREBASE_ENABLED=true` (`scripts/install-firebase-deps.mjs`).
+Os módulos nativos do Firebase NÃO estão no `package.json` do repositório: com `FIREBASE_ENABLED=true` o workflow os grava no `package.json` do runner (`scripts/install-firebase-deps.mjs`, antes do prebuild e do check-autolinking; nada é commitado). Se o passo "Conferir autolinking" falhar com Firebase ligado, a mensagem mostra a causa e a ordem esperada: `npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking`.
 
 ## 1. Console do Firebase (projeto `duofitness-app`)
 

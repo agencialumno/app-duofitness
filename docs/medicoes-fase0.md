@@ -32,7 +32,7 @@ Referência (histórico dos builds assinados antes desta etapa, execuções manu
 | Config do iOS com Firebase (introspecção, o prebuild do iOS não roda no Windows) | `com.apple.developer.applesignin` no entitlement, URL scheme do Google (`REVERSED_CLIENT_ID`) no Info.plist |
 | Bundle JS Android (Hermes) com os módulos instalados vs. sem eles | 3,66 MB vs. 3,47 MB (+0,19 MB, +5,6%) |
 | Bundle sem os módulos instalados | compila normalmente (`require` opcional dentro de `try/catch`) |
-| Módulos instalados com `--no-save` | 76 pacotes em ~45 s; `package.json` e lockfile intactos |
+| Instalação dos módulos de conta (`--save-exact` no workspace) | 76 pacotes em ~40 s; grava no `package.json` do workspace (o autolinking só vê `dependencies`); no CI o runner é descartado |
 
 **Não medido:** `pod install` e compilação iOS com frameworks estáticos; compilação Gradle com Firebase; tamanho final do APK/IPA. Dependem do CI (workflow acima).
 
