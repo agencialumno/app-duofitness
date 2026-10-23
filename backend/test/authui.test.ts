@@ -73,7 +73,7 @@ describe('acessibilidade e teclado', () => {
     expect(read('src/screens/auth/SignInScreen.js')).toMatch(/textContentType="password"/);
   });
   it('nenhuma tela de conta usa Alert (não funciona na web e não é testável)', () => {
-    for (const f of authFiles) expect(read(f), f).not.toMatch(/\bAlert\b/);
+    for (const f of authFiles) expect(code(f), f).not.toMatch(/\bAlert\b/);
   });
 });
 
