@@ -1,7 +1,7 @@
 // scripts/check-autolinking.mjs (na raiz do app) rodado como processo externo, com a saída do
 // "expo-modules-autolinking resolve" simulada por arquivos temporários.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -28,17 +28,17 @@ function run(modules: string[], extraArgs: string[] = [], env: Record<string, st
   return { code: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
-const ALL = ['expo', 'expo-asset', 'expo-constants', 'expo-file-system', 'expo-font', 'expo-keep-awake', 'expo-modules-core'];
+const ALL = ['expo', 'expo-asset', 'expo-constants', 'expo-file-system', 'expo-font', 'expo-keep-awake', 'expo-modules-core', 'expo-video'];
 
 describe('check-autolinking.mjs', () => {
-  it('passa quando os 4 módulos obrigatórios estão no autolinking', () => {
+  it('passa quando os 5 módulos obrigatórios estão no autolinking', () => {
     const r = run(ALL);
     expect(r.code).toBe(0);
-    expect(r.out).toContain('Módulos obrigatórios presentes: expo-file-system, expo-asset, expo-font, expo-keep-awake');
+    expect(r.out).toContain('Módulos obrigatórios presentes: expo-file-system, expo-asset, expo-font, expo-keep-awake, expo-video');
     expect(r.out).not.toContain('::error');
   });
 
-  it.each(['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake'])('falha quando falta %s e diz como corrigir', (missing) => {
+  it.each(['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'])('falha quando falta %s e diz como corrigir', (missing) => {
     const r = run(ALL.filter((m) => m !== missing));
     expect(r.code).toBe(1);
     expect(r.out).toContain(`::error::${missing} não está no autolinking`);
@@ -48,7 +48,7 @@ describe('check-autolinking.mjs', () => {
   it('lista todos os módulos que faltam, não só o primeiro', () => {
     const r = run(['expo', 'expo-font']);
     expect(r.code).toBe(1);
-    for (const m of ['expo-file-system', 'expo-asset', 'expo-keep-awake']) expect(r.out).toContain(`::error::${m} `);
+    for (const m of ['expo-file-system', 'expo-asset', 'expo-keep-awake', 'expo-video']) expect(r.out).toContain(`::error::${m} `);
     expect(r.out).not.toContain('::error::expo-font ');
   });
 
@@ -93,5 +93,19 @@ describe('check-autolinking.mjs', () => {
     const r = spawnSync(process.execPath, [SCRIPT, '--root', REPO_ROOT], { encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'true' } });
     expect(`${r.stdout}${r.stderr}`).not.toContain('::error');
     expect(r.status).toBe(0);
+  });
+});
+
+describe('expo-video no app (reprodução em primeiro plano, sem Picture-in-Picture)', () => {
+  const root = path.resolve(__dirname, '../..');
+  const read = (f: string) => JSON.parse(readFileSync(path.join(root, f), 'utf8'));
+  it('é dependência direta do app (no topo, não aninhada)', () => {
+    expect(read('package.json').dependencies['expo-video']).toMatch(/^~?3\./);
+  });
+  it('o app.json não liga reprodução em segundo plano nem Picture-in-Picture (o plugin do expo-video é desnecessário)', () => {
+    const app = read('app.json');
+    const plugins = JSON.stringify(app.expo.plugins);
+    expect(plugins).not.toMatch(/expo-video/);
+    expect(JSON.stringify(app.expo)).not.toMatch(/supportsBackgroundPlayback|supportsPictureInPicture|UIBackgroundModes/);
   });
 });

@@ -18,7 +18,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake'];
+const REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'];
 // Resolvidos pelo Babel/Metro a partir da raiz do projeto.
 const RESOLVABLE_FROM_ROOT = ['babel-preset-expo'];
 

@@ -42,7 +42,7 @@ App mobile das academias container da Duo Fitness: o morador monta e segue a pr�
 - **O Modo Demo (feira) nunca chama a API.** `DEMO_USER.isDemo === true` desliga qualquer chamada de rede.
 - Mudanças pequenas e explicadas; não alterar telas e funcionalidades sem pedido.
 - Textos do app em português do Brasil.
-- **Módulos nativos Expo no topo de `node_modules`.** O autolinking não vê módulos aninhados (no SDK 52 o `expo-file-system` aninhado fez os ícones sumirem). Mantenha `expo-file-system`, `expo-asset`, `expo-font` e `expo-keep-awake` como dependências diretas; `scripts/check-autolinking.mjs` confere (roda no `ci.yml` e no `android.yml`).
+- **Módulos nativos Expo no topo de `node_modules`.** O autolinking não vê módulos aninhados (no SDK 52 o `expo-file-system` aninhado fez os ícones sumirem). Mantenha `expo-file-system`, `expo-asset`, `expo-font`, `expo-keep-awake` e `expo-video` como dependências diretas; `scripts/check-autolinking.mjs` confere (roda no `ci.yml` e no `android.yml`).
 - **Imagens PNG** (`assets/` e as citadas no `app.json` ou importadas em `src/`) precisam ser PNG de verdade, 8 bits por canal e sem entrelaçamento; o `logo.png` já quebrou o AAPT2 por ser um JPEG com extensão `.png`. Confira com `node scripts/check-pngs.mjs` (roda também no `ci.yml`).
 
 ## Chat do Personal Trainer IA (`AIPersonalTrainerScreen`)
