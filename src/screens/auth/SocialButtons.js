@@ -4,11 +4,8 @@ import React, { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
+import { showApple } from '../../auth/socialSupport';
 import { Notice, SecondaryButton } from '../../components/auth/AuthParts';
-
-export function showApple(capabilities, os = Platform.OS) {
-  return !!capabilities?.apple && os === 'ios';
-}
 
 export default function SocialButtons({ onSuccess, disabled }) {
   const { provider, capabilities } = useAuth();
@@ -31,7 +28,7 @@ export default function SocialButtons({ onSuccess, disabled }) {
   };
 
   const google = !!capabilities?.google;
-  const apple = showApple(capabilities);
+  const apple = showApple(capabilities, Platform.OS);
   if (!google && !apple) return null;
   return (
     <View style={{ gap: 12 }}>

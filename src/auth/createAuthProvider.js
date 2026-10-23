@@ -10,7 +10,12 @@ export function wantsFakeAuth(platformOS, search) {
 
 export function createAuthProvider({ enabled, platformOS, search, loadNative } = {}) {
   if (!enabled) return new NullAuthProvider({ reason: 'disabled' });
-  if (wantsFakeAuth(platformOS, search)) return new FakeAuthProvider();
+  if (wantsFakeAuth(platformOS, search)) {
+    const fake = new FakeAuthProvider();
+    // gancho de teste do smoke (só web + URL de teste): permite marcar o e-mail como verificado
+    if (typeof window !== 'undefined') window.__duoFakeAuth = fake;
+    return fake;
+  }
   if (platformOS !== 'web' && typeof loadNative === 'function') {
     try {
       const native = loadNative();

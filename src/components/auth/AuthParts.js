@@ -91,6 +91,8 @@ export function PrimaryButton({ label, onPress, disabled, loading, testID }) {
     <TouchableOpacity
       testID={testID}
       onPress={disabled || loading ? undefined : onPress}
+      disabled={!!(disabled || loading)}
+      aria-disabled={!!(disabled || loading)}
       activeOpacity={0.85}
       style={[styles.btn, (disabled || loading) && styles.btnDisabled]}
       accessibilityRole="button"
@@ -107,6 +109,8 @@ export function SecondaryButton({ label, onPress, icon, disabled, testID }) {
     <TouchableOpacity
       testID={testID}
       onPress={disabled ? undefined : onPress}
+      disabled={!!disabled}
+      aria-disabled={!!disabled}
       activeOpacity={0.8}
       style={[styles.btn2, disabled && styles.btnDisabled]}
       accessibilityRole="button"
@@ -226,6 +230,8 @@ export function ConfirmModal({ visible, title, children, confirmLabel, confirmDi
             <View style={{ height: SPACING.md }} />
             <TouchableOpacity
               onPress={confirmDisabled || busy ? undefined : onConfirm}
+              disabled={!!(confirmDisabled || busy)}
+              aria-disabled={!!(confirmDisabled || busy)}
               style={[styles.btn, danger && { backgroundColor: COLORS.error }, (confirmDisabled || busy) && styles.btnDisabled]}
               accessibilityRole="button"
               accessibilityLabel={confirmLabel}
