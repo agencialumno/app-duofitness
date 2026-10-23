@@ -1,0 +1,52 @@
+// REFERÊNCIA. NÃO APLICADA: o Firestore ainda NÃO existe no projeto (nem Storage). Estas regras são o ponto de partida
+// para quando houver sincronização, e devem ser revisadas e testadas com o Emulator antes de qualquer publicação.
+//
+// Princípios: nada é público; só quem está logado, com e-mail verificado, lê e grava o PRÓPRIO documento; o servidor
+// valida tipos e tamanhos; coleções desconhecidas ficam fechadas (negar por padrão); nada de dados de menores (a conta é 18+).
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+    function isOwner(uid) {
+      return verified() && request.auth.uid == uid;
+    }
+
+    // Perfil e preferências do próprio usuário. Exemplo de campos; ajustar quando o modelo de dados existir.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'goals', 'level', 'createdAt', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.goals is list
+        && request.resource.data.goals.size() <= 4;
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'goals', 'level', 'updatedAt'])
+        && request.resource.data.name.size() <= 80;
+      allow delete: if isOwner(uid);
+
+      // Séries e sessões do próprio usuário (tamanho limitado por documento).
+      match /workouts/{workoutId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && request.resource.data.size() <= 40;
+      }
+      match /sessions/{sessionId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && request.resource.data.size() <= 12;
+        allow update: if false; // sessões concluídas não mudam
+      }
+    }
+
+    // Todo o resto fica fechado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

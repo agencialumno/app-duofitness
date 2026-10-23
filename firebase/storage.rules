@@ -1,0 +1,25 @@
+// REFERÊNCIA. NÃO APLICADA: o Storage ainda NÃO existe no projeto. Regras de partida para um futuro uso (por exemplo,
+// foto de perfil), a revisar e testar com o Emulator antes de publicar. Nada é público; só o dono, com e-mail verificado,
+// grava imagens pequenas na própria pasta; tipos e tamanhos validados; todo o resto fechado.
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function verified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    match /users/{uid}/profile/{fileName} {
+      allow read: if verified() && request.auth.uid == uid;
+      allow write: if verified() && request.auth.uid == uid
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if verified() && request.auth.uid == uid;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

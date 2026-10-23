@@ -165,6 +165,17 @@ jobs:
 
       - run: npm ci
 
+      # ---- Firebase (conta): OPCIONAL. Sem a variável FIREBASE_ENABLED=true e sem o secret, nada disto acontece ----
+      - name: Firebase (opcional) - gravar a configuração dos secrets (ios)
+        env:
+          FIREBASE_REQUESTED: ${{ vars.FIREBASE_ENABLED }}
+          FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64: ${{ secrets.FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: node scripts/firebase-prepare.mjs ios
+
+      - name: Firebase (opcional) - instalar os módulos nativos de conta (sem alterar package.json)
+        if: env.FIREBASE_ENABLED == 'true'
+        run: node scripts/install-firebase-deps.mjs
+
       - name: Conferir autolinking (módulos Expo obrigatórios)
         run: node scripts/check-autolinking.mjs
 
@@ -447,3 +458,8 @@ jobs:
           rm -f "$RUNNER_TEMP"/altool-private-keys/AuthKey_*.p8 "$HOME"/.appstoreconnect/private_keys/AuthKey_*.p8
           rm -rf "$RUNNER_TEMP/ipa-export" "$RUNNER_TEMP/ipa-unzipped"
           rm -f "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP"/ExportOptions-*.plist
+
+      # Apaga a configuração do Firebase gravada a partir dos secrets (e as cópias geradas pelo prebuild), mesmo se algo falhar.
+      - name: Firebase (opcional) - apagar os arquivos de configuração
+        if: always()
+        run: node scripts/firebase-prepare.mjs cleanup
