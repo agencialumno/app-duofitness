@@ -235,7 +235,7 @@ jobs:
           FIREBASE_GOOGLE_SERVICES_JSON_B64: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_B64 }}
         run: node scripts/firebase-prepare.mjs android
 
-      - name: Firebase (opcional) - instalar os módulos nativos de conta (sem alterar package.json)
+      - name: Firebase (opcional) - instalar os módulos nativos de conta (grava no package.json do runner, para o autolinking ver)
         if: env.FIREBASE_ENABLED == 'true'
         run: node scripts/install-firebase-deps.mjs
 
@@ -255,7 +255,7 @@ jobs:
       # O autolinking só enxerga node_modules do topo. Módulo aninhado (como aconteceu com o
       # expo-file-system no SDK 52) fica fora do app e quebra o carregamento da fonte dos ícones.
       - name: Conferir autolinking (módulos Expo obrigatórios)
-        run: node scripts/check-autolinking.mjs
+        run: node scripts/check-autolinking.mjs --platform android
 
       - name: Build (APK e AAB)
         working-directory: android

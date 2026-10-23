@@ -172,12 +172,12 @@ jobs:
           FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64: ${{ secrets.FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64 }}
         run: node scripts/firebase-prepare.mjs ios
 
-      - name: Firebase (opcional) - instalar os módulos nativos de conta (sem alterar package.json)
+      - name: Firebase (opcional) - instalar os módulos nativos de conta (grava no package.json do runner, para o autolinking ver)
         if: env.FIREBASE_ENABLED == 'true'
         run: node scripts/install-firebase-deps.mjs
 
-      - name: Conferir autolinking (módulos Expo obrigatórios)
-        run: node scripts/check-autolinking.mjs
+      - name: Conferir autolinking do iOS (módulos Expo obrigatórios; com Firebase, também os de conta)
+        run: node scripts/check-autolinking.mjs --platform ios
 
       # O prebuild reescreve os scripts "android" e "ios" do package.json (vira "expo run:..."). Isso é
       # inofensivo aqui: o npm ci já rodou e nenhum passo seguinte lê esses scripts.

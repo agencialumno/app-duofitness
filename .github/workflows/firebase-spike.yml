@@ -56,6 +56,9 @@ jobs:
           echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
           echo "FIREBASE_ANDROID_CONFIG=$PWD/.firebase-config/google-services.json" >> "$GITHUB_ENV"
           FIREBASE_ENABLED=true node scripts/install-firebase-deps.mjs
+      - name: Conferir autolinking (android) com os módulos de conta
+        if: matrix.firebase == 'on'
+        run: node scripts/check-autolinking.mjs --platform android
       - name: Prebuild Android (tempo)
         run: |
           set -euo pipefail
@@ -127,6 +130,9 @@ jobs:
           echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
           echo "FIREBASE_IOS_CONFIG=$PWD/.firebase-config/GoogleService-Info.plist" >> "$GITHUB_ENV"
           FIREBASE_ENABLED=true node scripts/install-firebase-deps.mjs
+      - name: Conferir autolinking (ios) com os módulos de conta
+        if: matrix.firebase == 'on'
+        run: node scripts/check-autolinking.mjs --platform ios
       - name: Prebuild iOS (tempo)
         run: |
           set -euo pipefail
