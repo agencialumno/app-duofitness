@@ -11,13 +11,16 @@ import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
 import { DemoBanner } from '../components/DemoControls';
-import { scoreBand } from '../utils/health';
+import { computeStreak, scoreBand } from '../utils/health';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, streak, getLevel, workouts, completedSessions, achievements } = useApp();
+  const { user, xp, getLevel, workouts, completedSessions, achievements } = useApp();
+  // Sequência = dias seguidos com treino, pelas datas das sessões: a MESMA função da Saúde (computeStreak).
+  // O contador gravado em @duo_streak segue existindo (conquistas), mas não é mais exibido aqui.
+  const streakDays = computeStreak(completedSessions);
   const levelInfo = getLevel();
   const today = new Date().toDateString();
   const trainedToday = completedSessions.some(s => new Date(s.completedAt).toDateString() === today);
@@ -48,9 +51,9 @@ export default function HomeScreen({ navigation }) {
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <View style={styles.streakBadge} accessibilityLabel={`Sequência: ${streak}`}>
+          <View style={styles.streakBadge} accessibilityLabel={`Sequência: ${streakDays} ${streakDays === 1 ? 'dia' : 'dias'} seguidos`}>
             <Ionicons name="flame" size={16} color={COLORS.primary} />
-            <Text style={styles.streakNum}>{streak}</Text>
+            <Text style={styles.streakNum}>{streakDays}</Text>
           </View>
           <InfoButton tema="sequencia" />
         </View>
@@ -124,7 +127,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.statsRow}>
         {[
           { label: 'Treinos', value: completedSessions.length, icon: 'checkmark-circle-outline' },
-          { label: 'Sequência', value: `${streak}d`, icon: 'flame-outline' },
+          { label: 'Sequência', value: `${streakDays}d`, icon: 'flame-outline' },
           { label: 'Conquistas', value: achievements.length, icon: 'trophy-outline' },
         ].map((s, i) => (
           <View key={i} style={styles.statCard}>

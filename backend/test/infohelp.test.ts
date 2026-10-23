@@ -101,9 +101,16 @@ describe('temas de ajuda (infoContent)', () => {
     for (const lim of ['xp < 100', 'xp < 300', 'xp < 600', 'xp < 1000', 'xp < 2000']) expect(ctx).toContain(lim);
     const xp = textsOf(C.INFO_THEMES.nivelXp.blocks).join(' ');
     for (const s of ['50 XP', '0 a 99', '100 a 299', '300 a 599', '600 a 999', '1000 a 1999', '2000 XP', 'Iniciante', 'Ativo', 'Dedicado', 'Avançado', 'Elite', 'Lenda']) expect(xp).toContain(s);
-    // sequência: o contador da Home soma 1 por treino e nunca zera
+    // sequência: a Home e a Saúde usam o MESMO cálculo por datas (computeStreak); o contador gravado segue só para as conquistas
     expect(ctx).toMatch(/const newStreak = streak \+ 1/);
-    expect(textsOf(C.INFO_THEMES.sequencia.blocks).join(' ')).toMatch(/soma 1 a cada treino/);
+    const seq = textsOf(C.INFO_THEMES.sequencia.blocks).join(' ');
+    expect(seq).toMatch(/dias seguidos/);
+    expect(seq).toMatch(/um dia inteiro sem nenhum treino/);
+    expect(seq).toMatch(/mesmo número na Home e na Saúde/);
+    expect(seq).not.toMatch(/soma 1 a cada treino|não zera sozinho/);
+    const home = read('src/screens/HomeScreen.js');
+    expect(home).toMatch(/computeStreak\(completedSessions\)/);
+    expect(home).not.toMatch(/\{streak\}|\$\{streak\}d/);
     // lotação: faixas
     expect(QUIET_BELOW).toBe(0.4);
     expect(MODERATE_BELOW).toBe(0.75);

@@ -84,11 +84,13 @@ export const INFO_THEMES = {
     label: 'sequência',
     titulo: 'Sequência',
     blocks: [
-      h('Na Home'),
-      t('O número de Sequência soma 1 a cada treino que você conclui. Ele serve de motivação e não zera sozinho se você ficar alguns dias sem treinar.'),
-      h('Na Saúde'),
-      t('A sequência da Saúde conta dias seguidos com pelo menos um treino concluído, contando de hoje ou de ontem. Ela se quebra quando passa um dia inteiro sem treino. Ela entra no Duo Score (7 dias seguidos valem a nota máxima desse item).'),
-      t('Por isso os dois números podem ser diferentes. Descanso entre treinos faz parte: não se cobre por isso.'),
+      h('Como é contada'),
+      t('A Sequência é o número de dias seguidos em que você concluiu pelo menos um treino. A conta começa em hoje ou, se você ainda não treinou hoje, em ontem.'),
+      h('O que quebra a sequência'),
+      t('Ela volta a zero quando passa um dia inteiro sem nenhum treino concluído. Dois treinos no mesmo dia contam como um dia.'),
+      h('Onde aparece'),
+      t('É o mesmo número na Home e na Saúde. Ele entra no Duo Score: 7 dias seguidos valem a nota máxima desse item.'),
+      t('Descanso entre treinos faz parte da rotina: não se cobre por isso.'),
     ],
   },
 
