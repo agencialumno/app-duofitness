@@ -14,6 +14,7 @@ import { AI_BADGE_ENABLED } from '../data/guidedConfig';
 import { isApiConfigured } from '../services/api';
 import SeriesCard from '../components/guided/SeriesCard';
 import InfoButton from '../components/InfoButton';
+import { MINOR_FOCUS_NOTE, getObjetivosBlocks } from '../data/infoContent';
 import { BuildingChecklist, animateLayout, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
@@ -413,13 +414,14 @@ function IntroStage({ settings, patch, onBack, onStart, onOpenChat }) {
             <View style={styles.editor}>
               <View style={styles.titleRow}>
                 <Text style={[styles.editorLabel, styles.titleFlex]}>Objetivos (pode escolher mais de um)</Text>
-                <InfoButton tema="objetivos" />
+                <InfoButton tema="objetivos" blocks={getObjetivosBlocks(user?.ageGroup)} />
               </View>
               <View style={styles.chipsWrap}>
                 {GOAL_OPTIONS.map((g) => (
                   <Chip key={g.id} label={g.label} selected={settings.goals.includes(g.id)} onPress={() => toggleGoal(g.id)} />
                 ))}
               </View>
+              {user?.ageGroup === 'under18' && <Text style={styles.minorNote}>{MINOR_FOCUS_NOTE}</Text>}
             </View>
           )}
 
@@ -542,6 +544,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: 48, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bgCardAlt, color: COLORS.white, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.md },
   okBtn: { minHeight: 48, minWidth: 64, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary, paddingHorizontal: SPACING.md },
   okBtnText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black },
+  minorNote: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
   error: { fontSize: FONTS.sizes.sm, color: COLORS.error },
   linkBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
   linkText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textDecorationLine: 'underline', flexShrink: 1 },

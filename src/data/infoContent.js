@@ -205,3 +205,12 @@ export const INFO_THEMES = {
 export function getInfoTheme(key) {
   return INFO_THEMES[key] || null;
 }
+
+// Frase só para menores de 18 anos (ageGroup 'under18'), na ajuda e na tela dos objetivos.
+export const MINOR_FOCUS_NOTE = 'Para menores de 18 anos, a série foca em hábitos e técnica.';
+
+// Blocos do "i" de objetivos: para under18 acrescenta a frase acima; para os demais, exatamente o tema padrão.
+export function getObjetivosBlocks(ageGroup) {
+  const base = INFO_THEMES.objetivos.blocks;
+  return ageGroup === 'under18' ? [...base, t(MINOR_FOCUS_NOTE)] : base;
+}
