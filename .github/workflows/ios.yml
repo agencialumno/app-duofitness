@@ -25,6 +25,11 @@ on:
         required: true
         default: false
         type: boolean
+      sign_archive:
+        description: 'Assinar o archive (caminho antigo: assinatura automática, que cria um certificado de DESENVOLVIMENTO por execução)? false (padrão) = archive sem assinatura e assinatura de distribuição só no export'
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -53,6 +58,9 @@ jobs:
       EXPO_PUBLIC_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_PRIVACY_URL }}
       # Tag sempre envia; execução manual envia só com upload=true.
       UPLOAD: ${{ (github.event_name == 'push' || inputs.upload) && 'true' || 'false' }}
+      # Padrão (false, também nas tags): archive SEM assinatura; a assinatura de distribuição (cloud signing) é só no export.
+      # true: caminho antigo (archive assinado automático, cria um certificado de desenvolvimento por execução do CI).
+      SIGN_ARCHIVE: ${{ inputs.sign_archive && 'true' || 'false' }}
       BUNDLE_ID: com.duofitness.app
     steps:
       - uses: actions/checkout@v4.2.2
@@ -254,7 +262,11 @@ jobs:
             exit 1
           fi
 
-      - name: Archive (assinatura automática pela chave da API)
+      # PADRÃO: archive SEM assinatura (CODE_SIGNING_ALLOWED=NO, sem -allowProvisioningUpdates e sem a chave da API): nada é
+      # criado na conta Apple. A assinatura de DISTRIBUIÇÃO (cloud signing, certificado gerenciado) acontece só no export.
+      # O archive assinado automático (input sign_archive=true) cria um certificado de DESENVOLVIMENTO ("Created via API")
+      # por execução, porque o runner é novo e não tem a chave privada do anterior: a conta chegou ao limite de certificados.
+      - name: Archive (sem assinatura por padrão; sign_archive=true assina automático)
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
@@ -298,11 +310,20 @@ jobs:
           }
           show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
 
-          archive_signed 2>&1 | tee "$LOG_DIR/archive.log" | show
-          RC=${PIPESTATUS[0]}
           HINT_LOG="$LOG_DIR/archive.log"
+          if [ "${SIGN_ARCHIVE:-false}" = "true" ]; then
+            # Caminho ANTIGO (opt-in): archive assinado automático; cria um certificado de desenvolvimento por execução.
+            echo "XC_ARCHIVE_MODE=signed" >> "$GITHUB_ENV"
+            archive_signed 2>&1 | tee "$LOG_DIR/archive.log" | show
+            RC=${PIPESTATUS[0]}
+          else
+            # PADRÃO: sem assinatura, sem a chave da API e sem falar com a Apple.
+            echo "XC_ARCHIVE_MODE=unsigned" >> "$GITHUB_ENV"
+            archive_unsigned 2>&1 | tee "$LOG_DIR/archive.log" | show
+            RC=${PIPESTATUS[0]}
+          fi
 
-          if [ "$RC" -ne 0 ] && grep -qiE "no devices from which to generate a provisioning profile|Your team has no devices" "$LOG_DIR/archive.log"; then
+          if [ "${SIGN_ARCHIVE:-false}" = "true" ] && [ "$RC" -ne 0 ] && grep -qiE "no devices from which to generate a provisioning profile|Your team has no devices" "$LOG_DIR/archive.log"; then
             echo "::warning::O time Apple não tem dispositivos registrados: o Xcode não gera o perfil de desenvolvimento do archive. Repetindo o archive SEM assinar; a assinatura de distribuição fica para o export. Para evitar este caminho, registre um iPhone em developer.apple.com > Certificates, Identifiers & Profiles > Devices."
             rm -rf "$ARCHIVE"
             echo "XC_ARCHIVE_UNSIGNED=true" >> "$GITHUB_ENV"
@@ -325,6 +346,9 @@ jobs:
           if [ ! -d "$ARCHIVE" ]; then
             echo "::error::O xcodebuild terminou sem erro, mas o archive não existe em $ARCHIVE."
             exit 1
+          fi
+          if [ "${SIGN_ARCHIVE:-false}" != "true" ]; then
+            echo "- archive **sem assinatura** (padrão): nenhum certificado de desenvolvimento é criado; a assinatura de distribuição acontece só no export. Para o caminho antigo, rode com sign_archive=true." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Conferir versão e build number do archive
@@ -388,7 +412,10 @@ jobs:
             2>&1 | tee "$XC_LOG_DIR/export.log" | show
           RC=${PIPESTATUS[0]}
           if [ "$RC" -ne 0 ]; then
-            if [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
+            if [ "${XC_ARCHIVE_MODE:-}" = "unsigned" ]; then
+              echo "::error::O export falhou depois do archive SEM assinatura (padrão). Se o erro disser que o export não aceita este archive, NÃO improvise: registre o erro e veja docs/testflight.md (opção de importar um certificado .p12 fixo a partir de secrets) ou rode com sign_archive=true (caminho antigo; cria um certificado de desenvolvimento por execução)."
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" --stage export || true
+            elif [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
               echo "::error::O export falhou depois de um archive SEM assinatura (time sem dispositivos): é aqui que a assinatura de distribuição é criada pela chave da API."
               node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" --unsigned || true
             else
@@ -413,11 +440,13 @@ jobs:
           SIGN_INFO="$(codesign -dvv "$APP" 2>&1)"
           AUTHORITY="$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^Authority=//p' | head -1)"
           TEAM="$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^TeamIdentifier=//p' | head -1)"
-          echo "Assinado por: $AUTHORITY (time $TEAM)"
+          # Só o TIPO do certificado é exibido: o nome do certificado (que traz o nome da empresa) nunca vai para o log.
           case "$AUTHORITY" in
-            *"Apple Distribution"*|*"iPhone Distribution"*) ;;
-            *) echo "::error::O app não foi assinado com certificado de DISTRIBUIÇÃO (veio: $AUTHORITY)."; exit 1 ;;
+            *"Apple Distribution"*) CERT_TYPE="Apple Distribution" ;;
+            *"iPhone Distribution"*) CERT_TYPE="iPhone Distribution" ;;
+            *) echo "::error::O app não foi assinado com certificado de DISTRIBUIÇÃO (o tipo do certificado encontrado não é Apple/iPhone Distribution; o nome não é exibido)."; exit 1 ;;
           esac
+          echo "Assinado com certificado de DISTRIBUIÇÃO (tipo: $CERT_TYPE)"
           [ "$TEAM" = "$APPLE_TEAM_ID" ] || { echo "::error::TeamIdentifier do app ($TEAM) diferente de APPLE_TEAM_ID."; exit 1; }
           # 3) perfil embutido: de App Store (sem get-task-allow) e para este app
           security cms -D -i "$APP/embedded.mobileprovision" > "$RUNNER_TEMP/profile.plist"
@@ -429,9 +458,31 @@ jobs:
           [ "$APP_ID" = "$APPLE_TEAM_ID.$BUNDLE_ID" ] || { echo "::error::application-identifier do perfil ($APP_ID) diferente de $APPLE_TEAM_ID.$BUNDLE_ID."; exit 1; }
           [ "$TASK_ALLOW" = "false" ] || { echo "::error::O perfil é de desenvolvimento (get-task-allow=true), não de distribuição."; exit 1; }
           {
-            echo "- assinatura de distribuição validada: \`$AUTHORITY\`, time \`$TEAM\`"
+            echo "- assinatura de distribuição validada (tipo \`$CERT_TYPE\`, time conferido; o nome do certificado não é exibido)"
             echo "- perfil: \`$PROFILE_NAME\` (expira em $EXPIRES)"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Um archive sem assinatura pode perder entitlements. Extrai os entitlements REAIS do .ipa exportado (codesign) e
+      # compara com o .entitlements do projeto iOS gerado: falta de qualquer um falha. Com as contas e o Firebase ligados,
+      # o com.apple.developer.applesignin é obrigatório (sem ele o TestFlight sairia sem o Sign in with Apple).
+      # Roda também com upload=false. Só os NOMES das chaves aparecem; nada de certificados.
+      - name: Conferir os entitlements do .ipa (comparação com o projeto)
+        run: |
+          set -euo pipefail
+          UNZIP_DIR="$RUNNER_TEMP/ipa-unzipped"
+          APP="$(find "$UNZIP_DIR/Payload" -maxdepth 1 -name '*.app' | head -1)"
+          [ -n "$APP" ] || { echo "::error::Não achei o .app dentro do .ipa exportado para conferir os entitlements."; exit 1; }
+          IPA_ENTS="$RUNNER_TEMP/ipa-entitlements.plist"
+          codesign -d --entitlements :- "$APP" > "$IPA_ENTS" 2>/dev/null || { echo "::error::codesign não conseguiu extrair os entitlements do .ipa."; exit 1; }
+          PROJECT_ENTS="ios/$XC_SCHEME/$XC_SCHEME.entitlements"
+          [ -f "$PROJECT_ENTS" ] || PROJECT_ENTS=none
+          ARGS=(--ipa "$IPA_ENTS" --project "$PROJECT_ENTS")
+          if [ "${EXPO_PUBLIC_AUTH_ENABLED:-}" = "true" ] && [ "${FIREBASE_ENABLED:-}" = "true" ]; then
+            ARGS+=(--require-applesignin)
+          elif [ "${EXPO_PUBLIC_AUTH_ENABLED:-}" = "true" ]; then
+            echo "::notice::Contas ligadas, mas sem Firebase neste build: o login com a Apple não existe (provedor indisponível), então o entitlement do Sign in with Apple não é exigido."
+          fi
+          node scripts/check-ipa-entitlements.mjs "${ARGS[@]}"
 
       # Valida (altool --validate-app) e, com upload=true, envia (altool --upload-app) o MESMO .ipa que o
       # export acima gerou e verificou. O envio pelo "xcodebuild -exportArchive" com destination=upload

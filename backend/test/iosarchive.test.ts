@@ -134,7 +134,9 @@ function runStep(script: string, scenario: string, extraEnv: Record<string, stri
   };
 }
 
-const archiveStep = () => extractRun(readFileSync(IOS_YML, 'utf8'), 'Archive (assinatura automática');
+// caminho ANTIGO (opt-in): archive assinado automático, com a repetição sem assinatura se o time não tiver dispositivos
+const SIGNED = { SIGN_ARCHIVE: 'true' };
+const archiveStep = () => extractRun(readFileSync(IOS_YML, 'utf8'), 'Archive (sem assinatura');
 const exportStep = () => extractRun(readFileSync(IOS_YML, 'utf8'), 'Exportar o .ipa e validar a assinatura');
 
 describe.skipIf(!hasBash)('ios.yml: passo do archive (bash -e, xcodebuild falso)', () => {
@@ -144,8 +146,8 @@ describe.skipIf(!hasBash)('ios.yml: passo do archive (bash -e, xcodebuild falso)
     expect(s.indexOf('set +e')).toBeLessThan(s.indexOf('archive_signed 2>&1'));
   });
 
-  it('archive assinado funciona de primeira: uma chamada, sem repetição', () => {
-    const r = runStep(archiveStep(), 'ok-first');
+  it('sign_archive=true (caminho antigo): archive assinado funciona de primeira, uma chamada, sem repetição', () => {
+    const r = runStep(archiveStep(), 'ok-first', SIGNED);
     expect(r.code).toBe(0);
     expect(r.calls).toHaveLength(1);
     expect(r.calls[0]).toContain('-allowProvisioningUpdates');
@@ -153,7 +155,7 @@ describe.skipIf(!hasBash)('ios.yml: passo do archive (bash -e, xcodebuild falso)
   });
 
   it('"no devices": repete o archive SEM assinar e conclui com sucesso (errexit ligado)', () => {
-    const r = runStep(archiveStep(), 'nodevices-then-ok');
+    const r = runStep(archiveStep(), 'nodevices-then-ok', SIGNED);
     expect(r.code).toBe(0);
     expect(r.calls).toHaveLength(2);
     // 1ª: assinado, com a chave da API; 2ª: sem assinatura e sem falar com a Apple
@@ -172,7 +174,7 @@ describe.skipIf(!hasBash)('ios.yml: passo do archive (bash -e, xcodebuild falso)
   });
 
   it('outro erro (cloud signing): NÃO repete, devolve o código do xcodebuild e roda o ios-log-hints', () => {
-    const r = runStep(archiveStep(), 'cloud-signing');
+    const r = runStep(archiveStep(), 'cloud-signing', SIGNED);
     expect(r.code).toBe(65);
     expect(r.calls).toHaveLength(1);
     expect(r.out).toContain('::error::A chave da API não tem permissão para o cloud signing');
@@ -180,7 +182,7 @@ describe.skipIf(!hasBash)('ios.yml: passo do archive (bash -e, xcodebuild falso)
   });
 
   it('a repetição também falha: devolve 65 e as dicas cobrem as DUAS tentativas', () => {
-    const r = runStep(archiveStep(), 'nodevices-then-fail');
+    const r = runStep(archiveStep(), 'nodevices-then-fail', SIGNED);
     expect(r.code).toBe(65);
     expect(r.calls).toHaveLength(2);
     expect(r.out).toContain('REGISTRE UM iPhone'); // causa da 1ª tentativa
