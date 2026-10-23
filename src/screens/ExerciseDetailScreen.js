@@ -4,6 +4,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import ExerciseMedia from '../components/ExerciseMedia';
+import InfoButton from '../components/InfoButton';
 import { EXERCISE_VIDEOS_ENABLED } from '../data/exerciseVideosConfig';
 
 export default function ExerciseDetailScreen({ navigation, route }) {
@@ -31,6 +32,10 @@ export default function ExerciseDetailScreen({ navigation, route }) {
           </View>
         </View>
 
+        <View style={styles.configTitleRow}>
+          <Text style={styles.sectionTitle}>Séries, repetições e descanso</Text>
+          <InfoButton tema="seriesRepsDescanso" />
+        </View>
         <View style={styles.configRow}>
           {[
             { label: ex.isTime ? 'Tempo' : 'Repetições', value: ex.defaultReps || ex.reps },
@@ -107,6 +112,7 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, justifyContent: 'center' },
   tag: { backgroundColor: '#1A1700', borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 4 },
   tagText: { fontSize: FONTS.sizes.xs, color: COLORS.primary, fontWeight: '500' },
+  configTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -SPACING.md },
   configRow: { flexDirection: 'row', backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
   configItem: { flex: 1, padding: SPACING.md, alignItems: 'center', gap: 4 },
   configItemBorder: { borderRightWidth: 1, borderRightColor: COLORS.border },

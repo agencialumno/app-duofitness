@@ -4,6 +4,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MarketplaceImage from '../components/MarketplaceImage';
+import InfoButton from '../components/InfoButton';
 import { MARKETPLACE_CONFIG } from '../data/marketplaceConfig';
 import {
   CATEGORIAS,
@@ -56,6 +57,7 @@ export default function StoreScreen({ navigation }) {
           <Text style={styles.title} accessibilityRole="header">Marketplace</Text>
           <Text style={styles.subtitle}>Vitrine de parceiros do Duo Fitness</Text>
         </View>
+        <InfoButton tema="marketplace" />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>

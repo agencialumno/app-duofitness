@@ -13,6 +13,7 @@ import {
 import { AI_BADGE_ENABLED } from '../data/guidedConfig';
 import { isApiConfigured } from '../services/api';
 import SeriesCard from '../components/guided/SeriesCard';
+import InfoButton from '../components/InfoButton';
 import { BuildingChecklist, animateLayout, Chip, FooterButton, GuidedHeader, OptionCard, TrainerLabel } from '../components/guided/GuidedParts';
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
@@ -190,7 +191,10 @@ function BuildingStage({ settings, plan, user, onBack, onDone }) {
         <View style={styles.labelRow}>
           <TrainerLabel text={PLAN_LABEL} badge={badge} />
         </View>
-        <Text style={styles.title} accessibilityRole="header">Montando sua série</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, styles.titleFlex]} accessibilityRole="header">Montando sua série</Text>
+          <InfoButton tema="montandoSerie" />
+        </View>
         <Text style={styles.subtitle}>Cada etapa abaixo é um cálculo feito agora, no seu aparelho.</Text>
         <BuildingChecklist steps={steps} visible={visible} />
       </ScrollView>
@@ -407,7 +411,10 @@ function IntroStage({ settings, patch, onBack, onStart, onOpenChat }) {
 
           {editing === 'goals' && (
             <View style={styles.editor}>
-              <Text style={styles.editorLabel}>Objetivos (pode escolher mais de um)</Text>
+              <View style={styles.titleRow}>
+                <Text style={[styles.editorLabel, styles.titleFlex]}>Objetivos (pode escolher mais de um)</Text>
+                <InfoButton tema="objetivos" />
+              </View>
               <View style={styles.chipsWrap}>
                 {GOAL_OPTIONS.map((g) => (
                   <Chip key={g.id} label={g.label} selected={settings.goals.includes(g.id)} onPress={() => toggleGoal(g.id)} />
@@ -486,7 +493,11 @@ function AskStage({ question, index, total, settings, patch, onBack, onNext, las
     <View style={styles.container}>
       <GuidedHeader onBack={onBack} progress={(index + 1) / total} caption={`Pergunta ${index + 1} de ${total}`} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.title} accessibilityRole="header">{title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, styles.titleFlex]} accessibilityRole="header">{title}</Text>
+          {question === 'combo' && <InfoButton tema="combos" />}
+          {question === 'limitation' && <InfoButton tema="limitacao" />}
+        </View>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <View style={styles.options} accessibilityRole="radiogroup">{body}</View>
       </ScrollView>
@@ -502,6 +513,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 22 },
   options: { gap: SPACING.sm },
   labelRow: { flexDirection: 'row' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  titleFlex: { flex: 1 },
   summaryChip: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 2, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCardAlt },
   summaryChipText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
   reasonsCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },

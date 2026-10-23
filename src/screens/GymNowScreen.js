@@ -6,6 +6,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import { formatHour } from '../utils/occupancy';
+import InfoButton from '../components/InfoButton';
 
 // "Academia agora": lotação em números agregados. Funciona offline (sem dados = "Sem dados no momento").
 export default function GymNowScreen({ navigation }) {
@@ -28,6 +29,7 @@ export default function GymNowScreen({ navigation }) {
           <Text style={styles.title} accessibilityRole="header">Academia agora</Text>
           <Text style={styles.subtitle}>Lotação da academia do condomínio</Text>
         </View>
+        <InfoButton tema="academiaAgora" />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xxl }]}>

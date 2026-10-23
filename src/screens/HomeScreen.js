@@ -47,9 +47,12 @@ export default function HomeScreen({ navigation }) {
             {trainedToday ? 'Treino concluído hoje' : 'Pronto para treinar?'}
           </Text>
         </View>
-        <View style={styles.streakBadge}>
-          <Ionicons name="flame" size={16} color={COLORS.primary} />
-          <Text style={styles.streakNum}>{streak}</Text>
+        <View style={styles.headerRight}>
+          <View style={styles.streakBadge} accessibilityLabel={`Sequência: ${streak}`}>
+            <Ionicons name="flame" size={16} color={COLORS.primary} />
+            <Text style={styles.streakNum}>{streak}</Text>
+          </View>
+          <InfoButton tema="sequencia" />
         </View>
       </View>
 
@@ -57,7 +60,10 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.levelCard}>
         <View style={styles.levelTop}>
           <View>
-            <Text style={styles.levelLabel}>NÍVEL {levelInfo.level}</Text>
+            <View style={styles.levelLabelRow}>
+              <Text style={styles.levelLabel}>NÍVEL {levelInfo.level}</Text>
+              <InfoButton tema="nivelXp" />
+            </View>
             <Text style={styles.levelTitle}>{levelInfo.title}</Text>
           </View>
           <View style={styles.xpBadge}>
@@ -296,6 +302,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg },
   greeting: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subGreeting: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  levelLabelRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1A0F00', borderWidth: 1, borderColor: '#3A2A00', borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs },
   streakNum: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
   levelCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, marginBottom: SPACING.sm },

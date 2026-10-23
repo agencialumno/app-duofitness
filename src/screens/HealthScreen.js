@@ -6,6 +6,7 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import WeightChart from '../components/health/WeightChart';
 import { ExampleBadge } from '../components/OccupancyCard';
+import InfoButton from '../components/InfoButton';
 import { animateLayout } from '../components/guided/GuidedParts';
 import {
   PRIVACY_NOTE, SCORE_DISCLAIMER, addGlass, addWeight, dayKey, formatKg, getWater, getWeightSeries,
@@ -61,7 +62,10 @@ export default function HealthScreen({ navigation }) {
 
           {/* Duo Score */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Duo Score</Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.cardTitle, styles.titleFlex]}>Duo Score</Text>
+              <InfoButton tema="duoScore" />
+            </View>
             {loading ? (
               <Text style={styles.muted}>Carregando…</Text>
             ) : (
@@ -155,7 +159,10 @@ export default function HealthScreen({ navigation }) {
             </View>
           ) : (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Evolução do peso</Text>
+              <View style={styles.titleRow}>
+                <Text style={[styles.cardTitle, styles.titleFlex]}>Evolução do peso</Text>
+                <InfoButton tema="saude" />
+              </View>
               {series.length === 0 ? (
                 <Text style={styles.muted}>Nenhum registro ainda. Use o campo abaixo para registrar o peso de hoje.</Text>
               ) : (
@@ -176,7 +183,10 @@ export default function HealthScreen({ navigation }) {
 
           {/* Água */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Água de hoje</Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.cardTitle, styles.titleFlex]}>Água de hoje</Text>
+              <InfoButton tema="saude" />
+            </View>
             <View style={styles.waterRow}>
               <TouchableOpacity
                 style={styles.roundBtn}
@@ -268,6 +278,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   content: { padding: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xl, gap: SPACING.md },
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleFlex: { flex: 1 },
   cardTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   subTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, marginTop: SPACING.sm, textTransform: 'uppercase' },
   muted: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },

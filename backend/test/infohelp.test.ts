@@ -77,7 +77,7 @@ describe('temas de ajuda (infoContent)', () => {
       for (const m of readFileSync(f, 'utf8').matchAll(/<InfoButton[^>]*\btema="([A-Za-z]+)"/g)) used.add(m[1]!);
     }
     for (const k of used) expect(Object.keys(C.INFO_THEMES), `tema "${k}" não existe`).toContain(k);
-    // (a checagem "todo tema é usado" entra quando os demais ícones forem ligados, no commit seguinte)
+    for (const [k] of themes) expect([...used], `tema "${k}" não é usado em nenhuma tela`).toContain(k);
   });
 
   it('nenhum texto de ajuda tem dieta, caloria, déficit, emagrecimento, dose, suplemento, meta ou promessa', () => {

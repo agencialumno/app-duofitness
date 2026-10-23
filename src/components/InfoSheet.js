@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import {
-  AccessibilityInfo, findNodeHandle, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  AccessibilityInfo, findNodeHandle, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +15,13 @@ export default function InfoSheet({ visible, onClose, titulo, blocks }) {
   const reduceMotion = useReduceMotion();
   const titleRef = useRef(null);
 
+  // Foco do leitor de tela no título ao abrir. Na web o findNodeHandle não existe; nunca deve derrubar a tela.
   const focusTitle = useCallback(() => {
-    const node = titleRef.current && findNodeHandle(titleRef.current);
-    if (node) AccessibilityInfo.setAccessibilityFocus?.(node);
+    try {
+      if (Platform.OS === 'web') { titleRef.current?.focus?.(); return; }
+      const node = titleRef.current && findNodeHandle(titleRef.current);
+      if (node) AccessibilityInfo.setAccessibilityFocus?.(node);
+    } catch (e) { /* sem foco automático: a folha continua utilizável */ }
   }, []);
 
   return (

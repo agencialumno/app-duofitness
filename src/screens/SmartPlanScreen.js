@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { generateWorkoutPlan } from '../utils/workoutGenerator';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
+import InfoButton from '../components/InfoButton';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecimento',
@@ -74,6 +75,9 @@ const QUESTIONS = [
   },
 ];
 
+// Perguntas do gerador rápido que têm explicação ("i"): combo e limitação física.
+const INFO_BY_QUESTION = { combo: 'combos', limitation: 'limitacao' };
+
 export default function SmartPlanScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { addWorkouts, user } = useApp();
@@ -132,6 +136,7 @@ export default function SmartPlanScreen({ navigation }) {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingTitle}>Analisando seu perfil...</Text>
+        <InfoButton tema="montandoSerie" />
         <Text style={styles.loadingSub}>
           Calculando séries ideais para{'\n'}
           {user?.name?.split(' ')[0]} · IMC {user?.imc} · {formatGoals(user?.goals)}
@@ -233,7 +238,10 @@ export default function SmartPlanScreen({ navigation }) {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.question}>{q.question}</Text>
+        <View style={styles.questionRow}>
+          <Text style={[styles.question, styles.questionFlex]}>{q.question}</Text>
+          {INFO_BY_QUESTION[q.id] && <InfoButton tema={INFO_BY_QUESTION[q.id]} />}
+        </View>
         <Text style={styles.questionSub}>{q.sub}</Text>
 
         <View style={styles.options}>
@@ -288,6 +296,8 @@ const styles = StyleSheet.create({
   profileBanner: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginHorizontal: SPACING.lg, backgroundColor: '#1A1700', borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm, paddingVertical: 6, marginBottom: SPACING.xs },
   profileBannerText: { fontSize: FONTS.sizes.xs, color: COLORS.primary, fontWeight: '500' },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+  questionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.xs },
+  questionFlex: { flex: 1 },
   question: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.xs, lineHeight: 30 },
   questionSub: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginBottom: SPACING.xl, lineHeight: 20 },
   options: { gap: SPACING.sm },
