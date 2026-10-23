@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const GOALS = [
-  { id: 'lose_weight', label: 'Emagrecer', sub: 'Queimar gordura e definir o corpo', icon: 'trending-down-outline' },
+  { id: 'lose_weight', label: 'Emagrecer', sub: 'Mais cardio e descansos curtos na série', icon: 'trending-down-outline' },
   { id: 'gain_muscle', label: 'Ganhar massa', sub: 'Hipertrofia e aumento de força', icon: 'barbell-outline' },
   { id: 'maintain', label: 'Condicionamento', sub: 'Manter forma e melhorar resistência', icon: 'pulse-outline' },
   { id: 'health', label: 'Saúde geral', sub: 'Bem-estar e qualidade de vida', icon: 'heart-outline' },

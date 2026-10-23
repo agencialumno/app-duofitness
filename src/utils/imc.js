@@ -10,7 +10,7 @@ export function getIMCCategory(imc) {
     label: 'Abaixo do peso',
     color: '#60a5fa',
     icon: 'arrow-down-circle-outline',
-    tip: 'Foco em ganho de massa e força',
+    tip: 'Treino de força com boa técnica e descanso entre as sessões',
     cardioRatio: 0.1,
     strengthRatio: 0.9,
   };
@@ -28,7 +28,7 @@ export function getIMCCategory(imc) {
     label: 'Sobrepeso',
     color: '#f97316',
     icon: 'alert-circle-outline',
-    tip: 'Combinação de cardio e musculação será ideal',
+    tip: 'Cardio leve e musculação, no seu ritmo',
     cardioRatio: 0.5,
     strengthRatio: 0.5,
   };
@@ -74,7 +74,7 @@ export function getIMCRecommendations(imcCategory, goalsOrGoal, gender, ageGroup
   if (imcCategory === 'underweight') {
     recs.restBetweenSets = 90;
     recs.setsMultiplier = 1.2;
-    recs.notes.push('Priorize exercícios compostos para ganho de massa');
+    recs.notes.push('Priorize exercícios compostos, com boa técnica');
     recs.notes.push('Descanse bem entre as sessões');
   } else if (imcCategory === 'overweight') {
     recs.cardioFirst = true;
@@ -93,7 +93,7 @@ export function getIMCRecommendations(imcCategory, goalsOrGoal, gender, ageGroup
   if (goalList.includes('lose_weight')) {
     recs.restBetweenSets = Math.min(recs.restBetweenSets, 45);
     recs.cardioFirst = true;
-    recs.notes.push('Déficit calórico + treino = resultado mais rápido');
+    recs.notes.push('Treinar com regularidade e dormir bem ajudam mais do que intensidade pontual');
   }
   if (goalList.includes('gain_muscle')) {
     recs.restBetweenSets = Math.max(recs.restBetweenSets, 90);
@@ -108,7 +108,7 @@ export function getIMCRecommendations(imcCategory, goalsOrGoal, gender, ageGroup
   }
 
   if (gender === 'female') {
-    recs.notes.push('Glúteos e pernas têm resposta excelente a volume alto');
+    recs.notes.push('A série dá atenção extra a glúteos e pernas');
   }
 
   if (ageGroup === 'under18') {
@@ -118,11 +118,11 @@ export function getIMCRecommendations(imcCategory, goalsOrGoal, gender, ageGroup
   } else if (ageGroup === '46+') {
     recs.restBetweenSets = Math.max(recs.restBetweenSets, 90);
     recs.sessionIntensity = recs.sessionIntensity === 'leve' ? 'leve' : 'moderada';
-    recs.notes.push('Aquecimento longo é essencial para proteger as articulações');
+    recs.notes.push('Faça um aquecimento mais longo e vá no seu ritmo');
     recs.avoidHighImpact = true;
   } else if (ageGroup === '18-25') {
     recs.setsMultiplier = Math.min(recs.setsMultiplier * 1.1, 1.3);
-    recs.notes.push('Sua recuperação é ótima — aproveite para progredir rápido');
+    recs.notes.push('Aumente a carga aos poucos, respeitando o descanso entre os treinos');
   }
 
   return recs;

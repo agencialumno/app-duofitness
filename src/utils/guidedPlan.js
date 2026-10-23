@@ -388,7 +388,7 @@ export function buildReasons(settings, plan, user) {
     reasons.push(`Como você quer ganhar massa, usei até ${maxSets} séries nos exercícios principais e descansos de ${avgRest}s em média.`);
   } else if (goals.includes('lose_weight')) {
     const cardioFirst = workouts.some((w) => w.exercises[0]?.category === 'Cardio');
-    reasons.push(`Como você quer emagrecer, ${cardioFirst ? 'comecei com cardio e ' : ''}deixei o descanso curto (${avgRest}s em média).`);
+    reasons.push(`Pelo objetivo que você escolheu, ${cardioFirst ? 'comecei com cardio e ' : ''}deixei o descanso curto (${avgRest}s em média).`);
   } else if (goals.length > 0) {
     const names = goals.map((g) => labelOf(GOAL_OPTIONS, g)?.toLowerCase()).filter(Boolean).join(' e ');
     reasons.push(`Pensando em ${names}, mantive volume moderado (até ${maxSets} séries) e descanso de ${avgRest}s em média.`);

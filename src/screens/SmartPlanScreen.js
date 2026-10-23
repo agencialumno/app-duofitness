@@ -40,7 +40,7 @@ const QUESTIONS = [
     sub: 'Incluindo aquecimento e descanso entre séries.',
     options: [
       { value: 30, label: '30 minutos', sub: 'Treino rápido e eficiente' },
-      { value: 45, label: '45 minutos', sub: 'Equilíbrio ideal' },
+      { value: 45, label: '45 minutos', sub: 'Equilibrado' },
       { value: 60, label: '60 minutos', sub: 'Volume completo' },
       { value: 90, label: '90 minutos', sub: 'Sessão longa' },
     ],
@@ -59,7 +59,7 @@ const QUESTIONS = [
       { value: 'full', label: 'Corpo todo', sub: 'Desenvolvimento equilibrado' },
       { value: 'upper', label: 'Parte superior', sub: 'Peito, costas, ombros e braços' },
       { value: 'lower', label: 'Parte inferior', sub: 'Pernas e glúteos' },
-      { value: 'core', label: 'Core e abdômen', sub: 'Força central e definição' },
+      { value: 'core', label: 'Core e abdômen', sub: 'Força e estabilidade do tronco' },
     ],
   },
   {
@@ -138,7 +138,7 @@ export default function SmartPlanScreen({ navigation }) {
         <Text style={styles.loadingTitle}>Analisando seu perfil...</Text>
         <InfoButton tema="montandoSerie" />
         <Text style={styles.loadingSub}>
-          Calculando séries ideais para{'\n'}
+          Calculando suas séries para{'\n'}
           {user?.name?.split(' ')[0]} · IMC {user?.imc} · {formatGoals(user?.goals)}
         </Text>
       </View>

@@ -35,7 +35,7 @@ export const DEMO_WORKOUTS = [
     createdAt: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString(),
     personalNotes: [
       'Progrida a carga a cada 2 semanas',
-      'Priorize exercícios compostos para ganho de massa',
+      'Priorize exercícios compostos, com boa técnica',
     ],
     exercises: [
       ex('db_press', 'Supino com Halteres', ['Peitoral', 'Tríceps'], 'Intermediário', 'dumbbells', 4, '8–12', 90, 'Peito',
@@ -101,7 +101,7 @@ export const DEMO_WORKOUTS = [
     createdAt: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString(),
     personalNotes: [
       'Progrida a carga a cada 2 semanas',
-      'Amplitude completa gera mais resultado que carga alta',
+      'Amplitude completa e boa técnica valem mais do que carga alta',
     ],
     exercises: [
       ex('squat', 'Agachamento Livre', ['Quadríceps', 'Glúteos', 'Isquiotibiais'], 'Iniciante', 'bodyweight', 4, '12–15', 90, 'Pernas',
