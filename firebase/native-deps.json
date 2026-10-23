@@ -1,11 +1,9 @@
 {
-  "_comentario": "Módulos nativos de conta. NÃO estão no package.json: scripts/install-firebase-deps.mjs os instala (--no-save) só quando FIREBASE_ENABLED=true, para o build normal ficar idêntico ao de antes. Versões exatas; as do Expo seguem o SDK 54. @react-native-firebase 23.8.8 é a última 23.x (as 26.x/27.x têm relatos de problema com frameworks estáticos e SPM no iOS).",
-  "dependencies": {
+  "_comentario": "Módulos nativos de conta. NÃO estão no package.json do repositório: scripts/install-firebase-deps.mjs os grava no package.json do WORKSPACE do CI (o autolinking só enxerga dependencies da raiz) quando FIREBASE_ENABLED=true; sem a flag, o build normal fica idêntico ao de antes. Módulos do Expo: versão do SDK (node_modules/expo/bundledNativeModules.json). Os demais: versão EXATA abaixo; @react-native-firebase 23.8.8 é a última 23.x (as 26.x/27.x têm relatos de problema com frameworks estáticos e SPM no iOS).",
+  "expo": ["expo-apple-authentication", "expo-crypto", "expo-build-properties"],
+  "pinned": {
     "@react-native-firebase/app": "23.8.8",
     "@react-native-firebase/auth": "23.8.8",
-    "@react-native-google-signin/google-signin": "16.1.5",
-    "expo-apple-authentication": "8.0.8",
-    "expo-build-properties": "1.0.10",
-    "expo-crypto": "15.0.9"
+    "@react-native-google-signin/google-signin": "16.1.5"
   }
 }

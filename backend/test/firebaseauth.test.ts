@@ -1,5 +1,5 @@
 // FirebaseAuthProvider (RN Firebase) com módulos FALSOS injetados, o plugin opcional e o instalador dos módulos nativos.
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -244,22 +244,54 @@ describe('plugin opcional do Firebase', () => {
 
 describe('instalador dos módulos nativos', () => {
   const run = (env: Record<string, string>, args: string[] = []) => spawnSync(process.execPath, [path.join(REPO, 'scripts/install-firebase-deps.mjs'), ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
+  const bundled = JSON.parse(readFileSync(path.join(REPO, 'node_modules/expo/bundledNativeModules.json'), 'utf8')) as Record<string, string>;
+  const inst = req('../../scripts/install-firebase-deps.mjs') as never;
+  void inst;
+
   it('sem a flag não instala nada', () => {
     const r = run({ FIREBASE_ENABLED: '' });
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/nenhum módulo de conta será instalado/);
   });
-  it('com a flag (simulação) lista versões EXATAS e usa --no-save', () => {
+
+  it('com a flag (simulação): módulos do Expo na versão do SDK 54 (bundledNativeModules), os demais em versão EXATA', () => {
     const r = run({ FIREBASE_ENABLED: 'true' }, ['--dry-run']);
     expect(r.status).toBe(0);
-    for (const m of ['@react-native-firebase/app@23.8.8', '@react-native-firebase/auth@23.8.8', '@react-native-google-signin/google-signin@', 'expo-apple-authentication@', 'expo-crypto@', 'expo-build-properties@']) expect(r.stdout).toContain(m);
-    expect(r.stdout).not.toMatch(/[~^]\d/);
-    expect(readFileSync(path.join(REPO, 'scripts/install-firebase-deps.mjs'), 'utf8')).toContain("'--no-save'");
+    for (const m of ['expo-apple-authentication', 'expo-crypto', 'expo-build-properties']) {
+      expect(bundled[m], m).toBeTruthy();
+      expect(r.stdout).toContain(`${m}@${bundled[m]}`); // a versão do SDK, sem chute
+    }
+    for (const m of ['@react-native-firebase/app@23.8.8', '@react-native-firebase/auth@23.8.8', '@react-native-google-signin/google-signin@16.1.5']) expect(r.stdout).toContain(m);
+    expect(r.stdout).toMatch(/Ordem esperada: npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking/);
   });
-  it('o check-autolinking passa a exigir os módulos de conta só com FIREBASE_ENABLED=true', () => {
-    const src = readFileSync(path.join(REPO, 'scripts/check-autolinking.mjs'), 'utf8');
-    expect(src).toMatch(/FIREBASE_ON \? FIREBASE_EXPO_MODULES : \[\]/);
-    expect(src).toMatch(/FIREBASE_ON \? FIREBASE_ROOT_PACKAGES : \[\]/);
-    for (const m of ['@react-native-firebase/app', '@react-native-firebase/auth', '@react-native-google-signin/google-signin', 'expo-apple-authentication', 'expo-crypto']) expect(src).toContain(m);
+
+  it('GRAVA no package.json do workspace (--save-exact): --no-save deixaria os módulos fora do autolinking', () => {
+    const src = readFileSync(path.join(REPO, 'scripts/install-firebase-deps.mjs'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
+    expect(src).toContain("'--save-exact'");
+    expect(src).not.toContain("'--no-save'");
+  });
+
+  it('native-deps.json: Expo só por nome (versão vem do SDK) e os demais com versão exata', () => {
+    const cfg = JSON.parse(readFileSync(path.join(REPO, 'firebase/native-deps.json'), 'utf8')) as { expo: string[]; pinned: Record<string, string> };
+    expect(cfg.expo.sort()).toEqual(['expo-apple-authentication', 'expo-build-properties', 'expo-crypto']);
+    expect(Object.keys(cfg.pinned).sort()).toEqual(['@react-native-firebase/app', '@react-native-firebase/auth', '@react-native-google-signin/google-signin']);
+    for (const v of Object.values(cfg.pinned)) expect(v).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it('resolveSpecs recusa módulo do Expo ausente no SDK e versão não fixada', async () => {
+    const { resolveSpecs, verifyInstalled } = await import('../../scripts/install-firebase-deps.mjs' as string);
+    expect(() => resolveSpecs({ expo: ['expo-crypto'] }, {})).toThrow(/bundledNativeModules/);
+    expect(() => resolveSpecs({ pinned: { x: '^1.0.0' } }, {})).toThrow(/não fixada/);
+    expect(resolveSpecs({ expo: ['expo-crypto'], pinned: { y: '1.2.3' } }, { 'expo-crypto': '~15.0.9' }).map((s: { spec: string }) => s.spec)).toEqual(['expo-crypto@~15.0.9', 'y@1.2.3']);
+    // o erro real: instalado em node_modules, mas fora de dependencies (o autolinking não vê)
+    const dir = mkdtempSync(path.join(tmpdir(), 'inst-'));
+    try {
+      writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', dependencies: { b: '1.0.0' } }));
+      for (const n of ['a', 'b']) { mkdirSync(path.join(dir, 'node_modules', n), { recursive: true }); writeFileSync(path.join(dir, 'node_modules', n, 'package.json'), `{"name":"${n}","version":"1.0.0"}`); }
+      const problems = verifyInstalled(dir, ['a', 'b', 'c']) as string[];
+      expect(problems.some((p) => /^a não está em dependencies do package\.json/.test(p))).toBe(true);
+      expect(problems.some((p) => /^c não está resolvível/.test(p))).toBe(true);
+      expect(problems.some((p) => p.startsWith('b '))).toBe(false);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
