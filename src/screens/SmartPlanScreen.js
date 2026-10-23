@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import { generateWorkoutPlan } from '../utils/workoutGenerator';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
 import InfoButton from '../components/InfoButton';
+import { displayNotes } from '../utils/noteText';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecimento',
@@ -182,7 +183,7 @@ export default function SmartPlanScreen({ navigation }) {
               <Ionicons name="person-circle-outline" size={18} color={COLORS.primary} />
               <Text style={styles.notesTitle}>Recomendações para você</Text>
             </View>
-            {plan[0].personalNotes.map((note, i) => (
+            {displayNotes(plan[0].personalNotes).map((note, i) => (
               <View key={i} style={styles.noteRow}>
                 <View style={styles.noteDot} />
                 <Text style={styles.noteText}>{note}</Text>

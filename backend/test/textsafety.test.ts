@@ -12,17 +12,12 @@ import { getIMCCategory, getIMCRecommendations } from '../../src/utils/imc.js';
 import { EXERCISE_DB, generateWorkoutPlan } from '../../src/utils/workoutGenerator.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import { DEMO_WORKOUTS } from '../../src/data/demoData.js';
+import { PROIBIDOS_NOTAS, PROIBIDOS_NUCLEO } from './textrules';
 // @ts-expect-error módulo JS do app, sem tipos
 import { COMBOS } from '../../src/data/combosEquipment.js';
 
 const REPO = path.resolve(__dirname, '../..');
 const read = (f: string) => readFileSync(path.join(REPO, f), 'utf8');
-
-// Notes e dicas: rígido (também barra promessas e adjetivos de resultado)
-export const PROIBIDOS_NOTAS =
-  /dieta|calor[ií]a|kcal|d[eé]ficit|emagre|perder peso|perda de peso|queim|jejum|\bdose\b|dosag|suplement|resultado|progredir r[aá]pid|mais r[aá]pid[oa] que|r[aá]pidamente|garant|milagr|excelente|essencial|\bideal\b|ideais|perfeit|melhora (o|a|seu|sua)|mais efic|gera mais|transform|em \d+ (dias|semanas|meses)/i;
-// Textos de exercício (dicas e passo a passo): só o núcleo (aqui "ideal para começar" é orientação, não promessa)
-const PROIBIDOS_NUCLEO = /dieta|calor[ií]a|kcal|d[eé]ficit|emagre|perder peso|queim|jejum|\bdose\b|dosag|suplement|resultado|garant|milagr/i;
 
 const CATS = [undefined, 'underweight', 'normal', 'overweight', 'obese1', 'obese2'] as const;
 const GOALS_ALL = ['lose_weight', 'gain_muscle', 'maintain', 'health'];
