@@ -88,3 +88,20 @@ Se o archive passar, mas a razão da compilação for maior que 2x, ou se falhar
 5. Aviso: o RNFB 24+/Expo 55+ muda o quadro (SPM, `useFrameworks: "dynamic"`, sem `forceStaticLinking`). Esta correção vale para a geração Expo 54 / RNFB 23.x fixada aqui.
 
 Implementação: `plugins/withFirebaseOptional.js` (forceStaticLinking) e `plugins/withFirebaseIosFix.js` (Podfile), só com `FIREBASE_ENABLED=true`; verificada no CI Linux (`ios-prebuild-firebase`: `ruby -c`, `scripts/check-firebase-podfile.mjs`, idempotência) e no `ios.yml` (passo "Conferir o Podfile do Firebase"). A compilação real só o macOS confirma.
+
+## 6. Certificados da conta Apple: causa, correção e o que medir
+
+Falha observada no `ios.yml` da conta-firebase (archive, exit 65): "Choose a certificate to revoke. Your account has reached the maximum number of certificates" e "No profiles for 'com.duofitness.app' were found: iOS App Development provisioning profiles". Causa: o archive assinado automático criava um certificado de desenvolvimento ("Created via API") por execução (runner novo, sem a chave privada do anterior); a conta chegou a 10 (revogados à mão). Os Distribution e o "Distribution Managed" não foram tocados.
+
+Correção: archive **sem assinatura** por padrão (`CODE_SIGNING_ALLOWED=NO`, sem `-allowProvisioningUpdates` e sem a chave), assinatura de distribuição só no export, input `sign_archive` (padrão `false`) para o caminho antigo, e checagem dos entitlements do `.ipa`. Ver `docs/testflight.md`.
+
+**Medir na próxima execução** (`ios.yml`, `upload=false`, conta-firebase), em comparação com a conta-ui (archive 213 s) e com a tentativa que falhou (191 s):
+
+| | archive SEM assinatura (novo padrão) | observação |
+|---|---|---|
+| Archive | _preencher_ s | tende a ser mais rápido (não fala com a Apple) |
+| Export (cloud signing) | _preencher_ s | é aqui que a assinatura de distribuição acontece |
+| Entitlements conferidos | _ok / falhou: qual chave_ | `com.apple.developer.applesignin` obrigatório com contas + Firebase |
+| Certificados novos na conta | _0 esperado_ | conferir em developer.apple.com > Certificates que nenhum Development "Created via API" apareceu |
+
+O critério de saída combinado continua valendo (compilação mais de 2x mais lenta que a conta-ui, ou quebrar, reavalia o SDK JS). Se o export recusar o archive sem assinatura, o erro fica registrado no log e a saída documentada é `sign_archive=true` ou o certificado fixo `.p12` (não implementado).

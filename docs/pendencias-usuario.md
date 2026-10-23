@@ -75,3 +75,8 @@ Pré-requisito: um build com `EXPO_PUBLIC_AUTH_ENABLED=true` e, para Firebase re
 ## 7. Se o `ios.yml` com Firebase falhar de novo
 
 Baixe o artifact `xcodebuild-logs-<run>` (sobe em qualquer falha, inclusive do prebuild e do pod install; já sanitizado) e leia o resumo do job: o `ios-log-hints` diz a causa e a ação, ou mostra as primeiras 40 linhas de erro. Confira no resumo a linha "Podfile COM Firebase: ok". Depois de uma execução bem-sucedida, preencha a tabela "depois da correção" em `docs/medicoes-fase0.md` (limite: 2x).
+
+## 8. Certificados da conta Apple
+
+- Depois de revogar à mão os certificados de desenvolvimento "Created via API", **não crie mais**: o `ios.yml` agora faz o archive sem assinatura. Se ver de novo "maximum number of certificates", só pode ter rodado com `sign_archive=true`; revogue só os Development "Created via API" (nunca os Distribution nem o "Distribution Managed") e confira antes se outro pipeline os usa.
+- Na próxima execução do `ios.yml` (`upload=false`), confira no resumo: "archive sem assinatura (padrão)", a assinatura de distribuição validada e "entitlements do .ipa conferidos". Se o export recusar o archive sem assinatura, rode com `sign_archive=true` ou considere o certificado fixo (.p12) descrito em `docs/testflight.md`.

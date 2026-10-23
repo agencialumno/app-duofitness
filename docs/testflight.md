@@ -4,7 +4,7 @@ O workflow [`.github/workflows/ios.yml`](../.github/workflows/ios.yml) gera o ap
 
 - **Runner:** `macos-26` (arm64), com Xcode 26.6 como padrão e o SDK do iOS 26. Desde 28/04/2026 a Apple só aceita no App Store Connect apps compilados com Xcode 26 ou mais novo. O workflow confere a versão e para cedo se o runner tiver um Xcode mais antigo.
 - **Projeto nativo:** gerado em cada execução por `npx expo prebuild --platform ios --no-install` (a pasta `ios/` fica fora do git), depois `pod install`.
-- **Assinatura:** automática, pela chave da API do App Store Connect (`xcodebuild -allowProvisioningUpdates` com `-authenticationKeyPath/ID/IssuerID`). É o *cloud signing*: a Apple guarda o certificado de distribuição, e o runner não precisa de certificado nem de perfil em arquivo.
+- **Assinatura:** o **archive é feito SEM assinatura** (padrão) e a assinatura de **distribuição** acontece só no **export** (cloud signing); o archive assinado automático fica atrás do input `sign_archive=true` (ver "Limite de certificados"). A assinatura do export é automática, pela chave da API do App Store Connect (`xcodebuild -allowProvisioningUpdates` com `-authenticationKeyPath/ID/IssuerID`). É o *cloud signing*: a Apple guarda o certificado de distribuição, e o runner não precisa de certificado nem de perfil em arquivo.
 - **Envio:** o `.ipa` que o export gerou e verificou é validado e enviado com o `altool` (`--validate-app` e depois `--upload-app`, com `--type ios --apiKey --apiIssuer`), por `scripts/ios-upload.sh`. O envio pelo próprio `xcodebuild -exportArchive` (`destination: upload`) falhava com *No Accounts with App Store Connect Access* mesmo com a chave funcionando para assinar, então foi removido.
 - **Versão e build:** a versão vem do `app.json` (`expo.version`). O build number é o `github.run_number`. O Expo grava `CFBundleShortVersionString` e `CFBundleVersion` no `Info.plist` com valores literais do `app.json` (`ios.buildNumber` "1"), e o `Info.plist` não usa `$(CURRENT_PROJECT_VERSION)`; por isso o workflow grava os dois valores no `Info.plist` **gerado** (`scripts/set-ios-version.sh`, com o PlistBuddy), logo depois do prebuild. O `app.json` versionado não muda, e o passo "Conferir versão e build number do archive" confirma o resultado no archive.
 - **Gatilhos:** execução manual (*Actions → ios → Run workflow*) e tag `ios-v*`. Nada roda em pull request.
@@ -75,6 +75,32 @@ Observações:
 - Builds de TestFlight expiram em **90 dias**. Para renovar, envie um build novo.
 - Testadores **externos** (fora da equipe) exigem a *Beta App Review* da Apple e não fazem parte deste guia.
 
+## Limite de certificados (e por que o archive agora é sem assinatura)
+
+**O que aconteceu:** o archive com assinatura automática (`-allowProvisioningUpdates` com a chave da API) criou, a cada execução, um certificado de **desenvolvimento** novo ("Created via API"). Cada execução roda num runner novo, sem a chave privada do certificado anterior, então o Xcode não reaproveita o anterior e cria outro. A conta acumulou 10 e a execução falhou com *"Choose a certificate to revoke. Your account has reached the maximum number of certificates"* e *"No profiles for 'com.duofitness.app' were found: iOS App Development provisioning profiles"*. Trocar o papel da chave não resolve (a chave já era Admin).
+
+**O que fazer se acontecer de novo (manual, nunca pelo CI):** em developer.apple.com > Certificates, Identifiers & Profiles > Certificates, revogue **só** os certificados de tipo **Development** "Created via API", depois de conferir que nenhum outro pipeline da conta os usa. **Não toque nos Distribution nem no "Distribution Managed"** (o CI não consegue recriá-los e o cloud signing depende deles). O workflow **nunca** cria, lista, revoga nem imprime nomes de certificados.
+
+**Como o workflow evita isso (padrão):**
+- Archive: `xcodebuild archive ... CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=` e **sem** `-allowProvisioningUpdates` nem a chave da API: nada é pedido à Apple, então nenhum certificado de desenvolvimento é criado.
+- Export: `xcodebuild -exportArchive` com `method app-store-connect`, `signingStyle automatic`, `-allowProvisioningUpdates` e a chave da API. É aqui que o cloud signing usa o certificado de **distribuição** gerenciado.
+- `sign_archive=true` (input do *Run workflow*, padrão `false`): volta ao caminho antigo (archive assinado automático, com a repetição sem assinatura se o time não tiver dispositivos). Use só se precisar, sabendo que cria um certificado de desenvolvimento por execução.
+
+**Por que esta opção e não a outra (cloud-managed no archive):** o cloud signing da Apple (WWDC21, "Distribute apps in Xcode with cloud signing") acontece na **distribuição**, com a chave da API; um archive assinado precisa de um certificado de desenvolvimento com chave privada no runner, e é isso que o Xcode cria a cada execução. Não encontrei documentação de assinar o archive com o certificado "Distribution Managed" (que não tem chave privada no runner). A combinação `CODE_SIGNING_ALLOWED=NO` + `exportArchive` com a chave da API **não está documentada** pela Apple; o que a sustenta é este repositório já ter o caminho de repetição sem assinatura e um build de TestFlight exportado com certificado Apple Distribution.
+
+**Se o export recusar o archive sem assinatura:** o passo registra o erro ("O export falhou depois do archive SEM assinatura (padrão)") e **não tenta outra coisa**. As saídas são: (1) rodar com `sign_archive=true` (cria um certificado de desenvolvimento por execução; revogue os acumulados de vez em quando), ou (2) **importar um certificado fixo**, descrito abaixo (não implementado).
+
+### Opção não implementada: certificado fixo (.p12) importado de secrets
+
+Em vez de depender da Apple para criar certificados, o runner importaria sempre o **mesmo** certificado. Exige: um certificado Apple Distribution (ou Development) exportado do Mac como `.p12` com senha; os secrets `IOS_CERT_P12_BASE64` e `IOS_CERT_P12_PASSWORD`; um passo que cria um keychain temporário (`security create-keychain`, `security import`, `security set-key-partition-list`) e o apaga no fim; e o export com `signingStyle manual` e um perfil de App Store baixado do portal (secret `IOS_PROVISIONING_PROFILE_BASE64`), ou automático com a identidade já no keychain. Contras: o `.p12` é um segredo de longa vida (rotação anual) e o perfil manual vence. Nada disso foi implementado, e o CI continua sem criar nem revogar certificados.
+
+## Entitlements do .ipa (Sign in with Apple)
+
+Um archive sem assinatura pode perder entitlements. Depois do export (também com `upload=false`), o passo **"Conferir os entitlements do .ipa"** extrai os entitlements reais do `.ipa` (`codesign -d --entitlements :-`) e os compara com o `ios/<App>/<App>.entitlements` do projeto gerado (`scripts/check-ipa-entitlements.mjs`):
+- toda chave do projeto precisa estar no `.ipa` (com o mesmo valor, quando o valor não usa `$(...)`); o `.ipa` pode ter chaves a mais (`application-identifier`, `get-task-allow`...);
+- com `EXPO_PUBLIC_AUTH_ENABLED=true` **e** Firebase ligado (`FIREBASE_ENABLED`), o `com.apple.developer.applesignin` é **obrigatório**: sem ele o passo falha com `::error::` e o TestFlight não recebe um build sem o Sign in with Apple. Com as contas ligadas **sem** Firebase o login da Apple nem existe (provedor indisponível), então só há um aviso;
+- só os nomes das chaves aparecem no log; certificados nunca são impressos (o passo da assinatura mostra apenas o tipo, "Apple Distribution").
+
 ## Problemas comuns
 
 | Mensagem | O que fazer |
@@ -84,6 +110,9 @@ Observações:
 | *A chave é válida, mas não tem permissão (403)* | Use uma chave de equipe com papel App Manager ou Admin. |
 | *o app com bundle id ... não foi encontrado nesta conta* | Crie o app no App Store Connect com o bundle id `com.duofitness.app`. |
 | *A chave da API não tem permissão para o cloud signing* | Gere uma chave com papel **Admin** e atualize os três secrets. |
+| *Choose a certificate to revoke* / *maximum number of certificates* | Limite de certificados: veja "Limite de certificados" acima (revogar à mão só os Development "Created via API"). Não adianta trocar o papel da chave. |
+| *O export falhou depois do archive SEM assinatura (padrão)* | Veja "Se o export recusar o archive sem assinatura" acima. |
+| *Falta no .ipa o entitlement ...* | Os entitlements do projeto não chegaram ao `.ipa`. Veja "Entitlements do .ipa". |
 | *O time Apple não tem dispositivos registrados* | O Xcode exige um dispositivo para gerar o perfil de desenvolvimento do archive. O workflow repete o archive **sem assinar** e deixa a assinatura de distribuição para o export (a chave precisa ter papel Admin no primeiro build). Para evitar esse caminho, registre um iPhone em *developer.apple.com → Certificates, Identifiers & Profiles → Devices → +* (nome e UDID do aparelho; o UDID aparece no Finder ao selecionar o iPhone no Mac, ou em Ajustes → Geral → Sobre). |
 | *ITMS-90725 / SDK Version Issue* | O build não foi feito com Xcode 26. Confira o passo "Conferir Xcode 26" e a imagem `macos-26`. |
 | *O número do build já foi usado* | Não renomeie `ios.yml`; suba a versão no `app.json` se precisar recomeçar a contagem. |
