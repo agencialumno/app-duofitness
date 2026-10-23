@@ -9,5 +9,6 @@ chaves `@duo_*`, `workoutGenerator.js` e comportamento de adultos intactos (hash
 
 - (c) Frase para menores de 18 ("Para menores de 18 anos, a série foca em hábitos e técnica.") em `infoContent.js` (`MINOR_FOCUS_NOTE`, `getObjetivosBlocks`) e na tela dos objetivos da série guiada, só para `under18`. Decisão: o onboarding (`ProfileSetupScreen`) pergunta o objetivo ANTES da faixa etária, então a frase não aparece lá (não há como saber a idade ainda); aparece na série guiada, onde o objetivo é editável e a idade já é conhecida.
 - (b) Smoke do player: causa provável da intermitência = o vídeo de teste gravado no navegador (MediaRecorder) às vezes sai vazio/lento com a máquina ocupada. Correção: o teste só segue depois de um `<video>` de prova disparar `loadeddata` (grava de novo, até 4 vezes, se não ficar pronto). Nada de repetir o passo.
-- (a) Suíte completa e smoke: ver resultados ao fim desta seção (atualizado no fechamento).
+- (a) Suíte completa: `npm test` 747 ok, `typecheck` ok, `expo-doctor` 18/18, `expo install --check` ok, `check-pngs`, `check-videos`, `check-autolinking` ok, `expo export --platform android` ok. Smoke web (fora do repositório, em %TEMP%\pw-smoke) com dois passos NOVOS (concluir um treino no Modo Demo; criar perfil de menor de 18 com "Emagrecer" e gerar a série): **48 passos OK, 0 erros de JS** (07:27). Os dois seletores do passo do menor falharam antes por erro MEU no teste (telas empilhadas e placeholder `70` x `170`), corrigidos no teste, não no app.
 
+Ajuda-textos fechada às 07:28.
