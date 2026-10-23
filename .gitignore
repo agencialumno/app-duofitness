@@ -18,3 +18,19 @@ web-build/
 # Projetos nativos gerados por "expo prebuild" (não versionar)
 /android/
 /ios/
+
+# Firebase: a configuração do cliente não é segredo, mas fica FORA do repositório público (entra no build por secrets)
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+/firebase/secrets/
+firebase/secrets/
+.firebaserc.local
+firebase-debug.log
+firebase-debug.*.log
+# Chaves de conta de serviço do Google/Firebase (essas SIM são segredo)
+*service-account*.json
+*serviceAccount*.json
+*-adminsdk-*.json
+*firebase-adminsdk*.json
