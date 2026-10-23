@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { AUTH_ENABLED } from '../data/authConfig';
 import { createAuthProvider } from './createAuthProvider';
 import { assertAuthProvider } from './authInterface';
+import loadNativeProvider from './loadNativeProvider';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,7 @@ export function AuthStateProvider({ children, provider: injected, enabled = AUTH
   const provider = useMemo(() => {
     const p = injected || createAuthProvider({
       enabled,
+      loadNative: loadNativeProvider,
       platformOS: Platform.OS,
       search: typeof window !== 'undefined' && window.location ? window.location.search : '',
     });

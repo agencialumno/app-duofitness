@@ -25,6 +25,7 @@ google-services.json
 GoogleService-Info.plist
 **/GoogleService-Info.plist
 /firebase/secrets/
+/.firebase-config/
 firebase/secrets/
 .firebaserc.local
 firebase-debug.log

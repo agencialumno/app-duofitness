@@ -18,9 +18,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'];
+// Módulos de conta (Firebase, Google e Apple): NÃO fazem parte do package.json. O workflow os instala com
+// scripts/install-firebase-deps.mjs só quando FIREBASE_ENABLED=true; nesse caso esta checagem os exige.
+const FIREBASE_ON = String(process.env.FIREBASE_ENABLED || '').trim().toLowerCase() === 'true';
+const FIREBASE_EXPO_MODULES = ['expo-apple-authentication', 'expo-crypto'];
+const FIREBASE_ROOT_PACKAGES = ['@react-native-firebase/app', '@react-native-firebase/auth', '@react-native-google-signin/google-signin', 'expo-build-properties'];
+
+const REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video', ...(FIREBASE_ON ? FIREBASE_EXPO_MODULES : [])];
 // Resolvidos pelo Babel/Metro a partir da raiz do projeto.
-const RESOLVABLE_FROM_ROOT = ['babel-preset-expo'];
+const RESOLVABLE_FROM_ROOT = ['babel-preset-expo', ...(FIREBASE_ON ? FIREBASE_ROOT_PACKAGES : [])];
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
