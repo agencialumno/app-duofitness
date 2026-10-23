@@ -51,7 +51,7 @@ const out = (msg) => console.log(onGithub ? `::error::${msg}` : `ERRO  ${msg}`);
 const RULES = [
   {
     id: 'limite-certificados',
-    re: /maximum number of certificates|Choose a certificate to revoke|reached the maximum number of (development|distribution )?certificates/i,
+    re: /maximum number of certificates|Choose a certificate to revoke|reached the maximum number of (development |distribution )?certificates/i,
     msg: 'CAUSA: a conta Apple atingiu o limite de certificados. Cada execução do CI roda num runner novo, sem a chave privada do certificado anterior, e o archive com assinatura automática criou um certificado de DESENVOLVIMENTO novo ("Created via API") por execução, até esgotar o limite. AÇÃO: revogue manualmente, em developer.apple.com > Certificates, Identifiers & Profiles > Certificates, SÓ os certificados de tipo Development "Created via API" (confira antes se outro pipeline da conta os usa), sem tocar nos Distribution nem no "Distribution Managed". O ios.yml agora faz o archive SEM assinatura por padrão (a assinatura de distribuição fica no export), então isto não deve se repetir; só volta se rodar com sign_archive=true. NÃO adianta trocar o papel da chave da API: o problema não é permissão.',
   },
   {
