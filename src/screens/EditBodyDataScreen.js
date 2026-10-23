@@ -8,6 +8,8 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { calculateIMC, getIMCCategory } from '../utils/imc';
+import InfoButton from '../components/InfoButton';
+import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 
 const GENDERS = [
   { id: 'male', label: 'Masculino', icon: 'man-outline' },
@@ -32,6 +34,8 @@ export default function EditBodyDataScreen({ navigation }) {
 
   const imc = weight && height ? calculateIMC(parseFloat(weight), parseFloat(height)) : null;
   const imcInfo = imc ? getIMCCategory(imc) : null;
+  // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria e sem a tabela de referência de adultos.
+  const imcCategoryVisible = showImcCategory(ageGroup);
 
   const canSave = weight && height && parseFloat(weight) > 0 && parseFloat(height) > 0;
 
@@ -106,16 +110,21 @@ export default function EditBodyDataScreen({ navigation }) {
 
           {/* IMC em tempo real */}
           {imc && imcInfo && (
-            <View style={[styles.imcCard, { borderColor: imcInfo.color + '55' }]}>
+            <View style={[styles.imcCard, { borderColor: imcCategoryVisible ? imcInfo.color + '55' : COLORS.border }]}>
               <View style={styles.imcLeft}>
-                <Text style={styles.imcLabel}>SEU IMC</Text>
-                <Text style={[styles.imcValue, { color: imcInfo.color }]}>{imc.toFixed(1)}</Text>
-                <Text style={[styles.imcCategory, { color: imcInfo.color }]}>{imcInfo.label}</Text>
+                <View style={styles.imcLabelRow}>
+                  <Text style={styles.imcLabel}>SEU IMC</Text>
+                  <InfoButton tema="imc" blocks={buildImcSheet({ weight, height, ageGroup }).blocks} />
+                </View>
+                <Text style={[styles.imcValue, { color: imcCategoryVisible ? imcInfo.color : COLORS.white }]}>{imc.toFixed(1)}</Text>
+                {imcCategoryVisible && <Text style={[styles.imcCategory, { color: imcInfo.color }]}>{imcInfo.label}</Text>}
               </View>
-              <View style={styles.imcRight}>
-                <Ionicons name={imcInfo.icon} size={32} color={imcInfo.color} />
-                <Text style={styles.imcTip}>{imcInfo.tip}</Text>
-              </View>
+              {imcCategoryVisible && (
+                <View style={styles.imcRight}>
+                  <Ionicons name={imcInfo.icon} size={32} color={imcInfo.color} />
+                  <Text style={styles.imcTip}>{imcInfo.tip}</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -152,7 +161,8 @@ export default function EditBodyDataScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Tabela de referência */}
+          {/* Tabela de referência (faixas de adultos: não aparece para menores de 18) */}
+          {imcCategoryVisible && (
           <View style={styles.refCard}>
             <Text style={styles.refTitle}>Referência de IMC</Text>
             {[
@@ -169,6 +179,7 @@ export default function EditBodyDataScreen({ navigation }) {
               </View>
             ))}
           </View>
+          )}
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -195,6 +206,7 @@ const styles = StyleSheet.create({
   measureUnit: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, fontWeight: '500' },
   imcCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.lg, gap: SPACING.md },
   imcLeft: { gap: 4 },
+  imcLabelRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   imcLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, fontWeight: '600', letterSpacing: 1.5 },
   imcValue: { fontSize: 44, fontWeight: '700', lineHeight: 48 },
   imcCategory: { fontSize: FONTS.sizes.md, fontWeight: '700' },

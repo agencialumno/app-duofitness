@@ -12,6 +12,8 @@ import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
 import { DemoBanner } from '../components/DemoControls';
 import { scoreBand } from '../utils/health';
+import InfoButton from '../components/InfoButton';
+import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -27,6 +29,9 @@ export default function HomeScreen({ navigation }) {
   const healthInfo = useHealth();
   const healthBand = scoreBand(healthInfo.score);
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
+  // Menor de 18 anos: as faixas de adultos não se aplicam; o rótulo e as cores de categoria ficam escondidos.
+  const imcCategoryVisible = showImcCategory(user?.ageGroup);
+  const imcColor = imcCategoryVisible ? imcInfo?.color : COLORS.white;
 
   return (
     <View style={styles.container}>
@@ -70,11 +75,14 @@ export default function HomeScreen({ navigation }) {
 
       {/* IMC Card */}
       {imcInfo && user?.weight && user?.height ? (
-        <View style={[styles.imcCard, { borderColor: imcInfo.color + '55' }]}>
+        <View style={[styles.imcCard, { borderColor: imcCategoryVisible ? imcInfo.color + '55' : COLORS.border }]}>
           <View style={styles.imcLeft}>
-            <Text style={styles.imcLabel}>IMC</Text>
-            <Text style={[styles.imcValue, { color: imcInfo.color }]}>{user.imc}</Text>
-            <Text style={[styles.imcCat, { color: imcInfo.color }]}>{imcInfo.label}</Text>
+            <View style={styles.imcLabelRow}>
+              <Text style={styles.imcLabel}>IMC</Text>
+              <InfoButton tema="imc" blocks={buildImcSheet({ weight: user.weight, height: user.height, ageGroup: user.ageGroup }).blocks} />
+            </View>
+            <Text style={[styles.imcValue, { color: imcColor }]}>{user.imc}</Text>
+            {imcCategoryVisible && <Text style={[styles.imcCat, { color: imcInfo.color }]}>{imcInfo.label}</Text>}
           </View>
           <View style={styles.imcDivider} />
           <View style={styles.imcRight}>
@@ -301,6 +309,7 @@ const styles = StyleSheet.create({
   xpNext: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
   imcCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md, marginBottom: SPACING.sm, gap: SPACING.md },
   imcLeft: { gap: 2 },
+  imcLabelRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   imcLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, fontWeight: '600', letterSpacing: 1.5 },
   imcValue: { fontSize: 32, fontWeight: '700', lineHeight: 36 },
   imcCat: { fontSize: FONTS.sizes.xs, fontWeight: '600' },

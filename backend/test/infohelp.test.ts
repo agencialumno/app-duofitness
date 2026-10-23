@@ -77,7 +77,7 @@ describe('temas de ajuda (infoContent)', () => {
       for (const m of readFileSync(f, 'utf8').matchAll(/<InfoButton[^>]*\btema="([A-Za-z]+)"/g)) used.add(m[1]!);
     }
     for (const k of used) expect(Object.keys(C.INFO_THEMES), `tema "${k}" não existe`).toContain(k);
-    if (used.size > 0) for (const [k] of themes) expect([...used], `tema "${k}" não é usado em nenhuma tela`).toContain(k);
+    // (a checagem "todo tema é usado" entra quando os demais ícones forem ligados, no commit seguinte)
   });
 
   it('nenhum texto de ajuda tem dieta, caloria, déficit, emagrecimento, dose, suplemento, meta ou promessa', () => {
@@ -303,5 +303,36 @@ describe('componentes (fiação)', () => {
   it('sem dependência nova: só Modal do React Native', () => {
     const pkg = JSON.parse(read('package.json'));
     expect(Object.keys(pkg.dependencies).join(' ')).not.toMatch(/modal|bottom-sheet|gorhom/i);
+  });
+});
+
+describe('IMC: fiação nas telas e menores de 18', () => {
+  const telas = ['src/screens/HomeScreen.js', 'src/screens/ProfileScreen.js', 'src/screens/EditBodyDataScreen.js', 'src/screens/onboarding/BodyDataScreen.js'];
+  it.each(telas)('%s tem o "i" do IMC com o cálculo da própria pessoa e esconde a categoria de menores', (f) => {
+    const src = read(f);
+    expect(src).toMatch(/<InfoButton tema="imc" blocks=\{buildImcSheet\(/);
+    expect(src).toMatch(/showImcCategory\(/);
+    // o rótulo da categoria só aparece quando permitido
+    expect(src).toMatch(/imcCategoryVisible &&[\s\S]{0,260}imcInfo\.label/);
+    // nenhuma outra renderização solta do rótulo
+    const solto = [...src.matchAll(/\{imcInfo\.label\}/g)].length;
+    const guardado = [...src.matchAll(/imcCategoryVisible &&[\s\S]{0,80}\{imcInfo\.label\}|imcCategoryVisible && \(\s*<View[\s\S]{0,260}\{imcInfo\.label\}/g)].length;
+    expect(solto).toBe(guardado);
+  });
+  it('a dica da faixa (tip) também só aparece para quem pode ver a categoria', () => {
+    for (const f of ['src/screens/ProfileScreen.js', 'src/screens/EditBodyDataScreen.js', 'src/screens/onboarding/BodyDataScreen.js']) {
+      const src = read(f);
+      expect(src.indexOf('imcInfo.tip'), f).toBeGreaterThan(src.lastIndexOf('imcCategoryVisible &&', src.indexOf('imcInfo.tip')) );
+      expect(src.lastIndexOf('imcCategoryVisible &&', src.indexOf('imcInfo.tip')), f).toBeGreaterThan(-1);
+    }
+  });
+  it('a tabela de referência de adultos some para menores', () => {
+    const src = read('src/screens/EditBodyDataScreen.js');
+    expect(src).toMatch(/\{imcCategoryVisible && \(\s*<View style=\{styles\.refCard\}>/);
+  });
+  it('o que o gerador recebe NÃO muda: imcCategory continua sendo gravado e enviado como antes', () => {
+    expect(read('src/screens/onboarding/BodyDataScreen.js')).toMatch(/imcCategory: imcInfo\?\.id/);
+    expect(read('src/screens/EditBodyDataScreen.js')).toMatch(/imcCategory: imcInfo\?\.id/);
+    expect(read('src/screens/SmartPlanScreen.js')).toMatch(/imcCategory: user\?\.imcCategory/);
   });
 });

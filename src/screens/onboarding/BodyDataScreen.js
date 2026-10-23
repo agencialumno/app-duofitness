@@ -7,6 +7,8 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { calculateIMC, getIMCCategory } from '../../utils/imc';
+import InfoButton from '../../components/InfoButton';
+import { buildImcSheet, showImcCategory } from '../../utils/imcInfo';
 
 const GENDERS = [
   { id: 'male', label: 'Masculino', icon: 'man-outline' },
@@ -32,6 +34,8 @@ export default function BodyDataScreen({ navigation, route }) {
 
   const imc = weight && height ? calculateIMC(parseFloat(weight), parseFloat(height)) : null;
   const imcInfo = imc ? getIMCCategory(imc) : null;
+  // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria (as faixas de adultos não se aplicam).
+  const imcCategoryVisible = showImcCategory(ageGroup);
 
   const canContinue = gender && ageGroup && weight && height &&
     parseFloat(weight) > 0 && parseFloat(height) > 0;
@@ -130,16 +134,21 @@ export default function BodyDataScreen({ navigation, route }) {
 
         {/* IMC Preview */}
         {imc && imcInfo && (
-          <View style={[styles.imcCard, { borderColor: imcInfo.color + '44' }]}>
+          <View style={[styles.imcCard, { borderColor: imcCategoryVisible ? imcInfo.color + '44' : COLORS.border }]}>
             <View style={styles.imcLeft}>
-              <Text style={styles.imcLabel}>SEU IMC</Text>
-              <Text style={[styles.imcValue, { color: imcInfo.color }]}>{imc.toFixed(1)}</Text>
-              <Text style={[styles.imcCategory, { color: imcInfo.color }]}>{imcInfo.label}</Text>
+              <View style={styles.imcLabelRow}>
+                <Text style={styles.imcLabel}>SEU IMC</Text>
+                <InfoButton tema="imc" blocks={buildImcSheet({ weight, height, ageGroup }).blocks} />
+              </View>
+              <Text style={[styles.imcValue, { color: imcCategoryVisible ? imcInfo.color : COLORS.white }]}>{imc.toFixed(1)}</Text>
+              {imcCategoryVisible && <Text style={[styles.imcCategory, { color: imcInfo.color }]}>{imcInfo.label}</Text>}
             </View>
-            <View style={styles.imcRight}>
-              <Ionicons name={imcInfo.icon} size={36} color={imcInfo.color} />
-              <Text style={styles.imcTip}>{imcInfo.tip}</Text>
-            </View>
+            {imcCategoryVisible && (
+              <View style={styles.imcRight}>
+                <Ionicons name={imcInfo.icon} size={36} color={imcInfo.color} />
+                <Text style={styles.imcTip}>{imcInfo.tip}</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -194,6 +203,7 @@ const styles = StyleSheet.create({
   measureUnit: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, fontWeight: '500' },
   imcCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.lg, marginBottom: SPACING.lg },
   imcLeft: { gap: 4 },
+  imcLabelRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   imcLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, fontWeight: '600', letterSpacing: 1.5 },
   imcValue: { fontSize: 40, fontWeight: '700', lineHeight: 44 },
   imcCategory: { fontSize: FONTS.sizes.md, fontWeight: '600' },

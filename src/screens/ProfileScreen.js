@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
+import InfoButton from '../components/InfoButton';
+import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import { DemoCard } from '../components/DemoControls';
 import { resetToWelcome } from '../navigation/resetNavigation';
 
@@ -30,6 +32,8 @@ export default function ProfileScreen({ navigation }) {
   const { user, xp, streak, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
   const levelInfo = getLevel();
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
+  // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria (as faixas de adultos não se aplicam).
+  const imcCategoryVisible = showImcCategory(user?.ageGroup);
 
   const handleReset = () => {
     Alert.alert('Resetar dados', 'Isso vai apagar todos os seus treinos e progresso. Tem certeza?', [
@@ -106,15 +110,20 @@ export default function ProfileScreen({ navigation }) {
               </View>
               <View style={styles.bodyDivider} />
               <View style={styles.bodyStat}>
-                <Ionicons name={imcInfo.icon} size={18} color={imcInfo.color} />
-                <Text style={[styles.bodyStatValue, { color: imcInfo.color }]}>{user.imc}</Text>
-                <Text style={styles.bodyStatLabel}>IMC</Text>
+                <Ionicons name={imcCategoryVisible ? imcInfo.icon : 'analytics-outline'} size={18} color={imcCategoryVisible ? imcInfo.color : COLORS.primary} />
+                <Text style={[styles.bodyStatValue, imcCategoryVisible && { color: imcInfo.color }]}>{user.imc}</Text>
+                <View style={styles.imcStatLabelRow}>
+                  <Text style={styles.bodyStatLabel}>IMC</Text>
+                  <InfoButton tema="imc" blocks={buildImcSheet({ weight: user.weight, height: user.height, ageGroup: user.ageGroup }).blocks} />
+                </View>
               </View>
             </View>
-            <View style={[styles.imcBanner, { backgroundColor: imcInfo.color + '18', borderColor: imcInfo.color + '44' }]}>
-              <Text style={[styles.imcBannerLabel, { color: imcInfo.color }]}>{imcInfo.label}</Text>
-              <Text style={styles.imcBannerTip}>{imcInfo.tip}</Text>
-            </View>
+            {imcCategoryVisible && (
+              <View style={[styles.imcBanner, { backgroundColor: imcInfo.color + '18', borderColor: imcInfo.color + '44' }]}>
+                <Text style={[styles.imcBannerLabel, { color: imcInfo.color }]}>{imcInfo.label}</Text>
+                <Text style={styles.imcBannerTip}>{imcInfo.tip}</Text>
+              </View>
+            )}
           </View>
         ) : (
           <TouchableOpacity
@@ -223,6 +232,7 @@ const styles = StyleSheet.create({
   bodyDivider: { width: 1, backgroundColor: COLORS.border },
   bodyStatValue: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white },
   bodyStatLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
+  imcStatLabelRow: { flexDirection: 'row', alignItems: 'center' },
   imcBanner: { padding: SPACING.md, borderTopWidth: 1, gap: 2 },
   imcBannerLabel: { fontSize: FONTS.sizes.sm, fontWeight: '700' },
   imcBannerTip: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, lineHeight: 18 },
