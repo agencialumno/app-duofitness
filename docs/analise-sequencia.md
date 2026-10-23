@@ -1,6 +1,6 @@
 # Sequência: Home, Saúde e conquistas (análise e proposta)
 
-**Status:** a Home já usa o cálculo por datas (aplicado). O **ajuste das conquistas é só uma proposta, NÃO aplicada.**
+**Status:** Home e Perfil usam o cálculo por datas (aplicado). As conquistas "3 dias seguidos" e "Semana perfeita" também (aplicado, `src/utils/achievements.js`). "Guerreiro da semana" NÃO mudou (continua 7 treinos no total).
 
 ## O que mudou (aplicado)
 
@@ -40,7 +40,7 @@ e em `checkAchievements`:
 
 Com a Home mostrando "Sequência 1d" e a conquista "3 dias seguidos" aparecendo, o usuário vê uma **contradição**.
 
-## Proposta (NÃO aplicada)
+## Proposta (APLICADA para "3 dias seguidos" e "Semana perfeita"; o item 1 abaixo segue em aberto)
 
 Passar a **sequência por datas** para `checkAchievements`, mantendo o contador gravado:
 

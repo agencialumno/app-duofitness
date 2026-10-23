@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFreshDemoData } from '../data/demoData';
 import { canOfferDemo, clearAllDuoData, restartDemoData, writeDemoData } from '../utils/demoSession';
 import { readAppData } from '../utils/safeStorage';
+import { evaluateAchievements } from '../utils/achievements';
 
 const AppContext = createContext({});
 
@@ -98,32 +99,17 @@ export const AppProvider = ({ children }) => {
     setStreak(newStreak);
     await AsyncStorage.setItem('@duo_streak', newStreak.toString());
 
-    checkAchievements(updatedSessions, newXp, newStreak);
+    checkAchievements(updatedSessions, newXp);
     return session;
   };
 
-  const checkAchievements = async (sessions, currentXp, currentStreak) => {
-    const newAchs = [...achievements];
-    let changed = false;
-
-    const unlock = (id, title, icon) => {
-      if (!newAchs.find(a => a.id === id)) {
-        newAchs.push({ id, title, icon, unlockedAt: new Date().toISOString() });
-        changed = true;
-      }
-    };
-
-    if (sessions.length >= 1) unlock('first_workout', 'Primeira série!', '🏆');
-    if (sessions.length >= 7) unlock('week_warrior', 'Guerreiro da semana', '🔥');
-    if (sessions.length >= 30) unlock('monthly_beast', 'Besta mensal', '💪');
-    if (currentStreak >= 3) unlock('streak_3', '3 dias seguidos', '⚡');
-    if (currentStreak >= 7) unlock('streak_7', 'Semana perfeita', '🌟');
-    if (currentXp >= 500) unlock('xp_500', '500 XP acumulado', '🎯');
-    if (currentXp >= 1000) unlock('xp_1000', 'Mestre do XP', '👑');
-
+  // "3 dias seguidos" e "Semana perfeita" usam a sequência por datas (ver utils/achievements.js);
+  // o contador @duo_streak segue gravado, mas não decide mais conquistas.
+  const checkAchievements = async (sessions, currentXp) => {
+    const { list, changed } = evaluateAchievements({ current: achievements, sessions, xp: currentXp });
     if (changed) {
-      setAchievements(newAchs);
-      await AsyncStorage.setItem('@duo_achievements', JSON.stringify(newAchs));
+      setAchievements(list);
+      await AsyncStorage.setItem('@duo_achievements', JSON.stringify(list));
     }
   };
 
