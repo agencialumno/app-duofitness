@@ -149,7 +149,8 @@ describe('flag EXPO_PUBLIC_EXERCISE_VIDEOS e acessibilidade', () => {
     expect(src).toMatch(/em breve`/);
     expect(src).toContain('Vídeo em breve');
     expect(src).toMatch(/aspectRatio: 1/);
-    expect(src).toMatch(/isReduceMotionEnabled/);
+    expect(src).toMatch(/useReduceMotionState/);
+    expect(readFileSync(path.join(REPO, 'src/hooks/useReduceMotion.js'), 'utf8')).toMatch(/isReduceMotionEnabled/);
     expect(src).toMatch(/autoplay: !reduceMotion/);
     expect(src).toMatch(/accessibilityLabel=\{label\}/);
   });
