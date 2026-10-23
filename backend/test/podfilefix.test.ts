@@ -12,9 +12,8 @@ const fix = req('../../plugins/withFirebaseIosFix.js') as ((c: Record<string, un
   patchPodfile: (t: string) => string; PodfileTemplateError: new (m: string) => Error; MARK_VAR: string; MARK_POST: string;
 };
 // normaliza para LF: o Git no Windows pode entregar a fixture com CRLF
-const TEMPLATE = readFileSync(path.join(__dirname, 'fixtures/Podfile.sdk54.rb'), 'utf8').split('
-').join('
-');
+const CR = String.fromCharCode(13);
+const TEMPLATE = readFileSync(path.join(__dirname, 'fixtures/Podfile.sdk54.rb'), 'utf8').split(CR).join('');
 const count = (s: string, re: RegExp) => (s.match(re) ?? []).length;
 
 describe('patchPodfile (fixture do template do SDK 54)', () => {
