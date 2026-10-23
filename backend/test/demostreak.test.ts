@@ -65,3 +65,36 @@ describe('sequência do demo: Home x Saúde', () => {
     expect(streak.detail).toContain('8 dias seguidos');
   });
 });
+
+describe('Perfil, Home e Saúde mostram a mesma sequência', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync } = require('node:fs') as typeof import('node:fs');
+  const path = require('node:path') as typeof import('node:path');
+  const read = (f: string) => readFileSync(path.resolve(__dirname, '../..', f), 'utf8');
+
+  it('as três telas usam computeStreak(completedSessions), de health.js (sem cópia da conta)', () => {
+    for (const f of ['src/screens/HomeScreen.js', 'src/screens/ProfileScreen.js']) {
+      const src = read(f);
+      expect(src, f).toMatch(/import \{[^}]*computeStreak[^}]*\} from '\.\.\/utils\/health'/);
+      expect(src, f).toMatch(/computeStreak\(completedSessions\)/);
+      expect(src, f).not.toMatch(/\bstreak\b[^D]*\} = useApp\(\)|\$\{streak\}/); // não lê mais o contador gravado
+    }
+    expect(read('src/hooks/useHealth.js') + read('src/utils/health.js')).toMatch(/computeStreak/);
+  });
+
+  it('o Perfil diz "1 dia" no singular e "N dias" no plural', () => {
+    expect(read('src/screens/ProfileScreen.js')).toMatch(/streakDays === 1 \? 'dia' : 'dias'/);
+  });
+
+  it('o contador @duo_streak continua gravado pelo AppContext (sem migração)', () => {
+    const ctx = read('src/context/AppContext.js');
+    expect(ctx).toMatch(/AsyncStorage\.setItem\('@duo_streak'/);
+    expect(ctx).toMatch(/const newStreak = streak \+ 1/);
+  });
+
+  it('com o contador divergente das datas, as telas mostram o das datas (dois treinos em dias alternados = 1)', () => {
+    const now = new Date(2026, 5, 10, 12);
+    const sessions = [-4, -2, 0].map((o) => ({ completedAt: new Date(2026, 5, 10 + o, 9).toISOString() }));
+    expect(H.computeStreak(sessions, now)).toBe(1); // contador antigo mostraria 3
+  });
+});

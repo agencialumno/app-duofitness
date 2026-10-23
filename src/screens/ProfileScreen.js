@@ -9,6 +9,7 @@ import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import { DemoCard } from '../components/DemoControls';
 import { resetToWelcome } from '../navigation/resetNavigation';
+import { computeStreak } from '../utils/health';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecer',
@@ -29,7 +30,9 @@ function formatGoals(goals) {
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, streak, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
+  const { user, xp, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
+  // Sequência = dias seguidos com treino, pelas datas das sessões: a MESMA função da Home e da Saúde.
+  const streakDays = computeStreak(completedSessions);
   const levelInfo = getLevel();
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
   // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria (as faixas de adultos não se aplicam).
@@ -143,7 +146,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.statsGrid}>
           {[
             { label: 'Treinos realizados', value: completedSessions.length, icon: 'checkmark-circle-outline' },
-            { label: 'Sequência atual', value: `${streak} dias`, icon: 'flame-outline' },
+            { label: 'Sequência atual', value: `${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}`, icon: 'flame-outline' },
             { label: 'Séries criadas', value: workouts.length, icon: 'barbell-outline' },
             { label: 'Conquistas', value: achievements.length, icon: 'trophy-outline' },
           ].map((s, i) => (
