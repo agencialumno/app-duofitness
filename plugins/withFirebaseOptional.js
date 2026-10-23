@@ -29,6 +29,9 @@ function resolveConfigFiles(env = process.env, cwd = process.cwd()) {
   };
 }
 
+// Pods do React Native Firebase usados pelo app (@react-native-firebase/app e /auth).
+const RNFB_STATIC_PODS = ['RNFBApp', 'RNFBAuth'];
+
 const withFirebaseOptional = (config) => {
   const { enabled, androidFile, iosFile } = resolveConfigFiles();
   if (!enabled) return config;
@@ -43,8 +46,11 @@ const withFirebaseOptional = (config) => {
   if (iosFile) {
     next.ios = { ...(config.ios || {}), googleServicesFile: iosFile, usesAppleSignIn: true };
     // O Firebase no iOS exige frameworks estáticos; só entram quando há o arquivo do iOS.
-    plugins.push([plug('expo-build-properties/app.plugin.js'), { ios: { useFrameworks: 'static' } }]);
+    // forceStaticLinking: remédio documentado do RNFB com frameworks estáticos (RNFB #8657, Expo #39607): os pods RNFB viram
+    // bibliotecas estáticas e deixam de dar "non-modular header inside framework module" com o React Native pré-compilado.
+    plugins.push([plug('expo-build-properties/app.plugin.js'), { ios: { useFrameworks: 'static', forceStaticLinking: RNFB_STATIC_PODS } }]);
     plugins.push(plug('expo-apple-authentication/app.plugin.js'));
+    plugins.push(require('./withFirebaseIosFix')); // ajustes do Podfile (só com a flag; idempotente)
   }
   plugins.push(plug('@react-native-firebase/app/app.plugin.js'));
   plugins.push(plug('@react-native-google-signin/google-signin/app.plugin.js')); // lê o arquivo (URL scheme do iOS, Android)
@@ -53,3 +59,4 @@ const withFirebaseOptional = (config) => {
 
 module.exports = withFirebaseOptional;
 module.exports.resolveConfigFiles = resolveConfigFiles;
+module.exports.RNFB_STATIC_PODS = RNFB_STATIC_PODS;
