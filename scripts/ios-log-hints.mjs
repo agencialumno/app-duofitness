@@ -50,6 +50,12 @@ const out = (msg) => console.log(onGithub ? `::error::${msg}` : `ERRO  ${msg}`);
 
 const RULES = [
   {
+    id: 'limite-certificados',
+    re: /maximum number of certificates|Choose a certificate to revoke|reached the maximum number of (development|distribution )?certificates/i,
+    msg: 'CAUSA: a conta Apple atingiu o limite de certificados. Cada execução do CI roda num runner novo, sem a chave privada do certificado anterior, e o archive com assinatura automática criou um certificado de DESENVOLVIMENTO novo ("Created via API") por execução, até esgotar o limite. AÇÃO: revogue manualmente, em developer.apple.com > Certificates, Identifiers & Profiles > Certificates, SÓ os certificados de tipo Development "Created via API" (confira antes se outro pipeline da conta os usa), sem tocar nos Distribution nem no "Distribution Managed". O ios.yml agora faz o archive SEM assinatura por padrão (a assinatura de distribuição fica no export), então isto não deve se repetir; só volta se rodar com sign_archive=true. NÃO adianta trocar o papel da chave da API: o problema não é permissão.',
+  },
+  {
+    suppressedBy: 'limite-certificados',
     re: /cloud signing permission error|does not have permission to (create|use)|permission to create .*certificate|cloud[- ]managed.*(permission|denied)|Unable to create .*distribution certificate/i,
     msg: 'A chave da API não tem permissão para o cloud signing (criar o certificado Apple Distribution gerenciado na nuvem). A chave precisa ter o papel ADMIN. No App Store Connect: Users and Access > Integrations > App Store Connect API > gerar chave de EQUIPE com acesso Admin (só o Account Holder ou um Admin gera) e atualizar os secrets APPSTORE_KEY_ID, APPSTORE_ISSUER_ID e APPSTORE_PRIVATE_KEY. Depois que o certificado gerenciado existir, App Manager basta nas próximas execuções.',
   },
@@ -65,9 +71,9 @@ const RULES = [
   {
     id: 'perfil',
     // consequência comum de "sem dispositivos": se essa causa já foi explicada, não repete esta
-    suppressedBy: 'sem-dispositivos',
+    suppressedBy: ['sem-dispositivos', 'limite-certificados'],
     re: /No profiles for '.*' were found|requires a provisioning profile|Provisioning profile .* doesn't (match|include)/i,
-    msg: 'Não foi possível obter o perfil de provisionamento de com.duofitness.app. Confira em developer.apple.com > Certificates, Identifiers & Profiles > Identifiers se o App ID existe (o app do App Store Connect cria o registro) e use uma chave com papel Admin para o primeiro build.',
+    msg: 'Não foi possível obter o perfil de provisionamento de com.duofitness.app. Confira em developer.apple.com > Certificates, Identifiers & Profiles > Identifiers se o App ID existe (o app do App Store Connect cria o registro) Se a chave da API JÁ tem papel Admin, não troque o papel: leia as outras dicas deste log (por exemplo, o limite de certificados). Só use uma chave com papel Admin no primeiro build se ela ainda não for Admin.',
   },
   {
     re: /SDK version issue|iOS 26 SDK|Xcode 26 or later|ITMS-90725|ITMS-90562/i,
@@ -119,7 +125,7 @@ let found = false;
 const matched = new Set();
 for (const rule of RULES) {
   if (!rule.re.test(log)) continue;
-  if (rule.suppressedBy && matched.has(rule.suppressedBy)) continue;
+  if (rule.suppressedBy && [rule.suppressedBy].flat().some((id) => matched.has(id))) continue;
   if (rule.id) matched.add(rule.id);
   out(rule.msg);
   found = true;
