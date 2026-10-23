@@ -107,3 +107,18 @@ describe('workflows do Firebase', () => {
     for (const f of ['android.yml', 'ios.yml', 'ci.yml']) expect(yml(f)).not.toMatch(/echo[^\n]*FIREBASE_GOOGLE_SERVICE/);
   });
 });
+
+describe('firebase-spike.yml (medição, só manual)', () => {
+  const y = readFileSync(path.join(REPO, '.github/workflows/firebase-spike.yml'), 'utf8');
+  it('só tem o gatilho workflow_dispatch (nunca push, tag nem pull request)', () => {
+    const on = y.slice(y.indexOf('\non:'), y.indexOf('\npermissions:'));
+    expect(on).toContain('workflow_dispatch');
+    expect(on).not.toMatch(/\b(push|pull_request|schedule|tags)\b/);
+  });
+  it('não usa secrets, só permissões de leitura, e apaga a configuração falsa ao fim', () => {
+    expect(y).not.toMatch(/secrets\./);
+    expect(y).toMatch(/permissions:\r?\n\s+contents: read/);
+    expect(y.match(/firebase-prepare\.mjs cleanup/g)?.length).toBe(2);
+    expect(y).not.toMatch(/upload-artifact|altool|TestFlight|keystore/i);
+  });
+});

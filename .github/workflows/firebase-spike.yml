@@ -1,0 +1,166 @@
+# Medição (Fase 0 do plano de contas): quanto o Firebase pesa nos builds, SEM secrets reais.
+#
+# - Só execução MANUAL (workflow_dispatch). Nunca roda em push, tag nem pull request.
+# - Usa arquivos de configuração FALSOS gerados aqui mesmo (compilar não valida com o servidor), então não precisa de nenhum secret.
+# - Compara "sem Firebase" (base, como o build de hoje) com "com Firebase" (módulos de conta + frameworks estáticos no iOS).
+# - Não assina nada, não envia nada e não publica artefato: só mede tempo e diz se quebrou, no resumo do job.
+# Critério combinado: se o build iOS ficar mais de 2x mais lento ou quebrar, reavaliar o SDK JS ANTES de seguir.
+# Como ler: docs/medicoes-fase0.md.
+name: firebase-spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Plataforma a medir'
+        required: true
+        default: both
+        type: choice
+        options: [both, android, ios]
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    if: ${{ inputs.platform == 'both' || inputs.platform == 'android' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        firebase: ['off', 'on']
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      VARIANT: ${{ matrix.firebase }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - uses: actions/setup-java@v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci
+      - name: Configuração FALSA do Firebase e módulos de conta (só na variante "on")
+        if: matrix.firebase == 'on'
+        run: |
+          set -euo pipefail
+          mkdir -p .firebase-config
+          cat > .firebase-config/google-services.json <<'JSON'
+          {"project_info":{"project_id":"spike-project"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.duofitness.app"}},"oauth_client":[{"client_id":"000000000000-spike.apps.googleusercontent.com","client_type":3}],"api_key":[{"current_key":"SPIKE-NOT-A-REAL-KEY"}]}],"configuration_version":"1"}
+          JSON
+          echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
+          echo "FIREBASE_ANDROID_CONFIG=$PWD/.firebase-config/google-services.json" >> "$GITHUB_ENV"
+          FIREBASE_ENABLED=true node scripts/install-firebase-deps.mjs
+      - name: Prebuild Android (tempo)
+        run: |
+          set -euo pipefail
+          T0=$(date +%s)
+          npx expo prebuild --platform android --no-install
+          echo "PREBUILD_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: Compilar (assembleDebug, só arm64; tempo)
+        working-directory: android
+        run: |
+          set -euo pipefail
+          T0=$(date +%s)
+          ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
+          echo "BUILD_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Android, Firebase: \`$VARIANT\`"
+            echo "- prebuild: ${PREBUILD_S:-?} s"
+            echo "- assembleDebug (arm64): ${BUILD_S:-?} s"
+            echo "- resultado do job: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Apagar a configuração falsa
+        if: always()
+        run: node scripts/firebase-prepare.mjs cleanup
+
+  ios:
+    if: ${{ inputs.platform == 'both' || inputs.platform == 'ios' }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        firebase: ['off', 'on']
+    env:
+      LANG: en_US.UTF-8
+      NODE_OPTIONS: --max-old-space-size=4096
+      VARIANT: ${{ matrix.firebase }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: xcodebuild -version
+      - run: npm ci
+      - name: Configuração FALSA do Firebase e módulos de conta (só na variante "on")
+        if: matrix.firebase == 'on'
+        run: |
+          set -euo pipefail
+          mkdir -p .firebase-config
+          cat > .firebase-config/GoogleService-Info.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>CLIENT_ID</key><string>000000000000-spike.apps.googleusercontent.com</string>
+          <key>REVERSED_CLIENT_ID</key><string>com.googleusercontent.apps.000000000000-spike</string>
+          <key>API_KEY</key><string>SPIKE-NOT-A-REAL-KEY</string>
+          <key>GCM_SENDER_ID</key><string>000000000000</string>
+          <key>PLIST_VERSION</key><string>1</string>
+          <key>BUNDLE_ID</key><string>com.duofitness.app</string>
+          <key>PROJECT_ID</key><string>spike-project</string>
+          <key>STORAGE_BUCKET</key><string>spike-project.appspot.com</string>
+          <key>IS_ADS_ENABLED</key><false/><key>IS_ANALYTICS_ENABLED</key><false/><key>IS_APPINVITE_ENABLED</key><true/><key>IS_GCM_ENABLED</key><true/><key>IS_SIGNIN_ENABLED</key><true/>
+          <key>GOOGLE_APP_ID</key><string>1:000000000000:ios:0000000000000000</string>
+          </dict></plist>
+          PLIST
+          echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
+          echo "FIREBASE_IOS_CONFIG=$PWD/.firebase-config/GoogleService-Info.plist" >> "$GITHUB_ENV"
+          FIREBASE_ENABLED=true node scripts/install-firebase-deps.mjs
+      - name: Prebuild iOS (tempo)
+        run: |
+          set -euo pipefail
+          T0=$(date +%s)
+          npx expo prebuild --platform ios --no-install
+          echo "PREBUILD_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: pod install (tempo)
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          T0=$(date +%s)
+          pod install
+          echo "PODS_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: Compilar para o simulador, sem assinatura (tempo)
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          WORKSPACE="$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)"
+          SCHEME="$(basename "$WORKSPACE" .xcworkspace)"
+          T0=$(date +%s)
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 40
+          echo "BUILD_S=$(( $(date +%s) - T0 ))" >> "$GITHUB_ENV"
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### iOS, Firebase: \`$VARIANT\`"
+            echo "- prebuild: ${PREBUILD_S:-?} s"
+            echo "- pod install: ${PODS_S:-?} s"
+            echo "- xcodebuild (simulador, Debug): ${BUILD_S:-?} s"
+            echo "- resultado do job: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Apagar a configuração falsa
+        if: always()
+        run: node scripts/firebase-prepare.mjs cleanup
