@@ -10,7 +10,7 @@ import ExerciseMedia from '../../src/components/ExerciseMedia.js';
 import { getTestVideoSource, parseTestVideo } from '../../src/utils/mediaTestFlag.js';
 import { AccessibilityInfo, AppState, Platform } from './stubs/react-native';
 import { nav } from './stubs/navigation';
-import { FakePlayer, players } from './stubs/expo-video';
+import { FakePlayer, playerDefaults, players } from './stubs/expo-video';
 import { byLabel, byTestId, findAll, mount, textsOf } from './stubs/mini-render';
 
 const REPO = path.resolve(__dirname, '../..');
@@ -43,6 +43,18 @@ async function open(m: unknown, props: Record<string, unknown> = {}) {
   return r;
 }
 const player = (): FakePlayer => players[players.length - 1]!;
+// abre com o player ainda "carregando" (status 'loading')
+async function openLoading() {
+  media.map = { squat: VIDEO };
+  playerDefaults.status = 'loading';
+  try {
+    const r = mount(ExerciseMedia as never, { exercise: SQUAT });
+    await r.flush();
+    return r;
+  } finally {
+    playerDefaults.status = 'readyToPlay';
+  }
+}
 const press = (r: { tree: unknown }, label: string) => (byLabel(r.tree, label) as { props: { onPress: () => void } }).props.onPress();
 
 describe('sem vídeo no mapa: comportamento atual (capa ou placeholder)', () => {
@@ -186,6 +198,33 @@ describe('com vídeo no mapa', () => {
     expect(AppState.__count()).toBe(0);
     expect(nav.count()).toBe(0);
     expect(Object.values(p.listeners).every((s) => s.size === 0)).toBe(true);
+  });
+});
+
+describe('só toca com o vídeo pronto', () => {
+  it('enquanto carrega não chama play(); toca quando o status vira readyToPlay', async () => {
+    const r = await openLoading();
+    expect(player().count('play')).toBe(0);
+    expect(player().playing).toBe(false);
+    player().status = 'readyToPlay';
+    player().emit('statusChange', { status: 'readyToPlay', oldStatus: 'loading' });
+    expect(player().count('play')).toBe(1);
+    expect(player().playing).toBe(true);
+    r.unmount();
+  });
+
+  it('vídeo que falha ao carregar nunca recebe play() (evita rejeição sem tratamento na web)', async () => {
+    const r = await openLoading();
+    player().emit('statusChange', { status: 'error', oldStatus: 'loading' });
+    expect(player().count('play')).toBe(0);
+    expect(findAll(r.tree, (n) => n.type === 'VideoView')).toHaveLength(0);
+    r.unmount();
+  });
+
+  it('já pronto ao abrir (vídeo local): toca na hora', async () => {
+    const r = await open(VIDEO);
+    expect(player().count('play')).toBe(1);
+    r.unmount();
   });
 });
 

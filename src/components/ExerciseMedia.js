@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
@@ -17,6 +17,7 @@ export default function ExerciseMedia({ exercise, renderVideo }) {
   const name = exercise?.name || 'exercício';
   const { reduce: reduceMotion, known: motionKnown } = useReduceMotionState();
   const [failed, setFailed] = useState(false);
+  const onFail = useCallback(() => setFailed(true), []);
 
   let media = getExerciseMedia(exercise?.id);
   // Teste na web (?duoTestVideo=1): um vídeo criado pelo próprio teste no navegador. Inerte em iOS e Android.
@@ -28,7 +29,6 @@ export default function ExerciseMedia({ exercise, renderVideo }) {
   if (!media && testVideo) media = { video: testVideo, poster: null, duracaoSeg: null, alt: `Vídeo de demonstração de ${name}` };
 
   if (media?.video && !failed) {
-    const onFail = () => setFailed(true);
     return (
       <View style={styles.box} testID="exercise-media-video">
         {typeof renderVideo === 'function'

@@ -1,6 +1,9 @@
 // Stub do expo-video: player falso que registra o que o app faz com ele.
 import { useRef } from './react';
 
+// status inicial dos players criados (os testes trocam para 'loading' para simular carregamento)
+export const playerDefaults = { status: 'readyToPlay' };
+
 export class FakePlayer {
   source: any;
   loop = false;
@@ -8,7 +11,7 @@ export class FakePlayer {
   audioMixingMode = 'auto';
   showNowPlayingNotification = true;
   staysActiveInBackground = true;
-  status = 'idle';
+  status = playerDefaults.status;
   playing = false;
   calls: string[] = [];
   listeners: Record<string, Set<(p: any) => void>> = {};

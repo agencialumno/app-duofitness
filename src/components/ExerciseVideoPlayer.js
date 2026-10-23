@@ -16,6 +16,7 @@ export default function ExerciseVideoPlayer({ media, exercise, reduceMotion, mot
   const focused = useIsFocused();
   const [appActive, setAppActive] = useState(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
   const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false); // só toca depois de pronto (play() em fonte que falha gera rejeição na web)
   const [userChoice, setUserChoice] = useState(null); // null = segue o padrão (toca, a menos que reduzir movimento)
 
   const player = useVideoPlayer(media.video, (p) => {
@@ -39,7 +40,11 @@ export default function ExerciseVideoPlayer({ media, exercise, reduceMotion, mot
     const subs = [];
     try {
       subs.push(player.addListener('playingChange', (e) => setPlaying(!!e?.isPlaying)));
-      subs.push(player.addListener('statusChange', (e) => { if (e?.status === 'error') onFail?.(); }));
+      subs.push(player.addListener('statusChange', (e) => {
+        if (e?.status === 'readyToPlay') setReady(true);
+        if (e?.status === 'error') onFail?.();
+      }));
+      if (player.status === 'readyToPlay') setReady(true);
       if (player.status === 'error') onFail?.();
     } catch (e) {
       onFail?.();
@@ -47,13 +52,13 @@ export default function ExerciseVideoPlayer({ media, exercise, reduceMotion, mot
     return () => subs.forEach((s) => s?.remove?.());
   }, [player, onFail]);
 
-  // toca só com foco da tela, app ativo, preferência de movimento conhecida e a pessoa não ter pausado
+  // toca só com o vídeo pronto, foco da tela, app ativo, preferência de movimento conhecida e a pessoa não ter pausado
   useEffect(() => {
     try {
-      if (motionKnown && wantsPlay && focused && appActive) player.play();
+      if (ready && motionKnown && wantsPlay && focused && appActive) player.play();
       else player.pause();
     } catch (e) { /* player já liberado */ }
-  }, [player, motionKnown, wantsPlay, focused, appActive]);
+  }, [player, ready, motionKnown, wantsPlay, focused, appActive]);
 
   // ao sair da tela: para (o expo-video libera o player junto com o componente)
   useEffect(() => () => { try { player.pause(); } catch (e) { /* já liberado */ } }, [player]);

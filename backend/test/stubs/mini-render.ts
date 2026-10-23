@@ -91,8 +91,9 @@ export function mount(Root: any, rootProps: any = {}) {
     }
     const run = pending;
     pending = [];
-    rendering = false;
+    // setState dentro de um efeito só agenda a próxima renderização: ela vem depois de TODOS os efeitos (como no React)
     run.forEach((f) => f());
+    rendering = false;
     if (dirty) { dirty = false; render(); }
   }
 
