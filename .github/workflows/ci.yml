@@ -28,6 +28,8 @@ jobs:
       - run: node scripts/check-pngs.mjs
       # Falha em segundos se um vídeo/capa de exercício estiver fora do padrão (docs/videos-exercicios.md).
       - run: node scripts/check-videos.mjs
+      # Falha se google-services.json, GoogleService-Info.plist, chave de conta de serviço, chave privada ou chave AIza estiverem versionados.
+      - run: node scripts/check-no-secrets.mjs
       - run: npm ci
       # Falha se expo-file-system, expo-asset, expo-font ou expo-keep-awake ficarem fora do
       # autolinking (por exemplo, aninhados em node_modules/expo/node_modules).

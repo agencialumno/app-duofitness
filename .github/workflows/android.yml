@@ -129,6 +129,9 @@ jobs:
       - name: Conferir vídeos e capas dos exercícios (extensão, formato real, nome, tamanho, mapa em dia)
         run: node scripts/check-videos.mjs
 
+      - name: Conferir que nenhum segredo do Firebase/Google está versionado (repositório público)
+        run: node scripts/check-no-secrets.mjs
+
       - name: Decodificar keystore de release
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

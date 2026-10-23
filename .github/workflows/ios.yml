@@ -134,6 +134,9 @@ jobs:
       - name: Conferir vídeos e capas dos exercícios (extensão, formato real, nome, tamanho, mapa em dia)
         run: node scripts/check-videos.mjs
 
+      - name: Conferir que nenhum segredo do Firebase/Google está versionado (repositório público)
+        run: node scripts/check-no-secrets.mjs
+
       - name: Preparar a chave da API do App Store Connect
         env:
           APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
