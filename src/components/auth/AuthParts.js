@@ -18,10 +18,12 @@ export function AuthScreen({ children, onBack, title, subtitle }) {
   const ref = useRef(null);
   const scrollTo = useCallback((y) => { ref.current?.scrollTo({ y: Math.max(0, y - SPACING.lg), animated: true }); }, []);
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={0}>
+    // Fundo escuro em TODAS as camadas (KeyboardAvoidingView, ScrollView e conteúdo): a área atrás do teclado e o bounce ao puxar a
+    // tela mostravam o fundo claro do tema padrão. testID "auth-screen" é conferido pelo smoke (cor de fundo computada).
+    <KeyboardAvoidingView testID="auth-screen" style={styles.screen} behavior="padding" keyboardVerticalOffset={0}>
       <ScrollView
         ref={ref}
-        style={styles.flex}
+        style={styles.screen}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -60,6 +62,8 @@ export function AuthField({ label, error, hint, secure, value, onChangeText, onB
           onBlur={onBlur}
           onFocus={() => scrollTo(y.current)}
           secureTextEntry={isSecure}
+          keyboardAppearance="dark"
+          selectionColor={COLORS.primary}
           placeholderTextColor={COLORS.textSecondary}
           accessibilityLabel={label}
           accessibilityHint={hint}
@@ -119,6 +123,36 @@ export function SecondaryButton({ label, onPress, icon, disabled, testID }) {
     >
       {icon ? <Ionicons name={icon} size={20} color={COLORS.white} /> : null}
       <Text style={styles.btn2Text}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// Botões de login social para FUNDO ESCURO.
+//  - Apple (diretrizes de aparência da Apple para Sign in with Apple): sobre fundo escuro usa-se o botão BRANCO (fundo branco,
+//    logo e texto pretos), cantos arredondados, altura mínima de 44 pt e o texto "Continuar com a Apple".
+//  - Google (tema escuro do botão do Google): fundo #131314, contorno #8E918F e texto #E3E3E3. O "G" aqui é o ícone monocromático
+//    do Ionicons; antes de publicar na loja, trocar pelo "G" oficial colorido do kit de marca do Google.
+export const SOCIAL_STYLES = {
+  apple: { bg: '#FFFFFF', fg: '#000000', border: '#FFFFFF' },
+  google: { bg: '#131314', fg: '#E3E3E3', border: '#8E918F' },
+};
+
+export function SocialButton({ provider, label, onPress, disabled, testID }) {
+  const v = SOCIAL_STYLES[provider];
+  return (
+    <TouchableOpacity
+      testID={testID}
+      onPress={disabled ? undefined : onPress}
+      disabled={!!disabled}
+      aria-disabled={!!disabled}
+      activeOpacity={0.8}
+      style={[styles.social, { backgroundColor: v.bg, borderColor: v.border }, disabled && styles.btnDisabled]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+    >
+      <Ionicons name={provider === 'apple' ? 'logo-apple' : 'logo-google'} size={20} color={v.fg} />
+      <Text style={[styles.socialText, { color: v.fg }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -252,7 +286,8 @@ export const isIOS = Platform.OS === 'ios';
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  screenContent: { paddingHorizontal: SPACING.lg, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: COLORS.bg },
+  screenContent: { paddingHorizontal: SPACING.lg, flexGrow: 1, backgroundColor: COLORS.bg },
   back: { width: 44, height: 44, justifyContent: 'center', marginBottom: SPACING.sm },
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.xs },
   subtitle: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, marginBottom: SPACING.md },
@@ -270,6 +305,8 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.45 },
   btnText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.black, textAlign: 'center' },
   btn2: { flexDirection: 'row', gap: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.textSecondary, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
+  social: { flexDirection: 'row', gap: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
+  socialText: { fontSize: FONTS.sizes.md, fontWeight: '600', textAlign: 'center' },
   btn2Text: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white, textAlign: 'center' },
   link: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.sm },
   linkText: { fontSize: FONTS.sizes.md, color: COLORS.primary, textDecorationLine: 'underline', textAlign: 'center' },

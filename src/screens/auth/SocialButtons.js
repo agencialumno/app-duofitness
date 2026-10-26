@@ -5,7 +5,7 @@ import { Platform, View } from 'react-native';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
 import { showApple } from '../../auth/socialSupport';
-import { Notice, SecondaryButton } from '../../components/auth/AuthParts';
+import { Notice, SocialButton } from '../../components/auth/AuthParts';
 
 export default function SocialButtons({ onSuccess, disabled }) {
   const { provider, capabilities } = useAuth();
@@ -32,8 +32,8 @@ export default function SocialButtons({ onSuccess, disabled }) {
   if (!google && !apple) return null;
   return (
     <View style={{ gap: 12 }}>
-      {google ? <SecondaryButton testID="btn-google" icon="logo-google" label="Continuar com Google" disabled={disabled || busy} onPress={() => run(() => provider.signInWithGoogle())} /> : null}
-      {apple ? <SecondaryButton testID="btn-apple" icon="logo-apple" label="Continuar com Apple" disabled={disabled || busy} onPress={() => run(() => provider.signInWithApple())} /> : null}
+      {google ? <SocialButton provider="google" testID="btn-google" label="Continuar com Google" disabled={disabled || busy} onPress={() => run(() => provider.signInWithGoogle())} /> : null}
+      {apple ? <SocialButton provider="apple" testID="btn-apple" label="Continuar com a Apple" disabled={disabled || busy} onPress={() => run(() => provider.signInWithApple())} /> : null}
       <Notice kind="error" text={error} testID="social-error" />
     </View>
   );
