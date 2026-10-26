@@ -16,7 +16,8 @@ O marketplace é uma **vitrine**: o app mostra anúncios de parceiros e leva o m
 
 - Sem número configurado, o botão avisa "Contato ainda não configurado" (nada quebra).
 - Textos sem promessa de saúde, dosagem ou resultado: o teste `backend/test/marketplace.test.ts` barra termos proibidos.
-- Imagens: PNG 16:9 (ex.: 640x360), até ~200 KB, 8 bits, sem entrelaçamento (`node scripts/check-pngs.mjs`). Sem imagem, `imagem: null` mostra o placeholder.
+- Imagens dos itens: JPEG 3:2 (1200x800), até ~200 KB, extensão `.jpg` (PNG só para ilustração com transparência; `node scripts/check-pngs.mjs` confere os dois e falha se a extensão não bater com o conteúdo). Sem imagem, `imagem: null` mostra o placeholder.
+- Banners do topo (carrossel paginado, sem giro automático): `src/data/marketplaceBanners.js`, `marketplaceBannerImages.js`, `src/components/MarketplaceBanners.js`; JPEG 2:1 (1080x540), selo "Exemplo", o toque abre `AnunciarMarketplace`. Mídia de exemplo e regra de troca: `docs/midia-pendente.md`.
 - Não vender nem entregar pelo app: o aviso "Anúncio de parceiro. O Duo Fitness não vende nem entrega estes itens." aparece no marketplace e no detalhe.
 
 ## Testes
