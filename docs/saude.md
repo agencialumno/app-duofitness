@@ -114,3 +114,65 @@ Hoje existe só a **estrutura**, desligada por `EXPO_PUBLIC_HEALTH_INTEGRATION=f
 
 `cd backend && npm test` (`test/health.test.ts`): histórico, vírgula decimal, fórmula (componentes ausentes, limites
 0 a 100, under18), relatório, termos proibidos, provedores e reset.
+
+
+## Saúde por categorias (expansão)
+
+A área Saúde ganhou categorias (composição corporal, atividade, sono, coração e recuperação, hidratação) sobre um modelo de dados
+novo. O Duo Score "antigo" (`health.js`, `@duo_health`) **continua como está**; a tela usa o **Duo Score V2**, em arquivo novo.
+
+### Modelo de dados (`src/utils/healthModel.js`)
+
+Amostra: `{ metric, value, unit, date, tz, source, at? }`.
+
+| Categoria | Métricas (unidade) | Como junta as amostras do mesmo dia |
+|---|---|---|
+| Composição corporal | peso (kg), % de gordura (%), massa magra (kg) | última do dia |
+| Atividade | passos, distância (km), minutos de exercício (min) | soma |
+| Sono | duração (min), hora de dormir, hora de acordar (min do dia) | soma / média do relógio (a hora de dormir atravessa a meia-noite: 23:30 e 00:30 dão 00:00) |
+| Coração e recuperação | FC em repouso (bpm), variabilidade (ms) | média |
+| Hidratação | água (copos) | soma |
+
+- **Origem** (`source`): `manual`, `apple_saude`, `health_connect` ou `exemplo`. Se há mais de uma no mesmo dia, vale a de maior prioridade
+  (aparelho, depois manual, depois exemplo), para nunca contar duas vezes.
+- **Fuso** (`tz`): IANA do aparelho; `date` é o dia **local**. **Unidade** sempre a da métrica; valor fora da faixa válida é rejeitado.
+- **Agregação**: por dia (um valor por dia com dado) e por semana (segunda a domingo: média dos dias que têm dado, total e nº de dias).
+- **Dado ausente é ausente, nunca zero**: dia sem amostra não aparece, não entra em média e não vira 0. Zero só existe se foi registrado.
+- **Tendência** (7 e 30 dias): média da metade mais antiga dos dias com dado contra a da metade mais nova; precisa de 2 dias com dado e
+  3 dias entre o primeiro e o último; dentro da tolerância da métrica é "estável".
+
+### Armazenamento e migração (`src/utils/healthStore.js`)
+
+Chaves **novas**; `@duo_health` não muda de nome, não é alterado e não é apagado:
+
+| Chave | Conteúdo |
+|---|---|
+| `@duo_health_v2` | `{ version: 2, samples: [...], waterGoal, migratedFromV1, clearedAt? }` |
+| `@duo_health_connect` | consentimento por categoria e provedor (hoje nunca gravada: a conexão está desligada) |
+
+Migração (uma vez, ao abrir a Saúde): sem `@duo_health_v2`, mas com `@duo_health`, o peso e a água do v1 viram amostras `manual` e o v2 é gravado;
+o v1 fica intacto. Valor corrompido em qualquer chave vale "ausente", sem derrubar o app e sem apagar nada.
+"Resetar tudo" e "Sair do demo" apagam tudo por prefixo `@duo_`. "Excluir conta" limpa as chaves **novas** (o v2 vira um marcador vazio
+para o `@duo_health` antigo não ser migrado de novo e trazer os dados de volta).
+
+### Notas por categoria (Duo Score V2, `src/utils/healthScores.js`)
+
+Cada nota vai de 0 a 100. Janela de 7 dias (30 na composição). **Categoria sem dados não entra na conta e não penaliza**; a tela diz o que falta.
+
+| Nota | Peso | Fórmula | Fica de fora quando |
+|---|---|---|---|
+| Consistência de treinos | 30 | igual ao Duo Score atual (dias com treino nos últimos 7 ÷ 3, máx. 100) | nunca concluiu um treino |
+| Sequência | 10 | igual ao atual (dias seguidos ÷ 7, máx. 100) | nunca concluiu um treino |
+| Atividade | 15 | média das partes disponíveis: **passos** = média/dia dos dias com dado ÷ 7.000; **exercício** = média/dia dos dias com dado × 7 ÷ 150 min (cada uma, máx. 100) | menos de 3 dias com passos **e** com minutos |
+| Sono | 20 | 70% **duração** + 30% **regularidade** (ou 100% duração sem hora de dormir). Duração por noite: 100 entre 7 e 9 h (menores de 18: 8 a 10 h); abaixo cai em linha até 0 em 4 h (menores: 5 h); acima cai até 70 em 11 h (menores: 12 h). Regularidade: desvio-padrão da hora de dormir ≤ 30 min = 100, ≥ 120 min = 40 | menos de 3 noites com duração |
+| Hidratação | 15 | média de min(copos ÷ meta, 1) **dos dias com registro** (um 0 registrado conta 0; dia sem registro não conta) | nenhum registro nos últimos 7 dias |
+| Composição corporal | 10 | 50% **acompanhamento** (dias com peso em 30 ÷ 4, máx. 100) + 50% **estabilidade** (variação por semana entre o primeiro e o último registro: até 0,5 kg = 100; até 1 kg = 80; acima = 60) | menos de 2 registros com 7 dias ou mais entre eles; **sempre** fora para menores de 18 |
+
+```
+score = Σ(peso × nota) / Σ(pesos dos componentes presentes)
+```
+
+Diferenças deliberadas em relação ao Duo Score atual: a hidratação não conta como 0 o dia sem registro (ausente não é zero); e a composição
+**não** tem direção de objetivo, meta de peso nem de gordura (mede o hábito de acompanhar e a estabilidade, igual para quem sobe ou desce).
+% de gordura e massa magra aparecem nos cartões, mas **não entram na nota**. Coração e recuperação não tem nota: só valores e tendências.
+"Por que este número" continua mostrando nota, peso (%) e pontos de cada componente presente.
