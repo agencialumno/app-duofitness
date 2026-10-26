@@ -143,7 +143,8 @@ describe('Duo Score V2', () => {
   it('sem nenhum dado o score é null e a lista diz tudo o que falta', () => {
     const r = S.computeDuoScoreV2({ sessions: [], samples: [], ageGroup: '26-35', now: NOW });
     expect(r.score).toBeNull();
-    expect(r.missing).toHaveLength(6);
+    expect(r.missing).toHaveLength(5); // "falta concluir um treino" aparece uma vez só
+    expect(new Set(r.missing).size).toBe(r.missing.length);
     expect(r.components.every((c: { present: boolean; points: number | null }) => !c.present && c.points === null)).toBe(true);
   });
   it('"por que este número": cada componente presente traz nota, peso (%) e pontos, e a soma dos pontos fecha o score', () => {

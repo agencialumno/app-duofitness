@@ -147,7 +147,8 @@ export function computeDuoScoreV2({ sessions = [], samples = [], waterGoal = 8, 
       points: c.present && totalWeight > 0 ? Math.round(((c.weight * c.value) / totalWeight) * 10) / 10 : null,
       share: c.present && totalWeight > 0 ? Math.round((c.weight / totalWeight) * 100) : null,
     })),
-    missing: components.filter((c) => !c.present).map((c) => c.missing),
+    // sem repetir (consistência e sequência faltam pelo mesmo motivo)
+    missing: [...new Set(components.filter((c) => !c.present).map((c) => c.missing))],
     minor,
   };
 }

@@ -28,3 +28,29 @@ Só depois de o Android passar: **ios** com `upload=false` (archive sem assinatu
 3. **Voltar entre telas:** Boas-vindas > Criar conta > Entrar > Esqueci a senha, e voltar pelo botão e pelo gesto de borda: nenhuma transição pisca em branco.
 4. **Botões sociais:** "Continuar com a Apple" aparece branco com texto preto (só no iOS); "Continuar com Google" escuro com contorno cinza. O "G" ainda é o ícone monocromático (trocar pelo oficial antes da loja).
 5. **Resto do app:** Início, Treinos, Perfil, Saúde e marketplace continuam como antes (o tema escuro só reforça o fundo).
+
+---
+
+# saude-categorias (Saúde por categorias; empilhada na fix-auth-fundo)
+
+Escada: `ajuda-textos` -> `conta-ui` -> `conta-firebase` -> `fix-auth-fundo` -> `saude-categorias`. Nada foi executado (sem push, tag nem deploy).
+
+```
+git push -u origin saude-categorias
+```
+
+Depois: disparar o workflow **android** nessa branch ("Use workflow from" = `saude-categorias`). A Saúde por categorias não depende de nenhuma variável
+(a integração com Apple Saúde / Health Connect continua desligada). Conferir no resumo do job: APK publicado, "Contas (...)" como você configurou, e que
+nenhum módulo nativo novo apareceu no autolinking (`check-autolinking` passa sem mudanças). Só depois de o Android passar: **ios** com `upload=false`.
+
+## O que testar no iPhone
+
+1. **Saúde** (Início > cartão Saúde): Resumo com o Duo Score, sugestões e os 5 cartões na ordem (Composição, Atividade, Sono, Coração e recuperação, Hidratação).
+2. **Sem dados** (perfil real, sem registros): cada cartão diz o que falta e mostra "Registrar"; o score fica em branco e diz o que falta; nada penaliza.
+3. **Detalhe**: toque em cada cartão; confira o "i", o valor atual, as tendências de 7 e 30 dias e o histórico. Com o VoiceOver ligado, o gráfico lê média, mínimo, máximo e dias sem registro.
+4. **Registrar**: no detalhe do Sono, registre "7:30", "23:30" e "7h00"; no de Composição, o peso com vírgula (78,5). Abra o teclado: o campo focado continua visível e o teclado é escuro.
+5. **Hidratação**: botões de copo e meta. **Conectar dispositivos**: tudo desabilitado, "Em breve", nada marcado.
+6. **Menor de 18**: sem o cartão de Composição e sem a conexão; só hábitos.
+7. **Migração**: quem já tinha peso e água registrados vê os mesmos dados (origem "Registro manual"); o app antigo não perdeu nada.
+8. **Modo Demo**: todas as categorias com "Dados de exemplo". "Reiniciar demo" e "Sair" limpam tudo.
+9. **Excluir conta** (com as contas ligadas): os dados de saúde novos são limpos; o resto do app fica.

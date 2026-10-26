@@ -176,3 +176,56 @@ Diferenças deliberadas em relação ao Duo Score atual: a hidratação não con
 **não** tem direção de objetivo, meta de peso nem de gordura (mede o hábito de acompanhar e a estabilidade, igual para quem sobe ou desce).
 % de gordura e massa magra aparecem nos cartões, mas **não entram na nota**. Coração e recuperação não tem nota: só valores e tendências.
 "Por que este número" continua mostrando nota, peso (%) e pontos de cada componente presente.
+
+### Sugestões de hábitos (`src/utils/healthCoach.js`, regras, não IA)
+
+Até **3 sugestões** por vez (uma por categoria, da mais necessária à menos), cada uma com o **motivo** (com o número da pessoa, por exemplo
+"Você dormiu em média 5h40 nos últimos 7 dias") e uma **ação pequena e concreta**. Textos em `src/data/healthCoachTexts.js`.
+
+| Regra | Dispara quando | Ação (resumo) |
+|---|---|---|
+| Sono curto | média de 7 dias abaixo de 7 h (menores de 18: 8 h), com 3 noites ou mais | apagar a luz 15 min mais cedo (menores: celular longe da cama) |
+| Horário de dormir irregular | desvio-padrão de 60 min ou mais | fixar um horário por 3 noites |
+| Hidratação baixa | nota de hidratação abaixo de 70 | garrafa por perto e um copo ao acordar |
+| Passos baixos | média abaixo de 6.000, 3 dias ou mais | caminhada de 10 min |
+| Exercício baixo | ritmo semanal estimado abaixo de 100 min | 15 min hoje (uma série curta conta) |
+| Treinos do app | menos de 3 dias de treino nos últimos 7 (e já treinou antes) | marcar um treino curto (com "ganhar massa": separar os dias de força) |
+| Recuperação | FC em repouso 5 bpm ou mais acima da semana anterior (3 dias em cada) | treino mais leve e horário de dormir de sempre (sem alerta) |
+
+Os **objetivos** do perfil (um ou mais) só mudam a **ordem** (ganhar massa puxa sono e treino; condicionamento e saúde puxam água e atividade;
+"emagrecer" é tratado como hábitos gerais). O coach **nunca usa** peso, gordura nem composição, e nunca cita dieta, calorias, déficit,
+metas de peso ou de gordura, prazos, suplementos, doses, diagnóstico ou alerta clínico; o tom é neutro e sem culpa. Sem dados suficientes
+ele diz isso ("Ainda não há dados suficientes para sugerir algo..."). Tudo em dia: uma mensagem positiva. Menores de 18: só hábitos (sono na faixa de 8 a 10 h).
+Um teste (`healthcoach.test.ts`) varre os textos e as sugestões geradas em centenas de cenários, objetivos e idades.
+
+### Tela Saúde, detalhe e conexão
+
+- **Saúde**: Resumo (Duo Score V2, notas por categoria, "o que falta" e "por que este número"), sugestões, e um cartão por categoria na ordem
+  **Composição corporal, Atividade, Sono, Coração e recuperação, Hidratação**. Cada cartão: valor atual, tendência de 7 e 30 dias (texto neutro:
+  "subindo", "estável", "caindo"), gráfico de 7 dias feito só com Views (dia sem dado = ponto pequeno, nunca barra zero; o leitor de tela recebe uma
+  alternativa em texto com média, mínimo, máximo e dias sem registro), a origem do dado e, sem dados, o que falta e a ação certa (registrar, ou
+  conectar quando a integração existir e estiver ligada).
+- **Detalhe** (toque no cartão): explicação ("i"), valor atual e origem, tendências, histórico (com "remover" para o que é manual ou de exemplo) e o
+  registro manual (peso, % de gordura, massa magra; passos, distância, minutos de exercício; duração do sono, hora de dormir e de acordar; FC em
+  repouso e variabilidade; água por botões). O campo focado fica visível com o teclado aberto.
+- **Não existem**: medidas por membro, gordura visceral, idade metabólica nem "idade biológica".
+- **Menores de 18**: sem o cartão de composição, sem a conexão e com o aviso "Só hábitos".
+- **Conectar dispositivos** (iOS: Apple Saúde; Android: Health Connect): explica o que será lido e para quê, as permissões (só leitura), que os dados
+  ficam no aparelho, pede **consentimento explícito por categoria** (nada vem marcado) e oferece **desconectar e apagar o que foi importado**.
+  Tudo **desligado** enquanto `EXPO_PUBLIC_HEALTH_INTEGRATION` não for `true`: aviso "Em breve", botão "Conectar" desabilitado, nenhuma permissão pedida.
+  Os stubs nativos continuam desligados e **nenhum módulo nativo novo** foi adicionado.
+- **Modo Demo**: dados de exemplo em **todas** as categorias, sempre rotulados "Dados de exemplo" (selo na tela e origem nos cartões). O que o vendedor
+  registra no demo também é de exemplo.
+
+### Privacidade dos dados de saúde
+
+Aviso fixo na tela: **"O Duo Score mede hábitos. Não é uma avaliação médica."** e **"Seus dados de saúde ficam só neste aparelho."**
+
+- Os dados de saúde **nunca** são usados no marketplace (nem para ordenar, segmentar ou mostrar itens), **nunca** são enviados ao backend nem à conta,
+  e **nunca** são gravados em log. Testes (`healthui.test.ts`) conferem: os arquivos de saúde não usam `console`, `fetch`, `XMLHttpRequest`,
+  `WebSocket` nem `Share`; marketplace, anunciar, API, SSE, lotação e conta não importam nada de saúde; o backend não conhece essas chaves.
+- Chaves: `@duo_health_v2` e `@duo_health_connect` (novas); `@duo_health` não é alterado.
+- **Resetar tudo** e **Sair do demo** apagam tudo por prefixo `@duo_`. **Excluir conta** limpa as chaves novas de saúde (o v2 vira um marcador vazio, a
+  conexão some) e não toca nas outras. Sair da conta continua sem apagar dados locais.
+- Integração futura: os dados lidos continuam no aparelho; qualquer envio exige consentimento próprio, base legal e revisão; nunca para publicidade
+  nem para o marketplace.
