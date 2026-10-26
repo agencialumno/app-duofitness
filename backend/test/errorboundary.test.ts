@@ -288,7 +288,8 @@ describe('nenhum JSON.parse solto de chaves @duo_* no app', () => {
     expect(offenders).toEqual([]);
   });
   it('os leitores permitidos protegem o parse com try/catch', () => {
-    for (const f of ['src/utils/demoSession.js', 'src/hooks/useHealth.js', 'src/utils/safeStorage.js']) {
+    for (const f of ['src/utils/demoSession.js', 'src/utils/safeStorage.js']) // useHealth.js não faz mais parse: lê pelo healthStore (readJsonKey, seguro)
+     {
       const src = readFileSync(path.join(REPO, f), 'utf8');
       const i = src.indexOf('JSON.parse(');
       expect(src.lastIndexOf('try', i), f).toBeGreaterThan(-1);

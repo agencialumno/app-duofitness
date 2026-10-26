@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
 import { canConfirmDelete } from '../../auth/authFlow';
+import { clearHealthData } from '../../utils/healthStore';
 import { AuthField, ConfirmModal, LinkButton, Notice, SecondaryButton } from './AuthParts';
 
 export default function AccountCard() {
@@ -56,6 +58,8 @@ export default function AccountCard() {
     setBusy(true); setDeleteError('');
     try {
       await provider.deleteAccount({ password });
+      // Excluir a conta também limpa as chaves NOVAS de saúde (v2 e conexão); as outras ficam.
+      try { await clearHealthData(AsyncStorage); } catch (e) { /* sem limpar agora: a conta já foi excluída */ }
       closeDelete();
     } catch (e) {
       setDeleteError(authErrorMessage(e, 'delete'));

@@ -3,7 +3,7 @@
 // Linguagem neutra: a tendência descreve ("subindo", "estável", "caindo"), não julga (não diz "bom" nem "ruim").
 import { dayKey } from './health';
 import {
-  CATEGORIES, METRICS, dailyValues, formatDuration, formatMetric, getCategory, latest, originOf, seriesStats, trendOf, windowSeries,
+  CATEGORIES, METRICS, dailyValues, formatDuration, formatMetric, getCategory, latest, makeSample, originOf, parseClock, seriesStats, trendOf, windowSeries,
 } from './healthModel';
 
 export const CATEGORY_ICONS = { body: 'body-outline', activity: 'walk-outline', sleep: 'moon-outline', heart: 'pulse-outline', hydration: 'water-outline' };
@@ -144,3 +144,76 @@ export function buildHistory(samples, metric, { limit = 30 } = {}) {
 }
 
 export { shortDate };
+
+// ---------- Formulário de registro manual (por categoria) ----------
+
+
+// Campos por categoria: kind "number" (aceita vírgula), "duration" (7:30, 7h30, 7,5 ou 450 min) ou "clock" (23:30).
+export const FORM_FIELDS = {
+  body: [
+    { metric: 'weight', label: 'Peso (kg)', placeholder: 'Ex.: 78,5', kind: 'number' },
+    { metric: 'body_fat', label: '% de gordura', placeholder: 'Ex.: 18,5', kind: 'number' },
+    { metric: 'lean_mass', label: 'Massa magra (kg)', placeholder: 'Ex.: 60,2', kind: 'number' },
+  ],
+  activity: [
+    { metric: 'steps', label: 'Passos de hoje', placeholder: 'Ex.: 8420', kind: 'number' },
+    { metric: 'distance', label: 'Distância (km)', placeholder: 'Ex.: 5,2', kind: 'number' },
+    { metric: 'exercise_minutes', label: 'Minutos de exercício', placeholder: 'Ex.: 45', kind: 'number' },
+  ],
+  sleep: [
+    { metric: 'sleep_duration', label: 'Duração do sono (h:min)', placeholder: 'Ex.: 7:30', kind: 'duration' },
+    { metric: 'bedtime', label: 'Hora de dormir', placeholder: 'Ex.: 23:30', kind: 'clock' },
+    { metric: 'wake_time', label: 'Hora de acordar', placeholder: 'Ex.: 06:45', kind: 'clock' },
+  ],
+  heart: [
+    { metric: 'resting_hr', label: 'FC em repouso (bpm)', placeholder: 'Ex.: 58', kind: 'number' },
+    { metric: 'hrv', label: 'Variabilidade da FC (ms)', placeholder: 'Ex.: 45', kind: 'number' },
+  ],
+};
+
+// "7:30", "7h30", "7,5" (horas) ou "450 min" -> minutos; ou null.
+export function parseDuration(text) {
+  const t = String(text ?? '').trim().toLowerCase();
+  if (!t) return null;
+  const min = /^(\d{1,4})\s*min$/.exec(t);
+  if (min) return Number(min[1]);
+  const clock = parseClock(t);
+  if (clock !== null) return clock;
+  const hours = /^(\d{1,2})(?:[.,](\d{1,2}))?\s*h?$/.exec(t);
+  if (hours) return Math.round(Number(`${hours[1]}.${hours[2] ?? '0'}`) * 60);
+  return null;
+}
+
+// Converte o texto de UM campo em valor da métrica, validando a faixa. { ok: true, value } | { ok: false, error }.
+export function parseFormEntry(field, text) {
+  const m = METRICS[field.metric];
+  const raw = String(text ?? '').trim();
+  const fail = (extra) => ({ ok: false, error: `${field.label}: ${extra}` });
+  let value;
+  if (field.kind === 'clock') value = parseClock(raw);
+  else if (field.kind === 'duration') value = parseDuration(raw);
+  else if (/^\d+(?:[.,]\d+)?\s*(kg|km|min|bpm|ms|%)?$/i.test(raw)) value = Number(raw.replace(/[^\d.,]/g, '').replace(',', '.'));
+  else value = null;
+  if (value === null || value === undefined || !Number.isFinite(value)) return fail(field.kind === 'clock' ? 'use o formato 23:30.' : field.kind === 'duration' ? 'use o formato 7:30 (horas e minutos).' : 'informe um número, pode usar vírgula.');
+  const probe = makeSample({ metric: field.metric, value, date: '2026-01-01', source: 'manual' });
+  if (!probe) {
+    const range = field.kind === 'clock' || field.kind === 'duration' ? 'valor fora do possível.' : `use um valor entre ${m.min} e ${m.max}.`;
+    return fail(range);
+  }
+  return { ok: true, value: probe.value };
+}
+
+// Lê vários campos de uma vez: campos vazios são ignorados; qualquer campo preenchido e inválido impede o registro.
+// { entries: [{ metric, value }], errors: [texto] }
+export function parseForm(fields, texts) {
+  const entries = [];
+  const errors = [];
+  for (const f of fields) {
+    const raw = String(texts[f.metric] ?? '').trim();
+    if (!raw) continue;
+    const r = parseFormEntry(f, raw);
+    if (r.ok) entries.push({ metric: f.metric, value: r.value });
+    else errors.push(r.error);
+  }
+  return { entries, errors };
+}

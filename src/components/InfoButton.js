@@ -8,9 +8,10 @@ import InfoSheet from './InfoSheet';
 // Ícone "i" em círculo (área de toque de 44x44) que abre a folha de ajuda do tema (texto em infoContent.js).
 // `blocks` opcional: conteúdo calculado na hora (ex.: o passo a passo do IMC com os dados da pessoa).
 // O texto fica FORA do toque do cartão que o contém: use em linhas de título, nunca dentro de outro botão.
-export default function InfoButton({ tema, blocks, titulo, color = COLORS.primary, style, size = 20 }) {
+export default function InfoButton({ tema, blocks, titulo, label, color = COLORS.primary, style, size = 20 }) {
   const [open, setOpen] = useState(false);
-  const theme = getInfoTheme(tema);
+  // `tema` existente em infoContent.js, ou um conteúdo próprio (blocks + titulo + label), como as ajudas da Saúde por categoria.
+  const theme = getInfoTheme(tema) || (blocks && titulo ? { label: label || titulo, titulo, blocks } : null);
   if (!theme) return null; // tema inexistente: nada na tela (um teste confere que todos existem)
 
   return (
