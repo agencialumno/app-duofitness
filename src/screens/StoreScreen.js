@@ -4,6 +4,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import MarketplaceImage from '../components/MarketplaceImage';
+import MarketplaceBanners from '../components/MarketplaceBanners';
 import InfoButton from '../components/InfoButton';
 import { MARKETPLACE_CONFIG } from '../data/marketplaceConfig';
 import {
@@ -61,6 +62,8 @@ export default function StoreScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <MarketplaceBanners onOpen={(b) => navigation.navigate(b.destino.rota, b.destino.params)} />
+
         <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
 
         <View style={styles.chips} accessibilityRole="tablist">
