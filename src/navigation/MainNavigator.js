@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
+import { STACK_SCREEN_OPTIONS, TAB_SCENE_STYLE } from './navTheme';
 
 import HomeScreen from '../screens/HomeScreen';
 import WorkoutsScreen from '../screens/WorkoutsScreen';
@@ -33,7 +34,7 @@ const ProfileStack = createStackNavigator();
 // para existir também no Modo Demo, onde as abas moram dentro do OnboardingNavigator.
 function HomeStackNav() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Loja" component={StoreScreen} />
       <HomeStack.Screen name="LojaDetalhe" component={StoreDetailScreen} />
@@ -46,7 +47,7 @@ function HomeStackNav() {
 
 function WorkoutStackNav() {
   return (
-    <WorkoutStack.Navigator screenOptions={{ headerShown: false }}>
+    <WorkoutStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <WorkoutStack.Screen name="WorkoutsList" component={WorkoutsScreen} />
       <WorkoutStack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
       <WorkoutStack.Screen name="CreateWorkout" component={CreateWorkoutScreen} />
@@ -61,7 +62,7 @@ function WorkoutStackNav() {
 
 function ExerciseStackNav() {
   return (
-    <ExerciseStack.Navigator screenOptions={{ headerShown: false }}>
+    <ExerciseStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <ExerciseStack.Screen name="ExercisesList" component={ExercisesScreen} />
       <ExerciseStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
     </ExerciseStack.Navigator>
@@ -70,7 +71,7 @@ function ExerciseStackNav() {
 
 function ProfileStackNav() {
   return (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProfileStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="EditBodyData" component={EditBodyDataScreen} />
     </ProfileStack.Navigator>
@@ -83,6 +84,7 @@ export default function MainNavigator() {
   const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
+      sceneContainerStyle={TAB_SCENE_STYLE}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {

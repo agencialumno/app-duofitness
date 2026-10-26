@@ -2,16 +2,21 @@ import 'react-native-gesture-handler';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider } from './src/context/AppContext';
 import { AuthStateProvider } from './src/auth/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import { NAV_COLORS } from './src/navigation/navTheme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { createForcedError } from './src/utils/errorTestFlag';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
+
+// Tema ESCURO da navegação (partindo do DarkTheme): sem ele o React Navigation usa o tema claro e as telas sem fundo próprio
+// aparecem brancas. Ver src/navigation/navTheme.js.
+const APP_NAV_THEME = { ...DarkTheme, colors: { ...DarkTheme.colors, ...NAV_COLORS } };
 
 // Flag de TESTE (só na web, pela URL; nunca liga em iOS/Android): provoca um erro de render para o smoke
 // test conferir a tela de recuperação. Ver src/utils/errorTestFlag.js.
@@ -52,7 +57,7 @@ function AppRoot() {
   return (
     <AuthStateProvider>
       <AppProvider>
-        <NavigationContainer>
+        <NavigationContainer theme={APP_NAV_THEME}>
           <StatusBar style="light" backgroundColor="#000000" />
           <RootNavigator isOnboarded={isOnboarded} />
         </NavigationContainer>
