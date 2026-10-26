@@ -196,6 +196,27 @@ describe('check-pngs.mjs', () => {
     expect(r.out).toMatch(/AVISO\s+assets\/y\.png:/);
   });
 
+  it('JPEG real (.jpg) passa; PNG com extensão .jpg e JPEG truncado falham', () => {
+    const jpg = Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 1, 0x2c, 2, 0x58, 1, 1, 0x11, 0, 0xff, 0xd9]);
+    put('assets/ok.jpg', jpg);
+    put('assets/falso.jpg', makePng());
+    put('assets/cortado.jpg', jpg.subarray(0, jpg.length - 2));
+    const r = run();
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('ok     assets/ok.jpg (600x300, JPEG baseline)');
+    expect(r.out).toContain('::error file=assets/falso.jpg::não é um JPEG: o conteúdo é PNG com extensão .jpg');
+    expect(r.out).toContain('::error file=assets/cortado.jpg::arquivo truncado');
+  });
+
+  it('require de .jpg em src/: confere o arquivo e a existência', () => {
+    put('src/img.js', "const a = require('../assets/foto.jpg');\nconst b = require('../assets/sumiu.jpg');\n");
+    put('assets/foto.jpg', Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 9, 0, 9, 1, 1, 0x11, 0, 0xff, 0xd9]));
+    const r = run();
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('ok     assets/foto.jpg');
+    expect(r.out).toContain('::error file=assets/sumiu.jpg::arquivo referenciado em src/img.js não existe');
+  });
+
   it('os PNGs reais do repositório passam', () => {
     const r = run(REPO_ROOT);
     expect(r.out).not.toContain('::error');

@@ -1,4 +1,4 @@
-// Confere os PNGs usados pelo app ANTES do build nativo. O AAPT2 (empacotador de recursos do
+// Confere os PNGs (e JPEGs) usados pelo app ANTES do build nativo. O AAPT2 (empacotador de recursos do
 // Android) recusa arquivos fora do padrão, e esse erro só aparecia no meio do Gradle.
 //
 // Quais arquivos: todo *.png em assets/, os .png citados no app.json e os .png importados ou
@@ -8,6 +8,9 @@
 //   truncado, CRC inválido, IEND ausente, entrelaçamento (Adam7), dados da imagem corrompidos
 //   ou incompletos, arquivo referenciado que não existe.
 // AVISO (não falha):     bits por canal diferente de 8.
+//
+// JPEG (.jpg/.jpeg): o conteúdo precisa ser JPEG de verdade (SOI FFD8FF, quadro SOF legível, EOI no fim);
+// um PNG com extensão .jpg também é erro. Mesmo critério de "referenciado e ausente".
 //
 // Uso:  node scripts/check-pngs.mjs [--root <pasta do app>]
 // Só usa módulos do Node: sem dependências.
@@ -144,6 +147,45 @@ export function inspectPng(buf) {
   return { errors, warnings, info };
 }
 
+/** @returns {{ errors: string[], warnings: string[], info: string }} */
+export function inspectJpeg(buf) {
+  const errors = [];
+  const warnings = [];
+  if (buf.length < 4 || !(buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff)) {
+    if (buf.length >= 8 && buf.subarray(0, 8).equals(PNG_SIGNATURE)) {
+      errors.push('não é um JPEG: o conteúdo é PNG com extensão .jpg (regrave como JPEG de verdade)');
+    } else {
+      const fmt = sniffFormat(buf);
+      errors.push(fmt ? `não é um JPEG: o conteúdo é ${fmt} com extensão .jpg` : 'não é um JPEG: assinatura inválida (arquivo vazio, corrompido ou de outro formato)');
+    }
+    return { errors, warnings, info: '' };
+  }
+  if (!(buf[buf.length - 2] === 0xff && buf[buf.length - 1] === 0xd9)) errors.push('arquivo truncado: marcador de fim (EOI) ausente');
+  // procura o quadro SOF (SOF0..SOF15, exceto DHT/JPG/DAC) para ler dimensões e o tipo (baseline/progressivo)
+  let off = 2;
+  let sof = null;
+  while (off + 4 <= buf.length) {
+    if (buf[off] !== 0xff) { off++; continue; }
+    const m = buf[off + 1];
+    if (m === 0xff) { off++; continue; }
+    if (m === 0xd8 || (m >= 0xd0 && m <= 0xd7) || m === 0x01) { off += 2; continue; }
+    if (m === 0xd9 || m === 0xda) break;
+    const len = buf.readUInt16BE(off + 2);
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+      if (off + 9 <= buf.length) sof = { progressive: m === 0xc2, bits: buf[off + 4], height: buf.readUInt16BE(off + 5), width: buf.readUInt16BE(off + 7) };
+      break;
+    }
+    off += 2 + len;
+  }
+  if (!sof) {
+    errors.push('quadro de imagem (SOF) ausente ou ilegível');
+    return { errors, warnings, info: '' };
+  }
+  if (sof.width === 0 || sof.height === 0) errors.push('dimensões inválidas (0)');
+  if (sof.progressive) warnings.push('JPEG progressivo (o esperado é baseline); regrave sem a opção progressivo');
+  return { errors, warnings, info: `${sof.width}x${sof.height}, JPEG ${sof.progressive ? 'progressivo' : 'baseline'}` };
+}
+
 // ---- descoberta dos arquivos ------------------------------------------------
 
 function walk(dir, accept, out = []) {
@@ -165,7 +207,7 @@ function collectStrings(value, out = []) {
   return out;
 }
 
-const isPng = (name) => /\.png$/i.test(name);
+const isPng = (name) => /\.(png|jpe?g)$/i.test(name);
 
 /** Mapa caminho absoluto -> de onde veio (para a mensagem de arquivo ausente). */
 function discover(root) {
@@ -190,7 +232,7 @@ function discover(root) {
 
   const sources = [...walk(path.join(root, 'src'), (n) => /\.(jsx?|tsx?)$/.test(n))];
   if (existsSync(path.join(root, 'App.js'))) sources.push(path.join(root, 'App.js'));
-  const importRe = /(?:require\(\s*|\bfrom\s+|\bimport\s+)['"]([^'"]+\.png)['"]/gi;
+  const importRe = /(?:require\(\s*|\bfrom\s+|\bimport\s+)['"]([^'"]+\.(?:png|jpe?g))['"]/gi;
   for (const file of sources) {
     const text = readFileSync(file, 'utf8');
     for (const m of text.matchAll(importRe)) {
@@ -231,7 +273,8 @@ function main() {
       failed++;
       continue;
     }
-    const { errors, warnings, info } = inspectPng(readFileSync(abs));
+    const buf = readFileSync(abs);
+    const { errors, warnings, info } = /\.jpe?g$/i.test(abs) ? inspectJpeg(buf) : inspectPng(buf);
     for (const e of errors) report('error', name, e);
     for (const w of warnings) report('warning', name, w);
     if (errors.length > 0) failed++;

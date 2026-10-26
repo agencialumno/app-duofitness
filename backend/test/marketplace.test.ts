@@ -179,17 +179,28 @@ describe('imagens', () => {
     for (const i of items.filter((x) => x.imagem)) expect(keys.has(i.imagem!), `${i.id} -> ${i.imagem}`).toBe(true);
   });
 
-  it('cada arquivo mapeado existe, é PNG e tem no máximo ~200 KB', () => {
+  it('cada arquivo mapeado existe, é JPEG de verdade (.jpg) e tem no máximo ~200 KB', () => {
     expect(entries.length).toBeGreaterThan(0);
     for (const e of entries) {
+      expect(e.file, e.file).toMatch(/\.jpg$/);
       expect(existsSync(e.file), e.file).toBe(true);
       expect(statSync(e.file).size, e.file).toBeLessThanOrEqual(200 * 1024);
-      expect(readFileSync(e.file).subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+      expect(readFileSync(e.file).subarray(0, 3).toString('hex')).toBe('ffd8ff');
     }
   });
 
-  it('itens sem imagem (null) usam o placeholder: há pelo menos um item assim', () => {
-    expect(items.some((i) => i.imagem === null)).toBe(true);
+  it('todo item de exemplo tem imagem e nenhuma imagem do mapa fica sobrando', () => {
+    const keys = entries.map((e) => e.key);
+    for (const i of items) expect(i.imagem, i.id).toBeTruthy();
+    const used = new Set(items.map((i) => i.imagem));
+    for (const k of keys) expect(used.has(k), `imagem sobrando: ${k}`).toBe(true);
+    expect(new Set(items.map((i) => i.imagem)).size).toBe(items.length);
+  });
+
+  it('sem imagem (imagem: null ou chave desconhecida) o mapa devolve null e a tela mostra o placeholder', () => {
+    expect(imagesSrc).toContain('(key && MARKETPLACE_IMAGES[key]) || null');
+    const comp = readFileSync(path.join(REPO, 'src/components/MarketplaceImage.js'), 'utf8');
+    expect(comp).toContain('marketplace-placeholder');
   });
 });
 

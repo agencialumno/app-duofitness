@@ -30,7 +30,7 @@ export default function MarketplaceImage({ imagem, categoria, style, iconSize = 
 }
 
 const styles = StyleSheet.create({
-  box: { width: '100%', aspectRatio: 16 / 9, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden' },
+  box: { width: '100%', aspectRatio: 3 / 2, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
   placeholder: { flex: 1, backgroundColor: COLORS.bgCardAlt, alignItems: 'center', justifyContent: 'center' },
 });

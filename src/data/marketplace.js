@@ -33,7 +33,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Itens para treinar em casa ou na academia do condomínio. Modelos e disponibilidade com o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. Aqui o parceiro descreve o que vem no kit, os tamanhos e as cores disponíveis, o prazo e a forma de entrega. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: 'exemplo-acessorios',
+    imagem: 'kit-acessorios',
     preco: 'R$ 89,90',
     destaque: true,
     contato: { tipo: 'whatsapp' },
@@ -46,7 +46,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Garrafa reutilizável para levar ao treino. Cores e tamanhos conforme o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro informa capacidade, material, cores e prazo de entrega. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: null,
+    imagem: 'squeeze',
     preco: 'R$ 29,90',
     destaque: false,
     contato: { tipo: 'whatsapp' },
@@ -59,7 +59,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Corda ajustável para aquecimento e cardio. Consulte modelos com o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro descreve o modelo, o comprimento ajustável e o prazo de entrega. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: null,
+    imagem: 'corda',
     preco: null,
     destaque: false,
     contato: { tipo: 'whatsapp' },
@@ -72,7 +72,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Proteína do soro do leite em pó. Marcas, sabores e tamanhos variam conforme o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro informa marca, sabor, tamanho da embalagem e prazo de entrega. Consulte o rótulo do produto para a lista de ingredientes e alergênicos.',
-    imagem: null,
+    imagem: 'whey',
     preco: null,
     destaque: true,
     contato: { tipo: 'whatsapp' },
@@ -85,7 +85,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Opção de proteína de origem vegetal em pó. Sabores e embalagens conforme o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro informa a origem dos ingredientes, os sabores e o prazo de entrega. Consulte o rótulo do produto para a lista de ingredientes e alergênicos.',
-    imagem: null,
+    imagem: 'proteina',
     preco: null,
     destaque: false,
     contato: { tipo: 'whatsapp' },
@@ -98,7 +98,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Produto de exemplo para demonstrar a vitrine. Detalhes e disponibilidade com o parceiro.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro informa marca, apresentação e prazo de entrega. Leia o rótulo e converse com um profissional de saúde antes de usar qualquer suplemento.',
-    imagem: null,
+    imagem: 'suplemento',
     preco: null,
     destaque: false,
     contato: { tipo: 'whatsapp' },
@@ -111,7 +111,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Atendimento com profissional parceiro. Combine horário e valores pelo WhatsApp.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro descreve a forma de atendimento (presencial ou online), os horários e como agendar. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: null,
+    imagem: 'nutri',
     preco: 'A combinar',
     destaque: true,
     contato: { tipo: 'whatsapp' },
@@ -124,7 +124,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Receitas para o dia a dia, publicadas pelo parceiro. Abre o site dele.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O link abre o site do parceiro no navegador. O conteúdo e as condições de acesso são de responsabilidade do parceiro.',
-    imagem: null,
+    imagem: 'colecao-receitas',
     preco: null,
     destaque: false,
     contato: { tipo: 'link', url: 'https://example.com/receitas' },
@@ -137,7 +137,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Atendimento presencial com profissional parceiro. Agende pelo WhatsApp.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro descreve o que inclui o atendimento, o local e os horários. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: null,
+    imagem: 'avaliacao',
     preco: 'A combinar',
     destaque: false,
     contato: { tipo: 'whatsapp' },
@@ -150,7 +150,7 @@ export const MARKETPLACE_ITEMS = [
     descricaoCurta: 'Aulas com profissional parceiro na academia do condomínio. Combine pelo WhatsApp.',
     descricaoCompleta:
       'Item de exemplo da vitrine. O parceiro descreve a modalidade, os horários e a forma de contratação. Valores e condições são combinados diretamente com o parceiro.',
-    imagem: null,
+    imagem: 'personal-trainer',
     preco: 'A combinar',
     destaque: false,
     contato: { tipo: 'whatsapp' },
