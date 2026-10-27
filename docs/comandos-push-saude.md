@@ -54,3 +54,23 @@ nenhum módulo nativo novo apareceu no autolinking (`check-autolinking` passa se
 7. **Migração**: quem já tinha peso e água registrados vê os mesmos dados (origem "Registro manual"); o app antigo não perdeu nada.
 8. **Modo Demo**: todas as categorias com "Dados de exemplo". "Reiniciar demo" e "Sair" limpam tudo.
 9. **Excluir conta** (com as contas ligadas): os dados de saúde novos são limpos; o resto do app fica.
+
+---
+
+# ajustes-perfil (verificação de e-mail, Saúde no Perfil e HealthKit nos entitlements; empilhada na saude-categorias)
+
+Escada: `ajuda-textos` -> `conta-ui` -> `conta-firebase` -> `fix-auth-fundo` -> `saude-categorias` -> `ajustes-perfil`. Nada foi executado (sem push, tag nem deploy).
+
+```
+git push -u origin ajustes-perfil
+```
+
+Depois: disparar o workflow **android** nessa branch ("Use workflow from" = `ajustes-perfil`) e, só depois de passar, o **ios** com `upload=false`. Para o HealthKit (ainda stub): se criar a variável `HEALTH_INTEGRATION_ENABLED=true`, rode o ios com `sign_archive=true` (veja `docs/testflight.md`).
+
+## O que testar no iPhone
+
+1. **E-mail**: crie uma conta por e-mail, abra o link de verificação no app de e-mail e volte ao Duo Fitness: o Perfil deve passar sozinho de "Verificando…" para "E-mail verificado" (ícone e texto), sem reiniciar. Antes de abrir o link: "E-mail não verificado", "Reenviar e-mail de verificação" (espera de 60 s) e "Já verifiquei".
+2. **Sem rede**: com o modo avião, "Já verifiquei" mostra "Não foi possível verificar agora" (nunca "não verificado").
+3. **Google e Apple**: o Perfil mostra "E-mail informado pelo Google" / "pela Apple", sem perguntar nada; com "Ocultar meu e-mail" aparece a explicação do e-mail privado.
+4. **Perfil > Saúde**: o cartão mostra o Duo Score e o registro mais recente (ou "Registrar primeiro dado"); toque abre a Saúde e o voltar retorna ao Perfil. Confira também no Modo Demo e como convidado; para menor de 18, "Só hábitos".
+5. **Nada quebrou**: Resetar todos os dados, Sair do demo, Excluir conta e os atalhos da Home.
