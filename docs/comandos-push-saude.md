@@ -74,3 +74,25 @@ Depois: disparar o workflow **android** nessa branch ("Use workflow from" = `aju
 3. **Google e Apple**: o Perfil mostra "E-mail informado pelo Google" / "pela Apple", sem perguntar nada; com "Ocultar meu e-mail" aparece a explicação do e-mail privado.
 4. **Perfil > Saúde**: o cartão mostra o Duo Score e o registro mais recente (ou "Registrar primeiro dado"); toque abre a Saúde e o voltar retorna ao Perfil. Confira também no Modo Demo e como convidado; para menor de 18, "Só hábitos".
 5. **Nada quebrou**: Resetar todos os dados, Sair do demo, Excluir conta e os atalhos da Home.
+
+---
+
+# saude-ux (redesenho da tela Saúde; empilhada na ajustes-perfil)
+
+Escada: `ajuda-textos` -> `conta-ui` -> `conta-firebase` -> `fix-auth-fundo` -> `saude-categorias` -> `ajustes-perfil` -> `saude-ux`. Nada foi executado (sem push, tag nem deploy).
+
+```
+git push -u origin saude-ux
+```
+
+Depois: workflow **android** nessa branch e, passando, **ios** com `upload=false`. Não há variável nem módulo nativo novo.
+
+## O que testar no iPhone
+
+1. **Saúde** (Início > cartão Saúde e Perfil > cartão Saúde): Duo Score no topo, três ações rápidas, chips, sugestões (motivo recolhido), cartões enxutos e "Relatório semanal" recolhido. Os chips rolam até o cartão.
+2. **Água +1** soma um copo e mostra "Hoje: N de M copos". **Registrar peso** abre o detalhe de composição com o formulário aberto.
+3. **Perfil sem dados**: só "Sem dados ainda · 5" (recolhido); ao abrir, uma ação "Registrar" por categoria.
+4. **Detalhe**: seletor de 7 e 30 dias, gráfico, registros com data e origem, "Registrar hoje" (teclado escuro, campo sempre visível), explicação no "i" e no fim.
+5. **Texto maior** (Ajustes > Acessibilidade > Tamanho do texto, até 150%) e iPhone pequeno: nada cortado nem sobreposto.
+6. **VoiceOver**: cada cartão é lido como um item (categoria, valor, relação com a média, atualizado); com "Reduzir movimento" a rolagem dos chips não anima.
+7. **Menor de 18**: sem Composição, sem "Conectar", "Registrar sono" no lugar do peso, só hábitos.

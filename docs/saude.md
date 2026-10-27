@@ -229,3 +229,25 @@ Aviso fixo na tela: **"O Duo Score mede hábitos. Não é uma avaliação médic
   conexão some) e não toca nas outras. Sair da conta continua sem apagar dados locais.
 - Integração futura: os dados lidos continuam no aparelho; qualquer envio exige consentimento próprio, base legal e revisão; nunca para publicidade
   nem para o marketplace.
+
+### Layout da tela Saúde (branch `saude-ux`, só apresentação)
+
+Nenhum dado, fórmula, regra do coach, armazenamento nem chave `@duo_*` mudou. Escalas fixas em `src/utils/theme.js` (`HEALTH_UI`): espaçamento em
+múltiplos de 4, padding do cartão 16, entre cartões 12, entre seções 24, tipografia em 4 níveis (título da seção 18, valor 32, rótulo 15, apoio 13) mais
+a legenda de 12, raio 16 e borda 1, alvo de toque mínimo de 44.
+
+De cima para baixo:
+
+1. **Duo Score** em destaque (barra de Views), nota e uma frase curta (`scorePhrase`, neutra); "i" do Duo Score.
+2. **Ações rápidas**: "Registrar peso" (menor de 18: "Registrar sono"), "Água +1" (mostra "Hoje: N de M copos") e "Conectar" (em breve; menor não vê).
+3. **Chips** horizontais (Composição, Atividade, Sono, Coração, Hidratação) que rolam até o cartão; sem animação com "Reduzir movimento".
+4. **Sugestões**: no máximo 3, com a ação visível e o motivo recolhido ("Por quê?").
+5. **Cartões por categoria COM dados**: um valor principal grande com a unidade, a variação de 7 dias (ícone e texto), uma mini-tendência e a origem em texto
+   pequeno. O VoiceOver lê cada cartão como um item ("Sono, 6 horas e 24 minutos, abaixo da sua média de 7 dias, atualizado hoje. Origem: ...").
+6. **"Sem dados ainda · N"**: as categorias sem dados ficam agrupadas e recolhidas; cada linha tem UMA ação ("Registrar").
+7. **Relatório semanal** (recolhido): nota por categoria, "o que falta" e "Por que este número?".
+8. **Avisos pequenos**: "O Duo Score mede hábitos. Não é uma avaliação médica." e a privacidade.
+
+**Detalhe da categoria**: valor atual com variação e origem, seletor de período (7 ou 30 dias) com o gráfico, registros com data e origem, a ação
+"Registrar hoje" (o formulário fica recolhido quando já há dados; "Registrar peso" abre direto) e a explicação ("i" no cabeçalho e texto no fim).
+Fonte dinâmica até 150% em 320 e 390 de largura sem cortar nem sobrepor (os botões rápidos passam para uma coluna).
