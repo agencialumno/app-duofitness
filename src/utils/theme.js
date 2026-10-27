@@ -58,3 +58,20 @@ export const SHADOWS = {
     elevation: 4,
   },
 };
+
+// Escalas fixas da tela Saúde (só ela usa; as outras telas seguem com SPACING e FONTS). Tudo em múltiplos de 4 ou 8:
+//  - cartão: padding de 16 a 20; entre cartões 12 a 16; entre seções 24 a 32;
+//  - tipografia em 4 níveis: título da seção, valor principal, rótulo e texto de apoio (mais a legenda, 12 no mínimo);
+//  - raio e borda iguais em todos os cartões.
+export const HEALTH_UI = {
+  space: { screen: 16, cardPadding: 16, cardGap: 12, section: 24, inner: 8, tight: 4 },
+  type: {
+    section: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
+    value: { fontSize: 32, lineHeight: 40, fontWeight: '700' },
+    label: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+    support: { fontSize: 13, lineHeight: 20, fontWeight: '400' },
+    caption: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+  },
+  card: { radius: 16, borderWidth: 1 },
+  minTouch: 44,
+};
