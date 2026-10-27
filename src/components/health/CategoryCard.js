@@ -1,12 +1,24 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
+import { COLORS, HEALTH_UI } from '../../utils/theme';
+import { cardA11y, compactVariation } from '../../utils/healthView';
 import TrendBars from './TrendBars';
 
-// Cartão de uma categoria da Saúde (o toque abre o detalhe). Valor atual, tendência de 7 e 30 dias (texto, sem julgamento),
-// gráfico de 7 dias com texto alternativo, origem do dado e, sem dados, o que falta e a ação certa (registrar ou conectar).
+const { space, type, card } = HEALTH_UI;
+
+// "76,0 kg" -> ["76,0", "kg"]; "6h24" (sem espaço) fica inteiro como valor.
+function splitValue(text) {
+  const m = /^([\d.,:]+)\s+(\D.*)$/.exec(String(text));
+  return m ? [m[1], m[2]] : [String(text), ''];
+}
+
+// Cartão enxuto de UMA categoria com dados: um valor principal grande (com a unidade), a variação, uma mini-tendência e a
+// origem em texto pequeno. Explicação, histórico e registro ficam no detalhe (o toque abre). Lido como UM item pelo leitor de
+// tela (cardA11y). Categoria sem dados NÃO usa este cartão: fica no grupo "Sem dados ainda".
 export default function CategoryCard({ view, onPress, testID }) {
+  const variation = compactVariation(view);
+  const [number, unit] = view.current ? splitValue(view.current.text) : ['', ''];
   return (
     <TouchableOpacity
       testID={testID}
@@ -14,7 +26,7 @@ export default function CategoryCard({ view, onPress, testID }) {
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={view.a11y}
+      accessibilityLabel={cardA11y(view)}
     >
       <View style={styles.head}>
         <View style={styles.iconWrap}>
@@ -24,55 +36,38 @@ export default function CategoryCard({ view, onPress, testID }) {
         <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
       </View>
 
-      {view.hasData ? (
-        <View style={styles.body}>
-          {view.current ? (
-            <View style={styles.valueRow}>
-              <Text style={styles.value}>{view.current.text}</Text>
-              <Text style={styles.sub}>{view.current.sub}</Text>
-            </View>
-          ) : null}
-          {view.extra.map((e) => (
-            <Text key={e.label} style={styles.extra}>{e.label}: <Text style={styles.extraValue}>{e.text}</Text> · {e.when}</Text>
-          ))}
-          <Text style={styles.trend}>{view.trends.d7.text}</Text>
-          <Text style={styles.trend}>{view.trends.d30.text}</Text>
-          <TrendBars series={view.series.d7} metric={view.primaryMetric} />
-          {view.origin ? (
-            <View style={styles.originRow}>
-              <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
-              <Text style={styles.origin}>Origem: {view.origin}</Text>
-            </View>
-          ) : null}
+      {view.current ? (
+        <View style={styles.valueRow}>
+          <Text style={styles.value}>{number}</Text>
+          {unit ? <Text style={styles.unit}>{unit}</Text> : null}
+          <Text style={styles.when}>{view.current.sub}</Text>
         </View>
       ) : (
-        <View style={styles.body}>
-          <Text style={styles.empty}>{view.empty.message}</Text>
-          <View style={styles.actionPill}>
-            <Ionicons name={view.empty.action.type === 'connect' ? 'link-outline' : 'add-circle-outline'} size={16} color={COLORS.black} />
-            <Text style={styles.actionText}>{view.empty.action.label}</Text>
-          </View>
-        </View>
+        <Text style={styles.when}>Sem valor principal ainda.</Text>
       )}
+
+      <View style={styles.variation}>
+        <Ionicons name={variation.icon} size={16} color={COLORS.textSecondary} />
+        <Text style={styles.variationText}>{variation.text}<Text style={styles.when}> · {variation.window}</Text></Text>
+      </View>
+
+      <TrendBars series={view.series.d7} metric={view.primaryMetric} height={32} showAxis={false} />
+
+      {view.origin ? <Text style={styles.origin}>Origem: {view.origin}</Text> : null}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
-  head: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, minHeight: 44 },
-  iconWrap: { width: 36, height: 36, borderRadius: RADIUS.sm, backgroundColor: '#1A1700', alignItems: 'center', justifyContent: 'center' },
-  title: { flex: 1, fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
-  body: { gap: SPACING.xs },
-  valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: SPACING.sm },
-  value: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
-  sub: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  extra: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  extraValue: { color: COLORS.white, fontWeight: '600' },
-  trend: { fontSize: FONTS.sizes.sm, color: COLORS.white },
-  originRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  origin: { flex: 1, fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
-  empty: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },
-  actionPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, minHeight: 44, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.primary },
-  actionText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.black },
+  card: { backgroundColor: COLORS.bgCard, borderRadius: card.radius, borderWidth: card.borderWidth, borderColor: COLORS.border, padding: space.cardPadding, gap: space.inner },
+  head: { flexDirection: 'row', alignItems: 'center', gap: space.inner, minHeight: HEALTH_UI.minTouch },
+  iconWrap: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#1A1700', alignItems: 'center', justifyContent: 'center' },
+  title: { flex: 1, ...type.label, color: COLORS.white },
+  valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: space.inner },
+  value: { ...type.value, color: COLORS.white },
+  unit: { ...type.label, color: COLORS.white },
+  when: { ...type.caption, color: COLORS.textSecondary },
+  variation: { flexDirection: 'row', alignItems: 'center', gap: space.tight },
+  variationText: { flex: 1, ...type.support, color: COLORS.white },
+  origin: { ...type.caption, color: COLORS.textSecondary },
 });

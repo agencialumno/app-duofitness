@@ -1,30 +1,56 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, LayoutAnimation, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
+import { COLORS, FONTS, HEALTH_UI, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import CategoryCard from '../components/health/CategoryCard';
+import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, WeeklyReport } from '../components/health/HealthParts';
 import { ExampleBadge } from '../components/OccupancyCard';
 import InfoButton from '../components/InfoButton';
-import { animateLayout } from '../components/guided/GuidedParts';
-import { SCORE_DISCLAIMER, scoreBand } from '../utils/health';
-import { CONNECT_CARD } from '../utils/healthProviders';
+import { SCORE_DISCLAIMER } from '../utils/health';
+import { splitViews } from '../utils/healthView';
 import { HEALTH_PRIVACY_LINES } from '../data/healthInfoContent';
-import { COACH_TEXTS } from '../data/healthCoachTexts';
 
-const BAND_COLOR = { great: COLORS.success, good: COLORS.primary, fair: COLORS.warning, low: COLORS.error, none: COLORS.textSecondary };
+const { space, type } = HEALTH_UI;
 
-// Saúde: Resumo (Duo Score) + sugestões de hábitos + um cartão por categoria (composição corporal, atividade, sono, coração e
-// recuperação, hidratação) + conexão com dispositivos (desligada). Tudo no aparelho; nada de aconselhamento médico.
+// Saúde, de cima para baixo: (a) Duo Score em destaque, (b) ações rápidas, (c) chips que rolam até cada categoria, (d) sugestões,
+// (e) um cartão enxuto por categoria COM dados e, recolhidas, as categorias SEM dados, (f) relatório semanal recolhido e
+// (g) avisos pequenos. Detalhes, explicação ("i") e histórico ficam na tela de detalhe. Tudo no aparelho; não é aconselhamento médico.
 export default function HealthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { loading, result, score, notes, views, coach, minor, isExample } = useHealth();
-  const [why, setWhy] = useState(false);
+  const { loading, result, score, notes, views, coach, minor, isExample, addGlass } = useHealth();
+  const scrollRef = useRef(null);
+  const ys = useRef({ cats: 0, nodata: 0 });
+  const [noDataOpen, setNoDataOpen] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
-  const band = scoreBand(score);
-  const bandColor = BAND_COLOR[band.id];
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => { if (alive) setReduceMotion(!!v); }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => setReduceMotion(!!v));
+    return () => { alive = false; sub?.remove?.(); };
+  }, []);
+
+  // "Reduzir movimento": sem animação de layout nem rolagem animada.
+  const animate = () => { if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); };
+  const scrollToY = (y) => scrollRef.current?.scrollTo({ y: Math.max(y - space.inner, 0), animated: !reduceMotion });
+
+  const { withData, noData } = splitViews(views);
   const openCategory = (category) => navigation.navigate('SaudeDetalhe', { category });
+  const hydration = views.find((v) => v.id === 'hydration');
+  const waterText = hydration && hydration.hasData && hydration.current && hydration.current.sub === 'Hoje' ? `Hoje: ${hydration.current.text}` : '';
+
+  const selectChip = (id) => {
+    const v = views.find((x) => x.id === id);
+    if (v && v.hasData) {
+      scrollToY(ys.current.cats + (ys.current[id] || 0));
+    } else {
+      animate();
+      setNoDataOpen(true);
+      scrollToY(ys.current.nodata);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -39,150 +65,80 @@ export default function HealthScreen({ navigation }) {
         <InfoButton tema="saude" />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}>
-        {isExample && <ExampleBadge />}
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
+      >
+        {isExample ? <ExampleBadge /> : null}
 
-        {/* 1. Resumo: Duo Score */}
-        <View style={styles.card} testID="health-summary">
-          <View style={styles.titleRow}>
-            <Text style={[styles.cardTitle, styles.titleFlex]}>Resumo · Duo Score</Text>
-            <InfoButton tema="duoScore" />
+        {/* (a) Duo Score */}
+        <View style={styles.firstSection}>
+          <ScoreHero loading={loading} result={result} score={score} minor={minor} />
+        </View>
+
+        {/* (b) ações rápidas */}
+        <View style={styles.section}>
+          <QuickActions
+            minor={minor}
+            waterText={waterText}
+            onRegister={() => navigation.navigate('SaudeDetalhe', { category: minor ? 'sleep' : 'body' })}
+            onWater={() => addGlass(1)}
+            onConnect={() => navigation.navigate('SaudeConectar')}
+          />
+        </View>
+
+        {/* (c) chips por categoria */}
+        {!loading && views.length > 0 ? (
+          <View style={styles.section}>
+            <CategoryChips items={views} onSelect={selectChip} />
           </View>
-          {loading || !result ? (
-            <Text style={styles.muted}>Carregando…</Text>
-          ) : (
-            <>
-              <View style={styles.scoreRow} accessible accessibilityLabel={score === null ? 'Duo Score: sem dados ainda' : `Duo Score ${score} de 100, ${band.label}`}>
-                <Text style={[styles.scoreNumber, { color: bandColor }]}>{score === null ? '—' : score}</Text>
-                <View style={styles.scoreSide}>
-                  <Text style={styles.scoreOf}>de 100</Text>
-                  <Text style={[styles.band, { color: bandColor }]}>{band.label}</Text>
+        ) : null}
+
+        {/* (d) sugestões */}
+        {!loading && coach ? (
+          <View style={styles.section}>
+            <SuggestionsCard coach={coach} onToggle={animate} />
+          </View>
+        ) : null}
+
+        {/* (e) categorias com dados e, recolhidas, as sem dados */}
+        {!loading ? (
+          <View style={styles.section}>
+            <View style={styles.cards} onLayout={(e) => { ys.current.cats = e.nativeEvent.layout.y; }}>
+              {withData.map((v) => (
+                <View key={v.id} onLayout={(e) => { ys.current[v.id] = e.nativeEvent.layout.y; }}>
+                  <CategoryCard view={v} testID={`health-card-${v.id}`} onPress={() => openCategory(v.id)} />
                 </View>
+              ))}
+            </View>
+            {noData.length > 0 ? (
+              <View style={withData.length > 0 ? styles.afterCards : null}>
+                <NoDataGroup
+                  views={noData}
+                  open={noDataOpen}
+                  onToggle={() => { animate(); setNoDataOpen((v) => !v); }}
+                  onOpenCategory={openCategory}
+                  onLayout={(e) => { ys.current.nodata = e.nativeEvent.layout.y + ys.current.cats; }}
+                />
               </View>
-              <View style={styles.bar}>
-                <View style={[styles.barFill, { width: `${score ?? 0}%`, backgroundColor: bandColor }]} />
-              </View>
+            ) : null}
+          </View>
+        ) : null}
 
-              {notes.length > 0 && (
-                <View style={styles.notes}>
-                  {notes.map((c) => (
-                    <View key={c.id} style={styles.catRow} accessible accessibilityLabel={`${c.label}: ${c.value === null ? 'sem dados' : `${c.value} de 100, ${c.grade}`}`}>
-                      <View style={styles.catHead}>
-                        <Text style={styles.catLabel}>{c.label}</Text>
-                        <Text style={styles.catGrade}>{c.value === null ? 'Sem dados' : `${c.value} · ${c.grade}`}</Text>
-                      </View>
-                      <View style={styles.barSmall}>
-                        <View style={[styles.barFill, { width: `${c.value ?? 0}%`, backgroundColor: BAND_COLOR[scoreBand(c.value).id] }]} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+        {/* (f) relatório semanal, recolhido por padrão */}
+        {!loading && result ? (
+          <View style={styles.section}>
+            <WeeklyReport result={result} notes={notes} onToggle={animate} />
+          </View>
+        ) : null}
 
-              {result.missing.length > 0 && (
-                <View style={styles.missingBox}>
-                  <Text style={styles.subTitle}>O que falta</Text>
-                  {result.missing.map((m) => (
-                    <View key={m} style={styles.missingRow}>
-                      <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
-                      <Text style={styles.missingText}>{m.charAt(0).toUpperCase() + m.slice(1)}</Text>
-                    </View>
-                  ))}
-                  <Text style={styles.muted}>Categoria sem dados não entra na conta e não diminui o seu score.</Text>
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={styles.whyBtn}
-                onPress={() => { animateLayout(); setWhy((v) => !v); }}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: why }}
-                accessibilityLabel="Por que este número?"
-              >
-                <Text style={styles.whyText}>Por que este número?</Text>
-                <Ionicons name={why ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.primary} />
-              </TouchableOpacity>
-              {why && (
-                <View style={styles.why}>
-                  <Text style={styles.muted}>
-                    O score é a média ponderada só dos itens que têm dados. Item sem registro não conta contra você.
-                  </Text>
-                  {result.components.map((c) => (
-                    <View key={c.id} style={styles.compRow}>
-                      <View style={styles.compHead}>
-                        <Text style={styles.compLabel}>{c.label}</Text>
-                        <Text style={styles.compValue}>{c.present ? `${c.value}/100` : 'sem dados'}</Text>
-                      </View>
-                      <Text style={styles.compDetail}>
-                        {c.present ? `${c.detail}. Peso no cálculo: ${c.share}%, soma ${String(c.points).replace('.', ',')} pontos.` : `Fora do cálculo: ${c.detail}.`}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </>
-          )}
+        {/* (g) avisos pequenos */}
+        <View style={[styles.section, styles.legal]}>
           <View style={styles.noticeRow}>
             <Ionicons name="information-circle-outline" size={16} color={COLORS.textSecondary} />
             <Text style={styles.noticeText}>{SCORE_DISCLAIMER}</Text>
           </View>
-        </View>
-
-        {/* Sugestões de hábitos (regras, não IA) */}
-        {coach && (
-          <View style={styles.card} testID="health-coach">
-            <Text style={styles.cardTitle}>{COACH_TEXTS.title}</Text>
-            {coach.insufficient ? (
-              <Text style={styles.muted}>{coach.message}</Text>
-            ) : (
-              <>
-                <Text style={styles.muted}>{COACH_TEXTS.intro}</Text>
-                {coach.suggestions.map((s) => (
-                  <View key={s.id} style={styles.recRow} accessible accessibilityLabel={`${s.reason} ${s.action}`}>
-                    <Ionicons name="bulb-outline" size={18} color={COLORS.primary} />
-                    <View style={styles.recText}>
-                      <Text style={styles.recReason}>{s.reason}</Text>
-                      <Text style={styles.recAction}>{s.action}</Text>
-                    </View>
-                  </View>
-                ))}
-              </>
-            )}
-          </View>
-        )}
-
-        {minor && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Só hábitos</Text>
-            <Text style={styles.muted}>Para menores de 18 anos, a Saúde mostra apenas hábitos: atividade, sono, coração e recuperação e hidratação. Não acompanhamos peso, composição corporal nem metas.</Text>
-          </View>
-        )}
-
-        {/* 2 a 6. Um cartão por categoria */}
-        {!loading && views.map((v) => (
-          <CategoryCard key={v.id} view={v} testID={`health-card-${v.id}`} onPress={() => openCategory(v.id)} />
-        ))}
-
-        {/* Conectar dispositivos (desligado; menores não veem) */}
-        {!minor && (
-          <TouchableOpacity
-            testID="health-connect-card"
-            style={[styles.card, styles.connectCard]}
-            onPress={() => navigation.navigate('SaudeConectar')}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={`${CONNECT_CARD.title}: ${CONNECT_CARD.status}. Abre a tela de conexão, hoje indisponível.`}
-          >
-            <Ionicons name="heart-circle-outline" size={28} color={COLORS.textSecondary} />
-            <View style={styles.connectText}>
-              <Text style={styles.connectTitle}>Conectar dispositivos</Text>
-              <Text style={styles.muted}>Apple Saúde / Health Connect · em breve</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.privacy}>
           {HEALTH_PRIVACY_LINES.map((t) => (
             <View key={t} style={styles.noticeRow}>
               <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.textSecondary} />
@@ -197,50 +153,17 @@ export default function HealthScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: space.screen, paddingBottom: SPACING.sm },
   backBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -SPACING.sm },
   headerText: { flex: 1 },
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
-  subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  content: { padding: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.md },
-  card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  titleFlex: { flex: 1 },
-  cardTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
-  subTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
-  muted: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },
-  scoreRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.md },
-  scoreNumber: { fontSize: 56, fontWeight: '700', lineHeight: 64 },
-  scoreSide: { paddingBottom: SPACING.sm },
-  scoreOf: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  band: { fontSize: FONTS.sizes.lg, fontWeight: '700' },
-  bar: { height: 10, borderRadius: 5, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden' },
-  barSmall: { height: 6, borderRadius: 3, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden', marginTop: 4 },
-  barFill: { height: '100%', borderRadius: 5 },
-  notes: { gap: SPACING.xs },
-  catRow: { paddingVertical: SPACING.xs },
-  catHead: { flexDirection: 'row', justifyContent: 'space-between', gap: SPACING.sm },
-  catLabel: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.white, fontWeight: '600' },
-  catGrade: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  missingBox: { gap: 4, paddingVertical: SPACING.xs },
-  missingRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  missingText: { flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.white },
-  whyBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  whyText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
-  why: { gap: SPACING.sm },
-  compRow: { gap: 2, paddingVertical: SPACING.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.border },
-  compHead: { flexDirection: 'row', justifyContent: 'space-between', gap: SPACING.sm },
-  compLabel: { flex: 1, fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
-  compValue: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
-  compDetail: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, lineHeight: 16 },
-  noticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.xs },
-  noticeText: { flex: 1, fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, lineHeight: 16 },
-  recRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
-  recText: { flex: 1, gap: 2 },
-  recReason: { fontSize: FONTS.sizes.md, color: COLORS.white, lineHeight: 22 },
-  recAction: { fontSize: FONTS.sizes.sm, color: COLORS.primary, lineHeight: 19, fontWeight: '600' },
-  connectCard: { flexDirection: 'row', alignItems: 'center', opacity: 0.75 },
-  connectText: { flex: 1 },
-  connectTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.textSecondary },
-  privacy: { gap: SPACING.xs },
+  subtitle: { ...type.support, color: COLORS.textSecondary },
+  content: { paddingHorizontal: space.screen, paddingTop: space.inner },
+  firstSection: { marginTop: space.inner },
+  section: { marginTop: space.section },
+  cards: { gap: space.cardGap },
+  afterCards: { marginTop: space.cardGap },
+  legal: { gap: space.inner },
+  noticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.tight },
+  noticeText: { flex: 1, ...type.caption, color: COLORS.textSecondary },
 });

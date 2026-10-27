@@ -66,24 +66,29 @@ describe('privacidade: dados de saúde nunca saem do aparelho', () => {
 
 describe('tela Saúde: cartões por categoria na ordem pedida', () => {
   const src = code('src/screens/HealthScreen.js');
-  it('Resumo (Duo Score), sugestões, depois um cartão por categoria (vindos da lista ordenada) e a conexão', () => {
-    const order = ['health-summary', 'health-coach', 'views.map', 'health-connect-card'].map((t) => src.indexOf(t));
-    expect(order.every((i) => i > -1)).toBe(true);
+  it('de cima para baixo: Duo Score, ações rápidas, chips, sugestões, cartões por categoria (vindos da lista ordenada), relatório e avisos', () => {
+    const order = ['<ScoreHero', '<QuickActions', '<CategoryChips', '<SuggestionsCard', 'withData.map', '<WeeklyReport', 'SCORE_DISCLAIMER}'].map((t) => src.indexOf(t));
+    expect(order.every((i) => i > -1), order.join(',')).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(src).toContain('testID={`health-card-${v.id}`}');
+    const parts = code('src/components/health/HealthParts.js');
+    for (const id of ['health-summary', 'health-coach', 'health-quick', 'health-nodata', 'health-report', 'health-connect-card']) expect(parts, id).toContain(id);
   });
   it('a ordem das categorias vem do modelo: Composição, Atividade, Sono, Coração e recuperação, Hidratação', () => {
     const model = code('src/utils/healthModel.js');
     const ids = [...model.matchAll(/\{ id: '(body|activity|sleep|heart|hydration)', label: '([^']+)'/g)].map((m) => `${m[1]}:${m[2]}`);
     expect(ids).toEqual(['body:Composição corporal', 'activity:Atividade', 'sleep:Sono', 'heart:Coração e recuperação', 'hydration:Hidratação']);
   });
-  it('menores de 18: sem o cartão de conexão e com o aviso "Só hábitos"', () => {
-    expect(src).toMatch(/\{!minor && \(\s*<TouchableOpacity\s+testID="health-connect-card"/);
-    expect(src).toContain('Só hábitos');
+  it('menores de 18: sem a ação Conectar, "Registrar sono" no lugar do peso e o aviso "Só hábitos"', () => {
+    const parts = code('src/components/health/HealthParts.js');
+    expect(parts).toMatch(/\{!minor \? \(\s*<QuickButton testID="health-connect-card"/);
+    expect(parts).toContain("minor ? 'Registrar sono' : 'Registrar peso'");
+    expect(parts).toContain('Só hábitos');
     expect(code('src/utils/healthView.js')).toMatch(/c\.id === 'body' && ageGroup === 'under18'/);
   });
   it('toque no cartão abre o detalhe da categoria; as rotas existem na pilha da aba Início', () => {
     expect(src).toMatch(/navigate\('SaudeDetalhe', \{ category \}\)/);
+    expect(src).toMatch(/navigate\('SaudeDetalhe', \{ category: minor \? 'sleep' : 'body' \}\)/);
     const nav = code('src/navigation/MainNavigator.js');
     expect(nav).toMatch(/name="SaudeDetalhe" component=\{HealthCategoryScreen\}/);
     expect(nav).toMatch(/name="SaudeConectar" component=\{HealthConnectScreen\}/);
@@ -168,8 +173,8 @@ describe('acessibilidade, área segura e fundo escuro', () => {
     }
   });
   it('cartões e botões têm papel e rótulo; alvos de toque de pelo menos 44', () => {
-    expect(code('src/components/health/CategoryCard.js')).toMatch(/accessibilityRole="button"\s+accessibilityLabel=\{view\.a11y\}/);
-    expect(code('src/components/health/CategoryCard.js')).toContain('minHeight: 44');
+    expect(code('src/components/health/CategoryCard.js')).toMatch(/accessibilityRole="button"\s+accessibilityLabel=\{cardA11y\(view\)\}/);
+    expect(code('src/components/health/CategoryCard.js')).toContain('minHeight: HEALTH_UI.minTouch');
     expect(code('src/components/health/TrendBars.js')).toMatch(/accessibilityRole="image" accessibilityLabel=\{describeSeries\(series, metric\)\}/);
     expect(code('src/screens/HealthCategoryScreen.js')).toMatch(/removeBtn: \{ width: 44, height: 44/);
   });

@@ -126,7 +126,7 @@ describe('temas de ajuda (infoContent)', () => {
     const score = textsOf(C.INFO_THEMES.duoScore.blocks).join(' ');
     expect(score).toContain('Por que este número?');
     expect(score).not.toMatch(/\d+ ?%|peso de|50|20|15/);
-    expect(read('src/screens/HealthScreen.js')).toContain('Por que este número?');
+    expect(read('src/components/health/HealthParts.js')).toContain('Por que este número?');
   });
 });
 
