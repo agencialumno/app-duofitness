@@ -15,13 +15,15 @@ export default class FakeAuthProvider {
     this.sentVerification = 0;
     this.sentReset = [];
     this.revokedApple = false;
+    this.tokenRefreshes = 0; // vezes em que o token foi renovado por e-mail verificado
     this.nextSocialEmail = {};
     this._n = 0;
   }
 
   // ---- ganchos de teste ----
   failNext(code) { this.failures.push(code); }
-  markVerified(email) { const u = this.users.get(norm(email)); if (u) u.emailVerified = true; }
+  // O link do e-mail muda o SERVIDOR; a cópia local (emailVerified) só muda no reloadUser(), como no Firebase.
+  markVerified(email) { const u = this.users.get(norm(email)); if (u) u.serverVerified = true; }
   _maybeFail(name) {
     this.calls.push(name);
     if (this.failures.length) throw authError(this.failures.shift());
@@ -38,6 +40,7 @@ export default class FakeAuthProvider {
   _create(email, extra) {
     this._n += 1;
     const u = { uid: `fake-${this._n}`, email, password: null, displayName: null, emailVerified: false, providers: [], ...extra };
+    u.serverVerified = !!u.emailVerified;
     this.users.set(email, u);
     return u;
   }
@@ -92,7 +95,10 @@ export default class FakeAuthProvider {
   async reloadUser() {
     this._maybeFail('reloadUser');
     if (!this.current) return null;
-    return this._publish(this.users.get(this.current));
+    const u = this.users.get(this.current);
+    u.emailVerified = !!u.serverVerified;
+    if (u.emailVerified) this.tokenRefreshes += 1;
+    return this._pub(u); // como no Firebase, reload() não dispara onAuthStateChanged: quem chama atualiza o estado
   }
 
   async signOut() {

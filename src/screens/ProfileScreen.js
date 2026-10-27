@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import { DemoCard } from '../components/DemoControls';
 import AccountCard from '../components/auth/AccountCard';
+import { useAuth } from '../auth/AuthContext';
 import { resetToWelcome } from '../navigation/resetNavigation';
 import { computeStreak } from '../utils/health';
 
@@ -32,6 +33,13 @@ function formatGoals(goals) {
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user, xp, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
+  const { refreshUser } = useAuth();
+  // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
+  useEffect(() => {
+    refreshUser();
+    const off = navigation.addListener('focus', () => { refreshUser(); });
+    return off;
+  }, [navigation, refreshUser]);
   // Sequência = dias seguidos com treino, pelas datas das sessões: a MESMA função da Home e da Saúde.
   const streakDays = computeStreak(completedSessions);
   const levelInfo = getLevel();

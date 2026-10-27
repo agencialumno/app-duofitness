@@ -1,18 +1,19 @@
 // Cartão "Conta" do Perfil. Só aparece com a flag de contas ligada e fora do Modo Demo (o demo nunca usa conta nem rede).
 // Sair da conta NÃO apaga os dados locais (ainda não há sincronização). Excluir a conta apaga só a conta online.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
-import { canConfirmDelete } from '../../auth/authFlow';
+import { RESEND_WAIT_SECONDS, canConfirmDelete, verificationView } from '../../auth/authFlow';
 import { clearHealthData } from '../../utils/healthStore';
 import { AuthField, ConfirmModal, LinkButton, Notice, SecondaryButton } from './AuthParts';
 
 export default function AccountCard() {
-  const { enabled, user, provider } = useAuth();
+  const { enabled, user, provider, checking, checkFailed, checkedUid, refreshUser } = useAuth();
+  const [wait, setWait] = useState(0); // intervalo entre reenvios do e-mail de verificação
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState('');
   const [error, setError] = useState('');
@@ -20,6 +21,12 @@ export default function AccountCard() {
   const [typed, setTyped] = useState('');
   const [password, setPassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
+
+  useEffect(() => {
+    if (wait <= 0) return undefined;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
 
   if (!enabled) return null;
 
@@ -35,19 +42,24 @@ export default function AccountCard() {
   const providers = user.providers || [];
   const methods = providers.map((p) => (p === 'password' ? 'e-mail e senha' : p === 'google.com' ? 'Google' : p === 'apple.com' ? 'Apple' : p)).join(', ');
 
+  const view = verificationView({ user, checking, failed: checkFailed, checkedOnce: checkedUid === user.uid });
+
   const resend = async () => {
+    if (wait > 0) return;
     setBusy(true); setError(''); setInfo('');
-    try { await provider.sendEmailVerification(); setInfo('E-mail de verificação enviado. Confira também a caixa de spam.'); }
+    try { await provider.sendEmailVerification(); setInfo('E-mail de verificação enviado. Confira também a caixa de spam.'); setWait(RESEND_WAIT_SECONDS); }
     catch (e) { setError(authErrorMessage(e, 'verify')); }
     finally { setBusy(false); }
   };
   const refresh = async () => {
     setBusy(true); setError(''); setInfo('');
     try {
-      const u = await provider.reloadUser();
-      if (u?.emailVerified) setInfo('E-mail verificado.'); else setError('Ainda não encontramos a verificação.');
-    } catch (e) { setError(authErrorMessage(e, 'verify')); }
-    finally { setBusy(false); }
+      // o resultado entra no estado global (AuthContext): Perfil, verificação e qualquer recurso leem o mesmo valor
+      const r = await refreshUser();
+      if (!r.ok) setError('Não foi possível verificar agora. Confira a conexão e tente de novo.');
+      else if (r.user?.emailVerified) setInfo('E-mail verificado.');
+      else setError('Ainda não encontramos a verificação. Abra o link do e-mail e tente de novo.');
+    } finally { setBusy(false); }
   };
   const signOut = async () => {
     setBusy(true); setError(''); setInfo('');
@@ -74,13 +86,16 @@ export default function AccountCard() {
         <Text style={styles.email} testID="account-email">{user.email}</Text>
       </View>
       <Text style={styles.text}>Entrada por {methods || 'conta'}.</Text>
-      <View style={styles.row} accessible accessibilityLabel={user.emailVerified ? 'E-mail verificado' : 'E-mail ainda não verificado'}>
-        <Ionicons name={user.emailVerified ? 'checkmark-circle' : 'alert-circle-outline'} size={18} color={user.emailVerified ? COLORS.success : COLORS.warning} />
-        <Text style={styles.text} testID="account-verified">{user.emailVerified ? 'E-mail verificado' : 'E-mail ainda não verificado'}</Text>
+      <View style={styles.row} accessible accessibilityLabel={view.text} accessibilityLiveRegion="polite" testID="account-verified-row">
+        <Ionicons name={view.icon} size={18} color={view.tone === 'ok' ? COLORS.success : view.tone === 'warn' ? COLORS.warning : COLORS.textSecondary} />
+        <Text style={styles.text} testID="account-verified" data-kind={view.kind}>{view.text}</Text>
       </View>
-      {!user.emailVerified ? (
+      {view.note ? <Text style={styles.text} testID="account-verified-note">{view.note}</Text> : null}
+      {view.canAct ? (
         <View style={styles.actions}>
-          <SecondaryButton testID="account-resend" label="Reenviar e-mail de verificação" onPress={resend} disabled={busy} />
+          {view.kind === 'unverified' ? (
+            <SecondaryButton testID="account-resend" label={wait > 0 ? `Reenviar e-mail de verificação (aguarde ${wait} s)` : 'Reenviar e-mail de verificação'} onPress={resend} disabled={busy || wait > 0} />
+          ) : null}
           <SecondaryButton testID="account-refresh" label="Já verifiquei" onPress={refresh} disabled={busy} />
         </View>
       ) : null}

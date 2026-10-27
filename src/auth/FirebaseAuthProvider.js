@@ -113,7 +113,16 @@ export default class FirebaseAuthProvider {
     const u = this.auth.currentUser;
     if (!u) return null;
     await this.api.reload(u);
-    return this._pub(this.auth.currentUser);
+    const cur = this.auth.currentUser;
+    // O token carrega email_verified (regras do Firestore/Storage leem request.auth.token.email_verified) e só renova de
+    // hora em hora: quando o e-mail passa a verificado, força um token novo.
+    if (cur && cur.emailVerified) {
+      try {
+        if (typeof this.api.getIdToken === 'function') await this.api.getIdToken(cur, true);
+        else await cur.getIdToken?.(true);
+      } catch { /* sem rede agora: o estado do usuário já está certo; o token renova sozinho depois */ }
+    }
+    return this._pub(cur);
   }
 
   async signOut() {

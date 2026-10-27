@@ -4,13 +4,11 @@ import { COLORS, FONTS } from '../../utils/theme';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
-import { destinationAfterAuth } from '../../auth/authFlow';
+import { RESEND_WAIT_SECONDS as RESEND_WAIT, destinationAfterAuth } from '../../auth/authFlow';
 import { AuthScreen, LinkButton, Notice, PrimaryButton, SecondaryButton } from '../../components/auth/AuthParts';
 
-const RESEND_WAIT = 60;
-
 export default function VerifyEmailScreen({ navigation }) {
-  const { provider, user } = useAuth();
+  const { provider, user, refreshUser } = useAuth();
   const { user: appUser } = useApp();
   const [wait, setWait] = useState(RESEND_WAIT); // o e-mail acabou de ser enviado no cadastro
   const [busy, setBusy] = useState(false);
@@ -42,11 +40,10 @@ export default function VerifyEmailScreen({ navigation }) {
     if (busy) return;
     setBusy(true); setError(''); setInfo('');
     try {
-      const u = await provider.reloadUser();
-      if (u?.emailVerified) setInfo('E-mail verificado. Tudo certo!');
+      const r = await refreshUser(); // atualiza o estado global (o Perfil vê o mesmo valor)
+      if (!r.ok) setError('Não foi possível verificar agora. Confira a conexão e tente de novo.');
+      else if (r.user?.emailVerified) setInfo('E-mail verificado. Tudo certo!');
       else setError('Ainda não encontramos a verificação. Abra o link do e-mail e tente de novo.');
-    } catch (e) {
-      setError(authErrorMessage(e, 'verify'));
     } finally { setBusy(false); }
   };
 
