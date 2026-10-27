@@ -154,6 +154,72 @@ export function mostRecentNote(views, samples) {
   return best;
 }
 
+// ---------- Apresentação da tela Saúde (só texto e agrupamento; nenhuma conta nem regra nova) ----------
+
+// Frase curta sob o Duo Score do cabeçalho. Neutra: só hábitos, sem promessa nem julgamento.
+export function scorePhrase(score, { missing = 0 } = {}) {
+  if (score === null || score === undefined) return 'Registre treinos, água ou sono para ver o seu Duo Score.';
+  const base = score >= 85 ? 'Seus hábitos da semana estão em dia.'
+    : score >= 70 ? 'Bom ritmo de hábitos nesta semana.'
+      : score >= 50 ? 'Dá para ajustar um hábito de cada vez.'
+        : 'Comece por um hábito pequeno hoje.';
+  const extra = missing > 0 ? ` ${missing === 1 ? 'Falta 1 categoria' : `Faltam ${missing} categorias`} com dados.` : '';
+  return `${base}${extra}`;
+}
+
+// Variação compacta do cartão: { icon, text, window }. "subindo 1.180 passos" / "estável" / "sem tendência ainda".
+const VARIATION_ICON = { up: 'trending-up', down: 'trending-down', stable: 'remove-outline' };
+export function compactVariation(view) {
+  const d7 = view && view.trends ? view.trends.d7 : null;
+  if (!d7) return { icon: 'help-circle-outline', text: 'Sem tendência ainda', window: '7 dias' };
+  const raw = String(d7.text).replace(/^\d+ dias: /, '');
+  const text = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const dir = d7.trend ? d7.trend.direction : null;
+  return { icon: VARIATION_ICON[dir] || 'help-circle-outline', text: dir ? text : 'Sem tendência ainda', window: '7 dias' };
+}
+
+// Valor falado pelo leitor de tela: "6 horas e 24 minutos" em vez de "6h24".
+export function spokenValue(metric, value, fallback) {
+  const m = METRICS[metric];
+  if (m && m.unit === 'min' && (metric === 'sleep_duration')) {
+    const total = Math.round(value);
+    const h = Math.floor(total / 60);
+    const min = total % 60;
+    const hs = `${h} ${h === 1 ? 'hora' : 'horas'}`;
+    return min ? `${hs} e ${min} ${min === 1 ? 'minuto' : 'minutos'}` : hs;
+  }
+  return fallback;
+}
+
+// Rótulo do cartão para o VoiceOver, lido como UM item: "Sono, 6 horas e 24 minutos, abaixo da sua média de 7 dias,
+// atualizado hoje. Origem: Dados de exemplo. Toque para ver o detalhe."
+export function cardA11y(view) {
+  if (!view) return '';
+  if (!view.hasData) return `${view.label}: sem dados. ${view.empty.action.label}. Toque para abrir.`;
+  const parts = [view.label];
+  const present = (view.series.d30 || []).filter((p) => p.value !== null && p.value !== undefined);
+  const lastPoint = present.length ? present[present.length - 1] : null;
+  if (view.current) parts.push(lastPoint ? spokenValue(view.primaryMetric, lastPoint.value, view.current.text) : view.current.text);
+  const st = seriesStats((view.series.d7 || []));
+  if (lastPoint && st && st.count >= 2) {
+    const tol = METRICS[view.primaryMetric] ? METRICS[view.primaryMetric].tol : 0;
+    const diff = lastPoint.value - st.avg;
+    parts.push(Math.abs(diff) <= tol ? 'na sua média de 7 dias' : diff > 0 ? 'acima da sua média de 7 dias' : 'abaixo da sua média de 7 dias');
+  }
+  if (view.current) {
+    const sub = String(view.current.sub);
+    parts.push(/^Hoje/.test(sub) ? 'atualizado hoje' : `atualizado ${sub.replace(/^Último registro em /, 'em ').replace(/^Em /, 'em ')}`);
+  }
+  const origin = view.origin ? ` Origem: ${view.origin}.` : '';
+  return `${parts.join(', ')}.${origin} Toque para ver o detalhe.`;
+}
+
+// Cartões com dados (na ordem da tela) e categorias sem dados (agrupadas e recolhidas em "Sem dados ainda").
+export function splitViews(views) {
+  const list = (views || []).filter(Boolean);
+  return { withData: list.filter((v) => v.hasData), noData: list.filter((v) => !v.hasData) };
+}
+
 export { shortDate };
 
 // ---------- Formulário de registro manual (por categoria) ----------
