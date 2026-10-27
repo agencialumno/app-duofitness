@@ -88,7 +88,7 @@ describe('tela Saúde: cartões por categoria na ordem pedida', () => {
   });
   it('toque no cartão abre o detalhe da categoria; as rotas existem na pilha da aba Início', () => {
     expect(src).toMatch(/navigate\('SaudeDetalhe', \{ category \}\)/);
-    expect(src).toMatch(/navigate\('SaudeDetalhe', \{ category: minor \? 'sleep' : 'body' \}\)/);
+    expect(src).toMatch(/navigate\('SaudeDetalhe', \{ category: minor \? 'sleep' : 'body', register: true \}\)/);
     const nav = code('src/navigation/MainNavigator.js');
     expect(nav).toMatch(/name="SaudeDetalhe" component=\{HealthCategoryScreen\}/);
     expect(nav).toMatch(/name="SaudeConectar" component=\{HealthConnectScreen\}/);

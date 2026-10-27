@@ -82,7 +82,7 @@ export default function HealthScreen({ navigation }) {
           <QuickActions
             minor={minor}
             waterText={waterText}
-            onRegister={() => navigation.navigate('SaudeDetalhe', { category: minor ? 'sleep' : 'body' })}
+            onRegister={() => navigation.navigate('SaudeDetalhe', { category: minor ? 'sleep' : 'body', register: true })}
             onWater={() => addGlass(1)}
             onConnect={() => navigation.navigate('SaudeConectar')}
           />

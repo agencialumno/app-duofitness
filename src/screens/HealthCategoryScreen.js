@@ -2,17 +2,18 @@ import React, { useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
+import { COLORS, FONTS, HEALTH_UI, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import TrendBars from '../components/health/TrendBars';
 import InfoButton from '../components/InfoButton';
 import { ExampleBadge } from '../components/OccupancyCard';
 import { dayKey } from '../utils/health';
 import { getCategory } from '../utils/healthModel';
-import { FORM_FIELDS, buildHistory, parseForm } from '../utils/healthView';
+import { FORM_FIELDS, buildHistory, compactVariation, parseForm } from '../utils/healthView';
 import { HEALTH_INFO, HEALTH_MEANING, HEALTH_PRIVACY_LINES } from '../data/healthInfoContent';
 
-// Detalhe de UMA categoria: explicação ("i"), valor atual, tendência de 7 e 30 dias, origem, histórico e registro manual.
+// Detalhe de UMA categoria, de cima para baixo: valor atual com a variação e a origem, seletor de período (7 ou 30 dias) com o gráfico,
+// registros com data e origem, a ação de registro (recolhida quando já há dados) e a explicação ("i" no cabeçalho e texto no fim).
 // O campo focado fica sempre visível com o teclado aberto (KeyboardAvoidingView + rolagem até o formulário).
 export default function HealthCategoryScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -23,6 +24,8 @@ export default function HealthCategoryScreen({ navigation, route }) {
   const formY = useRef(0);
   const [texts, setTexts] = useState({});
   const [msg, setMsg] = useState(null);
+  const [period, setPeriod] = useState('7');
+  const [formOpen, setFormOpen] = useState(!!route?.params?.register);
 
   const blocked = !cat || (id === 'body' && minor);
   const view = !blocked ? views.find((v) => v.id === id) : null;
@@ -80,21 +83,22 @@ export default function HealthCategoryScreen({ navigation, route }) {
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
         >
           {isExample && <ExampleBadge />}
-          <Text style={styles.meaning}>{HEALTH_MEANING[id]}</Text>
-
-          {/* Valor atual e origem */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Agora</Text>
+          {/* Valor atual, variação e origem */}
+          <View style={styles.card} testID="health-hero">
             {loading || !view ? (
               <Text style={styles.muted}>Carregando…</Text>
             ) : view.hasData ? (
               <>
                 {view.current ? (
-                  <View style={styles.valueRow}>
+                  <View style={styles.valueRow} accessible accessibilityLabel={`${view.current.text}, ${view.current.sub.toLowerCase()}`}>
                     <Text style={styles.value}>{view.current.text}</Text>
                     <Text style={styles.sub}>{view.current.sub}</Text>
                   </View>
                 ) : null}
+                <View style={styles.variation}>
+                  <Ionicons name={compactVariation(view).icon} size={16} color={COLORS.textSecondary} />
+                  <Text style={styles.trend}>{compactVariation(view).text} <Text style={styles.sub}>· 7 dias</Text></Text>
+                </View>
                 {view.extra.map((e) => (
                   <Text key={e.label} style={styles.extra}>{e.label}: <Text style={styles.extraValue}>{e.text}</Text> · {e.when}</Text>
                 ))}
@@ -103,26 +107,67 @@ export default function HealthCategoryScreen({ navigation, route }) {
             ) : (
               <>
                 <Text style={styles.muted}>{view.empty.message}</Text>
-                <Text style={styles.muted}>{view.empty.action.type === 'connect' ? 'Você também pode registrar à mão abaixo.' : 'Use o formulário abaixo para registrar.'}</Text>
+                <Text style={styles.muted}>{view.empty.action.type === 'connect' ? 'Você também pode registrar à mão abaixo.' : 'Use a ação de registro abaixo.'}</Text>
               </>
             )}
           </View>
 
-          {/* Tendência de 7 e 30 dias */}
+          {/* Período (7 ou 30 dias) e gráfico */}
           {view && view.hasData && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Tendência</Text>
-              <Text style={styles.trend}>{view.trends.d7.text}</Text>
-              <TrendBars series={view.series.d7} metric={view.primaryMetric} testID="trend-7" />
-              <Text style={[styles.trend, styles.trendSpaced]}>{view.trends.d30.text}</Text>
-              <TrendBars series={view.series.d30} metric={view.primaryMetric} testID="trend-30" />
-              <Text style={styles.muted}>Dias sem registro aparecem como um ponto pequeno e não contam como zero.</Text>
+            <View style={styles.card} testID="health-period">
+              <View style={styles.segment} accessibilityRole="tablist">
+                {[['7', '7 dias'], ['30', '30 dias']].map(([k, label]) => (
+                  <TouchableOpacity
+                    key={k}
+                    testID={`period-${k}`}
+                    style={[styles.segBtn, period === k && styles.segBtnActive]}
+                    onPress={() => setPeriod(k)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: period === k }}
+                    accessibilityLabel={`Período de ${label}`}
+                  >
+                    <Text style={[styles.segText, period === k && styles.segTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.trend}>{period === '7' ? view.trends.d7.text : view.trends.d30.text}</Text>
+              {period === '7'
+                ? <TrendBars series={view.series.d7} metric={view.primaryMetric} testID="trend-7" />
+                : <TrendBars series={view.series.d30} metric={view.primaryMetric} testID="trend-30" />}
+              <Text style={styles.caption}>Dias sem registro aparecem como um ponto pequeno e não contam como zero.</Text>
             </View>
           )}
 
+          {/* Registros, com data e origem */}
+          {!loading && cat.metrics.map((metric) => {
+            const rows = buildHistory(samples, metric, { limit: 14 });
+            if (rows.length === 0) return null;
+            return (
+              <View key={metric} style={styles.card} testID={`history-${metric}`}>
+                <Text style={styles.cardTitle}>Histórico: {METRIC_TITLE[metric]}</Text>
+                {rows.map((r) => (
+                  <View key={r.date} style={styles.histRow} accessible accessibilityLabel={`${r.label}: ${r.text}. Origem: ${SOURCE_NAME[r.source]}.`}>
+                    <Text style={styles.histDate}>{r.label}</Text>
+                    <Text style={styles.histValue}>{r.text}</Text>
+                    <Text style={styles.histSource}>{SOURCE_NAME[r.source]}</Text>
+                    {r.removable ? (
+                      <TouchableOpacity style={styles.removeBtn} onPress={() => remove(metric, r.date)} accessibilityRole="button" accessibilityLabel={`Remover o registro de ${r.label}`}>
+                        <Ionicons name="trash-outline" size={18} color={COLORS.textSecondary} />
+                      </TouchableOpacity>
+                    ) : <View style={styles.removeBtn} />}
+                  </View>
+                ))}
+              </View>
+            );
+          })}
+
           {/* Registrar */}
-          <View style={styles.card} onLayout={(e) => { formY.current = e.nativeEvent.layout.y; }} testID="health-form">
-            <Text style={styles.cardTitle}>Registrar hoje</Text>
+          <View style={styles.card} onLayout={(e) => { formY.current = e.nativeEvent.layout.y; }}>
+            {id !== 'hydration' && !formOpen ? (
+              <TouchableOpacity testID="health-register-open" style={styles.okBtn} onPress={() => setFormOpen(true)} accessibilityRole="button" accessibilityLabel="Registrar hoje">
+                <Text style={styles.okBtnText}>Registrar hoje</Text>
+              </TouchableOpacity>
+            ) : <Text style={styles.cardTitle}>Registrar hoje</Text>}
             {id === 'hydration' ? (
               <>
                 <View style={styles.waterRow}>
@@ -147,8 +192,8 @@ export default function HealthCategoryScreen({ navigation, route }) {
                   </TouchableOpacity>
                 </View>
               </>
-            ) : (
-              <>
+            ) : formOpen ? (
+              <View testID="health-form" style={styles.formBox}>
                 {fields.map((f) => (
                   <View key={f.metric} style={styles.field}>
                     <Text style={styles.label}>{f.label}</Text>
@@ -172,33 +217,16 @@ export default function HealthCategoryScreen({ navigation, route }) {
                 <TouchableOpacity testID="health-register" style={styles.okBtn} onPress={submit} accessibilityRole="button" accessibilityLabel="Registrar">
                   <Text style={styles.okBtnText}>Registrar</Text>
                 </TouchableOpacity>
-              </>
-            )}
+              </View>
+            ) : null}
             {msg ? <Text style={[styles.feedback, !msg.ok && styles.feedbackWarn]} accessibilityLiveRegion="polite" accessibilityRole="alert">{msg.text}</Text> : null}
           </View>
 
-          {/* Histórico */}
-          {!loading && cat.metrics.map((metric) => {
-            const rows = buildHistory(samples, metric, { limit: 14 });
-            if (rows.length === 0) return null;
-            return (
-              <View key={metric} style={styles.card} testID={`history-${metric}`}>
-                <Text style={styles.cardTitle}>Histórico: {METRIC_TITLE[metric]}</Text>
-                {rows.map((r) => (
-                  <View key={r.date} style={styles.histRow} accessible accessibilityLabel={`${r.label}: ${r.text}. Origem: ${SOURCE_NAME[r.source]}.`}>
-                    <Text style={styles.histDate}>{r.label}</Text>
-                    <Text style={styles.histValue}>{r.text}</Text>
-                    <Text style={styles.histSource}>{SOURCE_NAME[r.source]}</Text>
-                    {r.removable ? (
-                      <TouchableOpacity style={styles.removeBtn} onPress={() => remove(metric, r.date)} accessibilityRole="button" accessibilityLabel={`Remover o registro de ${r.label}`}>
-                        <Ionicons name="trash-outline" size={18} color={COLORS.textSecondary} />
-                      </TouchableOpacity>
-                    ) : <View style={styles.removeBtn} />}
-                  </View>
-                ))}
-              </View>
-            );
-          })}
+          {/* Explicação */}
+          <View style={styles.card} testID="health-meaning">
+            <Text style={styles.cardTitle}>O que é</Text>
+            <Text style={styles.muted}>{HEALTH_MEANING[id]}</Text>
+          </View>
 
           <View style={styles.privacy}>
             {HEALTH_PRIVACY_LINES.map((t) => (
@@ -228,18 +256,25 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  content: { padding: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.md },
-  meaning: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 22 },
-  card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
+  content: { padding: HEALTH_UI.space.screen, paddingTop: SPACING.sm, gap: HEALTH_UI.space.cardGap },
+  formBox: { gap: SPACING.sm },
+  variation: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  caption: { fontSize: 12, lineHeight: 16, color: COLORS.textSecondary },
+  segment: { flexDirection: 'row', gap: SPACING.sm },
+  segBtn: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bgCardAlt },
+  segBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  segText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
+  segTextActive: { color: COLORS.black },
+  card: { backgroundColor: COLORS.bgCard, borderRadius: HEALTH_UI.card.radius, borderWidth: HEALTH_UI.card.borderWidth, borderColor: COLORS.border, padding: HEALTH_UI.space.cardPadding, gap: SPACING.sm },
   cardTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   muted: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: SPACING.sm },
-  value: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
+  value: { ...HEALTH_UI.type.value, color: COLORS.white },
   bigOf: { fontSize: FONTS.sizes.lg, fontWeight: '400', color: COLORS.textSecondary },
   sub: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   extra: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   extraValue: { color: COLORS.white, fontWeight: '600' },
-  origin: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
+  origin: { fontSize: 12, lineHeight: 16, color: COLORS.textSecondary },
   trend: { fontSize: FONTS.sizes.sm, color: COLORS.white },
   trendSpaced: { marginTop: SPACING.sm },
   waterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACING.md },
@@ -262,6 +297,6 @@ const styles = StyleSheet.create({
   histSource: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
   removeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   noticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.xs },
-  noticeText: { flex: 1, fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, lineHeight: 16 },
+  noticeText: { flex: 1, fontSize: 12, lineHeight: 16, color: COLORS.textSecondary },
   privacy: { gap: SPACING.xs },
 });

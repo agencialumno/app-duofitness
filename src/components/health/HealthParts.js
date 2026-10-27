@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   barSmall: { height: 8, borderRadius: 4, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 6 },
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.cardGap },
-  quick: { flexGrow: 1, flexBasis: 120, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.inner, paddingHorizontal: space.screen, paddingVertical: space.inner, borderRadius: card.radius, borderWidth: card.borderWidth, borderColor: COLORS.border, backgroundColor: COLORS.bgCard },
+  quick: { flexGrow: 1, flexBasis: 150, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.inner, paddingHorizontal: space.screen, paddingVertical: space.inner, borderRadius: card.radius, borderWidth: card.borderWidth, borderColor: COLORS.border, backgroundColor: COLORS.bgCard },
   quickMuted: { backgroundColor: COLORS.bg },
   quickText: { flexShrink: 1 },
   quickLabel: { ...type.label, color: COLORS.white },
