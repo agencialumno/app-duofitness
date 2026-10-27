@@ -101,6 +101,12 @@ Um archive sem assinatura pode perder entitlements. Depois do export (também co
 - com `EXPO_PUBLIC_AUTH_ENABLED=true` **e** Firebase ligado (`FIREBASE_ENABLED`), o `com.apple.developer.applesignin` é **obrigatório**: sem ele o passo falha com `::error::` e o TestFlight não recebe um build sem o Sign in with Apple. Com as contas ligadas **sem** Firebase o login da Apple nem existe (provedor indisponível), então só há um aviso;
 - só os nomes das chaves aparecem no log; certificados nunca são impressos (o passo da assinatura mostra apenas o tipo, "Apple Distribution").
 
+## HealthKit no .ipa (integração de saúde)
+
+Com a variável de repositório `HEALTH_INTEGRATION_ENABLED=true` (só para a conferência; ela não muda o app), o passo **"Conferir os entitlements do .ipa"** passa `--require-healthkit` e o `com.apple.developer.healthkit` vira **obrigatório** no `.ipa` e no projeto iOS gerado. Sem ele a integração com o Apple Saúde não funciona no aparelho. Hoje o HealthKit é só um stub desligado (`EXPO_PUBLIC_HEALTH_INTEGRATION=false`) e nenhum plugin declara o entitlement: com a variável ligada o passo vai falhar até o plugin do HealthKit existir, e isso é proposital.
+
+**Importante (até a correção estrutural ser validada em macOS):** o archive **sem assinatura** (`sign_archive=false`, o padrão) **não grava entitlements** no app. O `ios.yml` já barrou um build por isso com o Sign in with Apple. Enquanto a correção estrutural dos entitlements não for validada em macOS, **o build com HealthKit deve ser gerado com `sign_archive=true`** (ele cria um certificado de desenvolvimento por execução; revogue os acumulados à mão de vez em quando). Com `HEALTH_INTEGRATION_ENABLED=true` e `sign_archive=false` o log mostra um aviso (`::notice::`) lembrando disso, e se o entitlement faltar o passo falha com `Falta no .ipa o entitlement com.apple.developer.healthkit`.
+
 ## Problemas comuns
 
 | Mensagem | O que fazer |

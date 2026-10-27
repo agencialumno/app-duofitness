@@ -54,6 +54,9 @@ jobs:
       # Contas (e-mail, Google e Apple): variáveis OPCIONAIS do repositório (não são segredo). Vazio = DESLIGADO,
       # e o app fica idêntico ao de antes. Ligar só com EXPO_PUBLIC_AUTH_ENABLED=true.
       EXPO_PUBLIC_AUTH_ENABLED: ${{ vars.EXPO_PUBLIC_AUTH_ENABLED }}
+      # HealthKit: variável OPCIONAL do repositório, só para a CONFERÊNCIA dos entitlements do .ipa (não muda o app). Com true,
+      # o .ipa precisa ter com.apple.developer.healthkit; veja docs/testflight.md (sign_archive=true até validar a correção estrutural).
+      HEALTH_INTEGRATION_ENABLED: ${{ vars.HEALTH_INTEGRATION_ENABLED }}
       EXPO_PUBLIC_TERMS_URL: ${{ vars.EXPO_PUBLIC_TERMS_URL }}
       EXPO_PUBLIC_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_PRIVACY_URL }}
       # Tag sempre envia; execução manual envia só com upload=true.
@@ -481,6 +484,12 @@ jobs:
             ARGS+=(--require-applesignin)
           elif [ "${EXPO_PUBLIC_AUTH_ENABLED:-}" = "true" ]; then
             echo "::notice::Contas ligadas, mas sem Firebase neste build: o login com a Apple não existe (provedor indisponível), então o entitlement do Sign in with Apple não é exigido."
+          fi
+          if [ "${HEALTH_INTEGRATION_ENABLED:-}" = "true" ]; then
+            ARGS+=(--require-healthkit)
+            if [ "${SIGN_ARCHIVE:-}" != "true" ]; then
+              echo "::notice::HealthKit ligado com o archive SEM assinatura: ele pode perder o entitlement com.apple.developer.healthkit. Se a conferência falhar, rode de novo com sign_archive=true (docs/testflight.md)."
+            fi
           fi
           node scripts/check-ipa-entitlements.mjs "${ARGS[@]}"
 

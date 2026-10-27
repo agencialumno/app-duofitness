@@ -3,17 +3,20 @@
 // sair sem o Sign in with Apple. Só os NOMES das chaves são impressos (nunca certificados nem valores secretos).
 //
 // Uso: node scripts/check-ipa-entitlements.mjs --ipa <plist XML do .ipa> --project <.entitlements do projeto | none>
-//                                              [--require-applesignin]
+//                                              [--require-applesignin] [--require-healthkit]
 // Regras:
 //  - toda chave do projeto precisa existir no .ipa; se o valor do projeto não tiver variável "$(...)", precisa ser IGUAL;
 //  - o .ipa pode ter chaves a mais (application-identifier, team-identifier, get-task-allow, beta-reports-active...);
-//  - --require-applesignin: com.apple.developer.applesignin é obrigatório no .ipa (e no projeto, se o projeto existir).
+//  - --require-applesignin: com.apple.developer.applesignin é obrigatório no .ipa (e no projeto, se o projeto existir);
+//  - --require-healthkit: com.apple.developer.healthkit é obrigatório no .ipa e no projeto (o workflow passa a flag quando
+//    HEALTH_INTEGRATION_ENABLED=true: sem o entitlement o HealthKit não funciona no aparelho).
 // Saída: 0 se tudo certo; 1 com ::error:: para cada problema. Escreve um resumo em GITHUB_STEP_SUMMARY, se existir.
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const APPLE_SIGN_IN = 'com.apple.developer.applesignin';
+export const HEALTHKIT = 'com.apple.developer.healthkit';
 
 // ---------- parser mínimo de plist XML (dict, array, string, true, false, integer, real, data, date) ----------
 export function parsePlist(xml) {
@@ -80,7 +83,7 @@ const hasVariable = (v) => JSON.stringify(v).includes('$(');
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // Devolve { problems[], checked[] } com NOMES de chaves, sem valores.
-export function compareEntitlements(ipa, project, { requireAppleSignIn = false } = {}) {
+export function compareEntitlements(ipa, project, { requireAppleSignIn = false, requireHealthKit = false } = {}) {
   const problems = [];
   const checked = [];
   for (const [key, want] of Object.entries(project || {})) {
@@ -92,6 +95,10 @@ export function compareEntitlements(ipa, project, { requireAppleSignIn = false }
     if (!(APPLE_SIGN_IN in ipa)) problems.push(`Falta no .ipa o entitlement ${APPLE_SIGN_IN} (Sign in with Apple); com as contas e o Firebase ligados ele é obrigatório`);
     if (!(APPLE_SIGN_IN in (project || {}))) problems.push(`O projeto iOS gerado não declara ${APPLE_SIGN_IN} (usesAppleSignIn não foi aplicado)`);
   }
+  if (requireHealthKit) {
+    if (!(HEALTHKIT in ipa)) problems.push(`Falta no .ipa o entitlement ${HEALTHKIT} (HealthKit); com a integração de saúde ligada ele é obrigatório. Um archive SEM assinatura pode perdê-lo: gere este build com sign_archive=true (veja docs/testflight.md)`);
+    if (!(HEALTHKIT in (project || {}))) problems.push(`O projeto iOS gerado não declara ${HEALTHKIT} (o plugin do HealthKit não foi aplicado)`);
+  }
   return { problems: [...new Set(problems)], checked };
 }
 
@@ -101,11 +108,12 @@ function main() {
   const ipaFile = arg('--ipa');
   const projFile = arg('--project');
   const requireAppleSignIn = args.includes('--require-applesignin');
+  const requireHealthKit = args.includes('--require-healthkit');
   if (!ipaFile || !projFile) { console.log('::error::Uso: check-ipa-entitlements.mjs --ipa <arquivo> --project <arquivo|none>'); process.exit(2); }
   let ipa; let project;
   try { ipa = parsePlist(readFileSync(ipaFile, 'utf8')); } catch (e) { console.log(`::error::Não consegui ler os entitlements do .ipa: ${String(e.message).split('\n')[0]}`); process.exit(1); }
   try { project = projFile === 'none' ? {} : parsePlist(readFileSync(projFile, 'utf8')); } catch (e) { console.log(`::error::Não consegui ler o .entitlements do projeto: ${String(e.message).split('\n')[0]}`); process.exit(1); }
-  const { problems, checked } = compareEntitlements(ipa, project, { requireAppleSignIn });
+  const { problems, checked } = compareEntitlements(ipa, project, { requireAppleSignIn, requireHealthKit });
   const summary = process.env.GITHUB_STEP_SUMMARY;
   if (problems.length) {
     for (const p of problems) console.log(`::error::${p}`);
@@ -114,7 +122,7 @@ function main() {
   }
   const names = checked.length ? checked.join(', ') : '(o projeto não declara entitlements)';
   console.log(`Entitlements do .ipa conferidos com o projeto: ${names}. O .ipa tem ${Object.keys(ipa).length} chave(s) no total.`);
-  if (summary) appendFileSync(summary, `- entitlements do .ipa conferidos com o projeto: ${names}${requireAppleSignIn ? ' (Sign in with Apple obrigatório: ok)' : ''}\n`);
+  if (summary) appendFileSync(summary, `- entitlements do .ipa conferidos com o projeto: ${names}${requireAppleSignIn ? ' (Sign in with Apple obrigatório: ok)' : ''}${requireHealthKit ? ' (HealthKit obrigatório: ok)' : ''}\n`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

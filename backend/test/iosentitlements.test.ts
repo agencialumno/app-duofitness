@@ -19,6 +19,9 @@ const plist = (body: string) => `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTY
 const SIWA = '<key>com.apple.developer.applesignin</key><array><string>Default</string></array>';
 const IPA_OK = plist(`<key>application-identifier</key><string>TEAM.com.duofitness.app</string><key>com.apple.developer.team-identifier</key><string>TEAM</string><key>get-task-allow</key><false/>${SIWA}`);
 const IPA_SEM_SIWA = plist('<key>application-identifier</key><string>TEAM.com.duofitness.app</string><key>get-task-allow</key><false/>');
+const HK = '<key>com.apple.developer.healthkit</key><true/>';
+const IPA_COM_HK = plist(`<key>application-identifier</key><string>TEAM.com.duofitness.app</string>${SIWA}${HK}`);
+const PROJECT_HK = plist(`${SIWA}${HK}`);
 const PROJECT_SIWA = plist(SIWA);
 const PROJECT_VAZIO = plist('');
 
@@ -61,6 +64,26 @@ describe('compareEntitlements', () => {
   });
 });
 
+describe('--require-healthkit', () => {
+  it('obrigatório no .ipa e declarado no projeto quando a integração de saúde está ligada', () => {
+    const ok = E.compareEntitlements(E.parsePlist(IPA_COM_HK), E.parsePlist(PROJECT_HK), { requireHealthKit: true });
+    expect(ok.problems).toEqual([]);
+    const semNoIpa = E.compareEntitlements(E.parsePlist(IPA_OK), E.parsePlist(PROJECT_HK), { requireHealthKit: true }).problems;
+    expect(semNoIpa.join('|')).toContain('Falta no .ipa o entitlement com.apple.developer.healthkit (HealthKit)');
+    expect(semNoIpa.join('|')).toContain('sign_archive=true');
+    const semNoProjeto = E.compareEntitlements(E.parsePlist(IPA_COM_HK), E.parsePlist(PROJECT_SIWA), { requireHealthKit: true }).problems;
+    expect(semNoProjeto.join('|')).toContain('O projeto iOS gerado não declara com.apple.developer.healthkit');
+  });
+  it('sem a exigência (integração desligada) o HealthKit não é cobrado', () => {
+    expect(E.compareEntitlements(E.parsePlist(IPA_OK), E.parsePlist(PROJECT_SIWA)).problems).toEqual([]);
+  });
+  it('e a exigência do Sign in with Apple continua valendo junto', () => {
+    const r = E.compareEntitlements(E.parsePlist(plist(HK)), {}, { requireAppleSignIn: true, requireHealthKit: true }).problems.join('|');
+    expect(r).toContain('com.apple.developer.applesignin');
+    expect(r).toContain('com.apple.developer.healthkit');
+  });
+});
+
 describe('CLI', () => {
   let dir: string;
   beforeEach(() => { dir = mkdtempSync(path.join(tmpdir(), 'ents-')); });
@@ -87,6 +110,15 @@ describe('CLI', () => {
     expect(run(IPA_OK, null).code).toBe(0);
     expect(run(IPA_OK, null, '--require-applesignin').code).toBe(1);
   });
+  it('--require-healthkit: passa com o entitlement e falha com ::error:: (nome da chave, sem valores) sem ele', () => {
+    const ok = run(IPA_COM_HK, PROJECT_HK, '--require-healthkit');
+    expect(ok.code, ok.out).toBe(0);
+    expect(ok.out).toContain('com.apple.developer.healthkit');
+    const ruim = run(IPA_OK, PROJECT_HK, '--require-healthkit');
+    expect(ruim.code).toBe(1);
+    expect(ruim.out).toContain('::error::Falta no .ipa o entitlement com.apple.developer.healthkit');
+    expect(ruim.out).not.toContain('TEAM.com.duofitness.app');
+  });
   it('arquivo ilegível ou argumentos ausentes falham com mensagem', () => {
     expect(run('lixo', PROJECT_SIWA).out).toContain('::error::Não consegui ler os entitlements do .ipa');
     const r = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
@@ -101,7 +133,7 @@ describe.skipIf(!hasBash)('o passo do ios.yml (bash -e, codesign falso, .ipa de 
 
   const stepRun = () => yaml.load(readFileSync(path.join(REPO, '.github/workflows/ios.yml'), 'utf8')).jobs.build!.steps.find((s) => (s.name ?? '').startsWith('Conferir os entitlements do .ipa'))!.run!;
 
-  function runStep(opts: { ipaEnts: string; projectEnts: string | null; auth?: string; firebase?: string }) {
+  function runStep(opts: { ipaEnts: string; projectEnts: string | null; auth?: string; firebase?: string; health?: string; signArchive?: string }) {
     mkdirSync(path.join(work, 'tmp', 'ipa-unzipped', 'Payload', 'DuoFitness.app'), { recursive: true });
     mkdirSync(path.join(work, 'scripts'), { recursive: true });
     mkdirSync(path.join(work, 'bin'), { recursive: true });
@@ -116,11 +148,26 @@ describe.skipIf(!hasBash)('o passo do ios.yml (bash -e, codesign falso, .ipa de 
     const r = spawnSync('bash', ['-e', px(path.join(work, 'step.sh'))], {
       cwd: work, encoding: 'utf8',
       env: { ...process.env, RUNNER_TEMP: px(path.join(work, 'tmp')), XC_SCHEME: 'DuoFitness', FAKE_IPA_ENTS: px(path.join(work, 'ipa-ents.xml')),
-        EXPO_PUBLIC_AUTH_ENABLED: opts.auth ?? '', FIREBASE_ENABLED: opts.firebase ?? '', GITHUB_STEP_SUMMARY: '' },
+        EXPO_PUBLIC_AUTH_ENABLED: opts.auth ?? '', FIREBASE_ENABLED: opts.firebase ?? '', HEALTH_INTEGRATION_ENABLED: opts.health ?? '', SIGN_ARCHIVE: opts.signArchive ?? 'false', GITHUB_STEP_SUMMARY: '' },
     });
     return { code: r.status, out: `${r.stdout}${r.stderr}` };
   }
 
+  it('HEALTH_INTEGRATION_ENABLED=true e .ipa SEM HealthKit (archive sem assinatura): FALHA e orienta sign_archive=true', () => {
+    const r = runStep({ ipaEnts: IPA_OK, projectEnts: PROJECT_HK, health: 'true', signArchive: 'false' });
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('::error::Falta no .ipa o entitlement com.apple.developer.healthkit');
+    expect(r.out).toContain('::notice::HealthKit ligado com o archive SEM assinatura');
+  });
+  it('HEALTH_INTEGRATION_ENABLED=true e .ipa COM HealthKit: passa (sem aviso quando o archive é assinado)', () => {
+    const r = runStep({ ipaEnts: IPA_COM_HK, projectEnts: PROJECT_HK, health: 'true', signArchive: 'true' });
+    expect(r.code, r.out).toBe(0);
+    expect(r.out).not.toContain('::notice::HealthKit ligado');
+  });
+  it('HEALTH_INTEGRATION_ENABLED vazio: o HealthKit não é exigido (o app atual não usa HealthKit)', () => {
+    const r = runStep({ ipaEnts: IPA_OK, projectEnts: PROJECT_SIWA });
+    expect(r.code, r.out).toBe(0);
+  });
   it('contas + Firebase ligados e .ipa COM Sign in with Apple: passa', () => {
     const r = runStep({ ipaEnts: IPA_OK, projectEnts: PROJECT_SIWA, auth: 'true', firebase: 'true' });
     expect(r.code, r.out).toBe(0);
