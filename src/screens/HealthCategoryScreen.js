@@ -124,6 +124,7 @@ export default function HealthCategoryScreen({ navigation, route }) {
                     onPress={() => setPeriod(k)}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: period === k }}
+                    aria-selected={period === k}
                     accessibilityLabel={`Período de ${label}`}
                   >
                     <Text style={[styles.segText, period === k && styles.segTextActive]}>{label}</Text>
