@@ -78,6 +78,10 @@ function ProfileStackNav() {
     <ProfileStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="EditBodyData" component={EditBodyDataScreen} />
+      {/* A Saúde é a mesma tela da aba Início, registrada aqui também para o voltar retornar ao Perfil */}
+      <ProfileStack.Screen name="Saude" component={HealthScreen} />
+      <ProfileStack.Screen name="SaudeDetalhe" component={HealthCategoryScreen} />
+      <ProfileStack.Screen name="SaudeConectar" component={HealthConnectScreen} />
     </ProfileStack.Navigator>
   );
 }

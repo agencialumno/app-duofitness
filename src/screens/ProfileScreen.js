@@ -9,6 +9,7 @@ import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import { DemoCard } from '../components/DemoControls';
 import AccountCard from '../components/auth/AccountCard';
+import ProfileHealthCard from '../components/health/ProfileHealthCard';
 import { useAuth } from '../auth/AuthContext';
 import { resetToWelcome } from '../navigation/resetNavigation';
 import { computeStreak } from '../utils/health';
@@ -204,6 +205,9 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
       </View>
+
+      {/* Saúde: a MESMA tela da aba Início (a rota Saude também existe na pilha do Perfil; o voltar retorna aqui) */}
+      <ProfileHealthCard onPress={() => navigation.navigate('Saude')} />
 
       {!user?.isDemo && <AccountCard />}
       {user?.isDemo && <DemoCard navigation={navigation} />}

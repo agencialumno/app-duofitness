@@ -143,6 +143,17 @@ export function buildHistory(samples, metric, { limit = 30 } = {}) {
     .map((d) => ({ date: d.date, label: shortDate(d.date), text: formatMetric(metric, d.value), source: d.source, removable: d.source === 'manual' || d.source === 'exemplo' }));
 }
 
+// Registro mais recente entre as categorias com dados: { date, label, text, sub } ou null (cartão Saúde do Perfil).
+export function mostRecentNote(views, samples) {
+  let best = null;
+  for (const v of views || []) {
+    if (!v || !v.hasData || !v.current) continue;
+    const l = latest(samples || [], v.primaryMetric);
+    if (l && (!best || l.date > best.date)) best = { date: l.date, label: v.label, text: v.current.text, sub: v.current.sub };
+  }
+  return best;
+}
+
 export { shortDate };
 
 // ---------- Formulário de registro manual (por categoria) ----------
