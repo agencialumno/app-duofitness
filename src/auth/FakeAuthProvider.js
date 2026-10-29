@@ -106,12 +106,12 @@ export default class FakeAuthProvider {
     this._publish(null);
   }
 
-  async deleteAccount({ password } = {}) {
+  async deleteAccount({ password, recent = false } = {}) {
     this._maybeFail('deleteAccount');
     const u = this.current && this.users.get(this.current);
     if (!u) throw authError('auth/no-current-user');
-    if (u.providers.includes('password') && u.password !== password) throw authError('auth/wrong-password');
-    if (u.providers.includes('apple.com')) this.revokedApple = true;
+    if (!recent && u.providers.includes('password') && u.password !== password) throw authError('auth/wrong-password');
+    if (!recent && u.providers.includes('apple.com')) this.revokedApple = true;
     this.users.delete(u.email);
     this._publish(null);
   }

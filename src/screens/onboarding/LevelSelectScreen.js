@@ -24,7 +24,7 @@ export default function LevelSelectScreen({ navigation, route }) {
       level,
       joinedAt: new Date().toISOString(),
     });
-    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    // o portão do app passa para o Main sozinho quando o perfil é salvo
   };
 
   return (

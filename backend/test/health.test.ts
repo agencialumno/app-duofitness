@@ -14,6 +14,8 @@ const key = (off: number) => H.addDays(H.dayKey(NOW), off);
 const sessionsOn = (offs: number[]) => offs.map((o, i) => ({ id: String(i), completedAt: new Date(2026, 5, 10 + o, 9, 0).toISOString() }));
 const waterOn = (map: Record<number, number>) => Object.fromEntries(Object.entries(map).map(([o, g]) => [key(Number(o)), g]));
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('peso: vírgula decimal e validação', () => {
   it.each([
     ['78', 78], ['78,5', 78.5], ['78.5', 78.5], [' 78,5 kg ', 78.5], ['78,55', 78.6], ['102,3', 102.3], ['65 KG', 65],
@@ -336,8 +338,8 @@ describe('faixas do score', () => {
 
 describe('Modo Demo: histórico de exemplo', () => {
   it('é determinístico, válido e gera um score com todos os componentes', () => {
-    const a = H.buildDemoHealth(NOW);
-    expect(a).toEqual(H.buildDemoHealth(NOW));
+    const a = SH.buildDemoHealth(NOW);
+    expect(a).toEqual(SH.buildDemoHealth(NOW));
     expect(H.normalizeHealth(a)).toEqual(a);
     expect(a.weights.length).toBeGreaterThanOrEqual(5);
     expect(Object.keys(a.water)).toHaveLength(7);
@@ -374,8 +376,10 @@ describe('integração (provedores)', () => {
     }
     expect(P.selectHealthProvider({ flag: 'true', platform: 'web' }).source).toBe('manual');
   });
-  it('Modo Demo nunca usa integração', () => {
-    expect(P.selectHealthProvider({ flag: 'true', platform: 'ios', isDemo: true }).source).toBe('manual');
+  it('menor de 18 anos nunca usa integração (Apple Saúde / Health Connect indisponíveis), mesmo com a flag ligada', () => {
+    expect(P.selectHealthProvider({ flag: 'true', platform: 'ios', minor: true }).source).toBe('manual');
+    expect(P.selectHealthProvider({ flag: 'true', platform: 'android', minor: true }).source).toBe('manual');
+    expect(P.selectHealthProvider({ flag: 'true', platform: 'ios', minor: false }).source).toBe('healthkit');
   });
   it('cartão de conexão: "em breve" e desabilitado', () => {
     expect(P.CONNECT_CARD).toMatchObject({ status: 'em breve', enabled: false });
@@ -393,12 +397,11 @@ describe('integração (provedores)', () => {
 });
 
 describe('"Resetar tudo" limpa também @duo_health', () => {
-  it('a tela de Perfil usa resetAll (apaga todas as @duo_*, inclusive a de saúde) e volta às boas-vindas', () => {
-    const src = readFileSync(path.join(REPO, 'src/screens/ProfileScreen.js'), 'utf8');
-    expect(src).toMatch(/await resetAll\(\)/);
-    expect(src).toMatch(/resetToWelcome\(navigation\)/);
+  it('a limpeza do app é por prefixo @duo_ (inclusive @duo_health); o Perfil não tem mais "Resetar tudo"', () => {
+    const profile = readFileSync(path.join(REPO, 'src/screens/ProfileScreen.js'), 'utf8');
+    expect(profile).not.toMatch(/resetAll|Resetar/);
     expect(H.HEALTH_KEY).toBe('@duo_health');
-    expect(H.HEALTH_KEY.startsWith('@duo_')).toBe(true); // coberta pela limpeza por prefixo
+    expect(H.HEALTH_KEY.startsWith('@duo_')).toBe(true); // coberta pela limpeza por prefixo (duoStorage.clearAllDuoData)
   });
   it('as chaves @duo_* existentes continuam as mesmas (a nova só acrescenta)', () => {
     const ctx = readFileSync(path.join(REPO, 'src/context/AppContext.js'), 'utf8');

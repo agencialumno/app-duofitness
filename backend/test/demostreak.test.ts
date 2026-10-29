@@ -3,13 +3,15 @@
 // A regra de cálculo da Saúde NÃO muda: o que se ajusta são os dados do demo.
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error módulo JS do app, sem tipos
-import * as D from '../../src/data/demoData.js';
+import * as D from './helpers/demoData.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import * as H from '../../src/utils/health.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOON = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12, 0, 0).getTime();
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('sequência do demo: Home x Saúde', () => {
   it('as constantes do demo coincidem (Home mostra DEMO_STREAK; a Saúde calcula o mesmo)', () => {
     const now = new Date();
@@ -59,7 +61,7 @@ describe('sequência do demo: Home x Saúde', () => {
   it('a Saúde do demo usa a mesma sequência: o score de sequência do demo reflete 8 dias', () => {
     const now = new Date(NOON(2026, 6, 10));
     const fresh = D.getFreshDemoData(now.getTime());
-    const r = H.computeDuoScore({ sessions: fresh.sessions, health: H.buildDemoHealth(now), goals: fresh.user.goals, ageGroup: fresh.user.ageGroup, now });
+    const r = H.computeDuoScore({ sessions: fresh.sessions, health: SH.buildDemoHealth(now), goals: fresh.user.goals, ageGroup: fresh.user.ageGroup, now });
     const streak = r.components.find((c: { id: string }) => c.id === 'streak');
     expect(streak.value).toBe(100); // 8 dias seguidos >= 7 (nota máxima)
     expect(streak.detail).toContain('8 dias seguidos');

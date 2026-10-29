@@ -11,7 +11,7 @@ import { getIMCCategory, getIMCRecommendations } from '../../src/utils/imc.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import { EXERCISE_DB, generateWorkoutPlan } from '../../src/utils/workoutGenerator.js';
 // @ts-expect-error módulo JS do app, sem tipos
-import { DEMO_WORKOUTS } from '../../src/data/demoData.js';
+import { DEMO_WORKOUTS } from './helpers/demoData.js';
 import { PROIBIDOS_NOTAS, PROIBIDOS_NUCLEO } from './textrules';
 // @ts-expect-error módulo JS do app, sem tipos
 import { COMBOS } from '../../src/data/combosEquipment.js';
@@ -47,7 +47,7 @@ describe('scanner: as notes de imc.js em todas as combinações', () => {
     expect(notes).toContain('Treinar com regularidade e dormir bem ajudam mais do que intensidade pontual');
     expect(notes.join(' ')).not.toMatch(/d[eé]ficit|resultado mais r[aá]pido/i);
     // nenhuma outra frase do app tem a frase antiga (só o mapa de compatibilidade para séries antigas pode tê-la)
-    const hits = ['src/utils/imc.js', 'src/utils/workoutGenerator.js', 'src/screens/SmartPlanScreen.js', 'src/data/demoData.js', 'src/data/infoContent.js'].filter((f) => /Déficit calórico \+ treino/.test(read(f)));
+    const hits = ['src/utils/imc.js', 'src/utils/workoutGenerator.js', 'src/screens/SmartPlanScreen.js', 'src/data/infoContent.js'].filter((f) => /Déficit calórico \+ treino/.test(read(f)));
     expect(hits).toEqual([]);
   });
 

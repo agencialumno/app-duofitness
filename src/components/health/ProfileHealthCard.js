@@ -5,7 +5,6 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
 import { scoreBand } from '../../utils/health';
 import { mostRecentNote } from '../../utils/healthView';
 import useHealth from '../../hooks/useHealth';
-import { ExampleBadge } from '../OccupancyCard';
 
 // Cartão "Saúde" do Perfil: Duo Score, o registro mais recente (ou "sem dados" com a ação certa) e abre a MESMA tela Saúde
 // (a rota "Saude" também está registrada na pilha do Perfil, então o voltar retorna ao Perfil). Menores de 18: só hábitos.
@@ -39,7 +38,6 @@ export default function ProfileHealthCard({ onPress }) {
         <Text style={styles.title}>Saúde</Text>
         <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
       </View>
-      {h.isExample ? <ExampleBadge /> : null}
       <View style={styles.row}>
         <Text style={styles.score}>{scoreText}</Text>
         <View style={styles.side}>

@@ -202,8 +202,8 @@ export function generateGuidedPlan(settings, user) {
 }
 
 // 'IA' só com a flag ligada, API configurada, fora do Modo Demo e série vinda da API.
-export function getPlanBadge({ source = 'local', aiEnabled = false, apiConfigured = false, isDemo = false } = {}) {
-  if (source === 'ai' && aiEnabled && apiConfigured && !isDemo) return 'IA';
+export function getPlanBadge({ source = 'local', aiEnabled = false, apiConfigured = false } = {}) {
+  if (source === 'ai' && aiEnabled && apiConfigured) return 'IA';
   return null;
 }
 

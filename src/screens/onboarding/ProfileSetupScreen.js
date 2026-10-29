@@ -29,9 +29,11 @@ export default function ProfileSetupScreen({ navigation }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.content}>
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          {navigation.canGoBack() ? (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Voltar">
+              <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          ) : <View />}
           <View style={styles.stepDots}>
             <View style={[styles.dot, styles.dotActive]} />
             <View style={styles.dot} />

@@ -18,6 +18,8 @@ const sample = (metric: string, value: number, off: number, source = 'manual') =
 const L = (...xs: unknown[]) => M.normalizeSamples(xs.flat());
 const days = (metric: string, values: number[], source = 'manual') => values.map((v, i) => sample(metric, v, -(values.length - 1 - i), source));
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('cartão com dados', () => {
   const samples = L(days('steps', [4000, 5000, 6000, 8000], 'apple_saude'));
   const v = V.buildCategoryView({ category: 'activity', samples, now: NOW });
@@ -95,7 +97,7 @@ describe('lista de cartões', () => {
     expect(V.buildCategoryViews({ samples: [], now: NOW }).map((c: { label: string }) => c.label)).toEqual(['Composição corporal', 'Atividade', 'Sono', 'Coração e recuperação', 'Hidratação']);
   });
   it('no demo todos os cartões têm dados e a origem é "Dados de exemplo"', () => {
-    const demo = St.buildDemoHealthV2(NOW);
+    const demo = SH.buildDemoHealthV2(NOW);
     for (const c of V.buildCategoryViews({ samples: demo.samples, now: NOW, waterGoal: demo.waterGoal })) {
       expect(c.hasData, c.id).toBe(true);
       expect(c.origin, c.id).toBe('Dados de exemplo');

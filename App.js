@@ -10,7 +10,6 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { NAV_COLORS } from './src/navigation/navTheme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { createForcedError } from './src/utils/errorTestFlag';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -28,7 +27,6 @@ function ForceRenderError() {
 }
 
 function AppRoot() {
-  const [isOnboarded, setIsOnboarded] = useState(null);
   // Pré-carrega a fonte dos ícones antes de renderizar. Se falhar, registra o erro e
   // segue renderizando o app mesmo assim (sem travar).
   const [fontsLoaded, fontError] = useFonts(Ionicons.font);
@@ -37,29 +35,15 @@ function AppRoot() {
     if (fontError) console.error('Falha ao carregar a fonte dos ícones:', fontError);
   }, [fontError]);
 
-  useEffect(() => {
-    checkOnboarding();
-  }, []);
+  if (!fontsLoaded && !fontError) return null;
 
-  const checkOnboarding = async () => {
-    try {
-      const val = await AsyncStorage.getItem('@duo_onboarded');
-      setIsOnboarded(val === 'true');
-    } catch (e) {
-      // armazenamento ilegível: segue como "ainda não fez o onboarding" em vez de travar numa tela vazia
-      console.error('Falha ao ler o estado do onboarding:', e);
-      setIsOnboarded(false);
-    }
-  };
-
-  if (isOnboarded === null || (!fontsLoaded && !fontError)) return null;
-
+  // O RootNavigator escolhe a tela pelo estado da conta (conta -> idade -> perfil -> app), ver AppContext.gate.
   return (
     <AuthStateProvider>
       <AppProvider>
         <NavigationContainer theme={APP_NAV_THEME}>
           <StatusBar style="light" backgroundColor="#000000" />
-          <RootNavigator isOnboarded={isOnboarded} />
+          <RootNavigator />
         </NavigationContainer>
       </AppProvider>
     </AuthStateProvider>

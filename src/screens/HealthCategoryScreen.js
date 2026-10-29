@@ -6,7 +6,6 @@ import { COLORS, FONTS, HEALTH_UI, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import TrendBars from '../components/health/TrendBars';
 import InfoButton from '../components/InfoButton';
-import { ExampleBadge } from '../components/OccupancyCard';
 import { dayKey } from '../utils/health';
 import { getCategory } from '../utils/healthModel';
 import { FORM_FIELDS, buildHistory, compactVariation, parseForm } from '../utils/healthView';
@@ -19,7 +18,7 @@ export default function HealthCategoryScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const id = route?.params?.category;
   const cat = getCategory(id);
-  const { loading, views, samples, minor, isExample, record, remove, addGlass, waterGoal, setGoal, source } = useHealth();
+  const { loading, views, samples, minor, record, remove, addGlass, waterGoal, setGoal, source } = useHealth();
   const scrollRef = useRef(null);
   const formY = useRef(0);
   const [texts, setTexts] = useState({});
@@ -82,7 +81,6 @@ export default function HealthCategoryScreen({ navigation, route }) {
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
         >
-          {isExample && <ExampleBadge />}
           {/* Valor atual, variação e origem */}
           <View style={styles.card} testID="health-hero">
             {loading || !view ? (

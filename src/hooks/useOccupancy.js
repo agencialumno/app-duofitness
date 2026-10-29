@@ -1,18 +1,15 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { useApp } from '../context/AppContext';
 import { OCCUPANCY_CONFIG } from '../data/occupancyConfig';
 import { getBestTime, selectProvider } from '../utils/occupancy';
 
 // Lotação da academia para as telas. Atualiza ao focar a tela e a cada minuto enquanto ela está em foco.
 // status: 'loading' | 'ready' | 'empty' (sem dados no momento). Falha nunca lança: vira 'empty'.
-// No Modo Demo o provedor é sempre o de exemplo (nenhuma chamada de rede).
+// Sem API configurada (ou com a lotação remota desligada) o provedor é o de exemplo (nenhuma chamada de rede).
 export default function useOccupancy(gymId = OCCUPANCY_CONFIG.gymId) {
-  const { user } = useApp();
-  const isDemo = !!user?.isDemo;
   const provider = useMemo(
-    () => selectProvider({ apiUrl: OCCUPANCY_CONFIG.apiUrl, remoteFlag: OCCUPANCY_CONFIG.remoteFlag, isDemo }),
-    [isDemo],
+    () => selectProvider({ apiUrl: OCCUPANCY_CONFIG.apiUrl, remoteFlag: OCCUPANCY_CONFIG.remoteFlag }),
+    [],
   );
   const [state, setState] = useState({ status: 'loading', reading: null, best: null, now: new Date() });
   const alive = useRef(true);

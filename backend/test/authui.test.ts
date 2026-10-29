@@ -84,14 +84,17 @@ describe('Apple só no iOS e flag desligada', () => {
     expect(showApple({ apple: true }, 'web')).toBe(false);
     expect(showApple({ apple: false }, 'ios')).toBe(false);
   });
-  it('as boas-vindas só mudam com a flag; desligada, o botão é o de sempre', () => {
+  it('as boas-vindas só têm Criar conta e Entrar (sem Modo Demo e sem "Continuar sem conta")', () => {
     const w = read('src/screens/onboarding/WelcomeScreen.js');
-    expect(w).toMatch(/accountsEnabled \? \(/);
-    expect(w).toMatch(/Começar agora/);
-    expect(w).toMatch(/Modo Demo \(vendedor\)/);
+    expect(w).toMatch(/testID="wl-signup"/);
+    expect(w).toMatch(/testID="wl-signin"/);
+    expect(w).not.toMatch(/Modo Demo|Continuar sem conta|Começar agora|wl-guest|loadDemoData/);
   });
-  it('o cartão de conta não aparece no Modo Demo e a flag fica fora do estado do demo', () => {
-    expect(read('src/screens/ProfileScreen.js')).toMatch(/!user\?\.isDemo && <AccountCard \/>/);
+  it('o Perfil sempre mostra o cartão de conta e a seção Conta no fim; não há reset nem demo', () => {
+    const p = read('src/screens/ProfileScreen.js');
+    expect(p).toMatch(/<AccountCard \/>/);
+    expect(p).toMatch(/<AccountActions \/>/);
+    expect(p).not.toMatch(/Resetar todos os dados|resetAll|DemoCard|isDemo/);
   });
   it('os workflows recebem a flag como variável opcional (vars), nunca secret', () => {
     for (const f of ['.github/workflows/android.yml', '.github/workflows/ios.yml']) {

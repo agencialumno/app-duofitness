@@ -5,7 +5,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
-import { useApp } from '../context/AppContext';
 import { ADVERTISE_DONE_MESSAGE, ADVERTISE_NOTICES, MARKETPLACE_CONTACT_EMAIL } from '../data/advertiseConfig';
 import {
   ADVERTISE_NICHES, DESCRIPTION_MAX, buildEmail, buildShareMessage, emptyForm, maskPhone, nicheLabel, validateForm,
@@ -14,16 +13,13 @@ import { Chip } from '../components/guided/GuidedParts';
 
 // "Anunciar em nosso marketplace": formulário -> revisão -> e-mail. Nada é gravado no aparelho: os dados
 // vivem só na memória desta tela e seguem por e-mail (mailto:) para a equipe Duo Fitness.
-// No Modo Demo o "Confirmar" só mostra uma prévia do e-mail.
 export default function AdvertiseScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user } = useApp();
-  const isDemo = !!user?.isDemo;
 
   const [values, setValues] = useState(emptyForm());
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [stage, setStage] = useState('form'); // 'form' | 'review' | 'preview' | 'done'
+  const [stage, setStage] = useState('form'); // 'form' | 'review' | 'done'
   const [mail, setMail] = useState(null);
   const [via, setVia] = useState('mail');
   const [busy, setBusy] = useState(false);
@@ -45,7 +41,6 @@ export default function AdvertiseScreen({ navigation }) {
 
   const back = useCallback(() => {
     if (stage === 'review') { setStage('form'); return true; }
-    if (stage === 'preview') { setStage('review'); return true; }
     navigation.goBack();
     return true;
   }, [stage, navigation]);
@@ -70,11 +65,6 @@ export default function AdvertiseScreen({ navigation }) {
     if (busy) return;
     const email = buildEmail(check.values);
     setSendError('');
-    if (isDemo) {
-      setMail(email);
-      setStage('preview');
-      return;
-    }
     setBusy(true);
     let channel = 'mail';
     try {
@@ -103,7 +93,7 @@ export default function AdvertiseScreen({ navigation }) {
       </TouchableOpacity>
       <View style={styles.headerText}>
         <Text style={styles.title} accessibilityRole="header">
-          {stage === 'review' ? 'Confira os dados' : stage === 'preview' ? 'Prévia do e-mail' : stage === 'done' ? 'Tudo pronto' : 'Anunciar em nosso marketplace'}
+          {stage === 'review' ? 'Confira os dados' : stage === 'done' ? 'Tudo pronto' : 'Anunciar em nosso marketplace'}
         </Text>
       </View>
     </View>
@@ -131,37 +121,6 @@ export default function AdvertiseScreen({ navigation }) {
           {via === 'share' && <Text style={styles.muted}>Abrimos a folha de compartilhamento porque não foi possível abrir o aplicativo de e-mail. Envie o texto para {MARKETPLACE_CONTACT_EMAIL}.</Text>}
           {mail?.truncated && <Text style={styles.muted}>A descrição era longa e foi resumida no e-mail. Complete o texto antes de enviar, se quiser.</Text>}
         </View>
-        <View style={styles.footer}>
-          <PrimaryButton label="Concluir" onPress={() => navigation.goBack()} />
-          <TouchableOpacity style={styles.linkBtn} onPress={() => setStage('review')} accessibilityRole="button" accessibilityLabel="Voltar aos dados">
-            <Text style={styles.linkText}>Voltar aos dados</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // ---------- Prévia (Modo Demo) ----------
-  if (stage === 'preview' && mail) {
-    return (
-      <View style={styles.container}>
-        {header}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          <View style={styles.demoTag}>
-            <Ionicons name="flask-outline" size={14} color={COLORS.black} />
-            <Text style={styles.demoTagText}>Modo Demo: nenhum e-mail foi aberto nem enviado</Text>
-          </View>
-          <Text style={styles.sectionTitle}>É assim que o e-mail será montado</Text>
-          <View style={styles.card}>
-            <Text style={styles.mailLabel}>Para</Text>
-            <Text style={styles.mailValue} selectable>{mail.to}</Text>
-            <Text style={styles.mailLabel}>Assunto</Text>
-            <Text style={styles.mailValue} selectable>{mail.subject}</Text>
-            <Text style={styles.mailLabel}>Mensagem</Text>
-            <Text style={styles.mailBody} selectable>{mail.body}</Text>
-          </View>
-          {notices}
-        </ScrollView>
         <View style={styles.footer}>
           <PrimaryButton label="Concluir" onPress={() => navigation.goBack()} />
           <TouchableOpacity style={styles.linkBtn} onPress={() => setStage('review')} accessibilityRole="button" accessibilityLabel="Voltar aos dados">
@@ -370,8 +329,6 @@ const styles = StyleSheet.create({
   centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.lg },
   doneText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white, textAlign: 'center', lineHeight: 26 },
   sectionTitle: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white },
-  demoTag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4 },
-  demoTagText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.black, flexShrink: 1 },
   mailLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: SPACING.sm },
   mailValue: { fontSize: FONTS.sizes.md, color: COLORS.white, lineHeight: 22 },
   mailBody: { fontSize: FONTS.sizes.sm, color: COLORS.white, lineHeight: 20 },

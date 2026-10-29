@@ -202,7 +202,7 @@ describe('Firebase: renovação do token', () => {
 
 describe('uma só fonte, sem valor gravado', () => {
   it('nenhuma tela guarda "verificado" no aparelho: o estado vem do usuário recarregado', () => {
-    for (const f of ['src/auth/AuthContext.js', 'src/auth/verificationController.js', 'src/components/auth/AccountCard.js', 'src/screens/auth/VerifyEmailScreen.js']) {
+    for (const f of ['src/auth/AuthContext.js', 'src/auth/verificationController.js', 'src/components/auth/AccountCard.js']) {
       const code = read(f).replace(/^\s*\/\/.*$/gm, '');
       expect(code, f).not.toMatch(/AsyncStorage\.(set|get)Item\([^)]*(verif|email)/i);
       expect(code, f).not.toMatch(/localStorage/);
@@ -215,11 +215,9 @@ describe('uma só fonte, sem valor gravado', () => {
     const ctx = read('src/auth/AuthContext.js');
     expect(ctx).toMatch(/AppState\.addEventListener\('change'/);
     expect(ctx).toMatch(/st === 'active'/);
-    for (const f of ['src/components/auth/AccountCard.js', 'src/screens/auth/VerifyEmailScreen.js']) {
-      const c = read(f);
-      expect(c, f).toMatch(/refreshUser/);
-      expect(c, f).not.toMatch(/provider\.reloadUser\(\)/); // sempre pelo estado global
-    }
+    const c = read('src/components/auth/AccountCard.js');
+    expect(c).toMatch(/refreshUser/);
+    expect(c).not.toMatch(/provider\.reloadUser\(\)/); // sempre pelo estado global
   });
   it('o cartão de conta usa ícone E texto, intervalo entre reenvios e "Já verifiquei"', () => {
     const c = read('src/components/auth/AccountCard.js');

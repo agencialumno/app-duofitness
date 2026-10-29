@@ -16,6 +16,8 @@ const list = (...xs: ReturnType<typeof sample>[]) => M.normalizeSamples(xs);
 const sessionsOn = (offs: number[]) => offs.map((o, i) => ({ id: `s${i}`, completedAt: new Date(2026, 5, 10 + o, 9).toISOString() }));
 const days = (metric: string, values: number[], endOff = 0) => values.map((v, i) => sample(metric, v, endOff - (values.length - 1 - i)));
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('pesos', () => {
   it('somam 100 e as notas de treino do Duo Score atual seguem com os mesmos valores', () => {
     expect(Object.values(S.SCORE_WEIGHTS_V2).reduce((a: number, b: unknown) => a + (b as number), 0)).toBe(100);
@@ -195,7 +197,7 @@ describe('Duo Score V2', () => {
     expect(minor.map((c: { id: string }) => c.id)).toEqual(['activity', 'sleep', 'hydration']);
   });
   it('o demo (dados de exemplo em todas as categorias) gera um score com todos os componentes presentes', () => {
-    const demo = St.buildDemoHealthV2(NOW);
+    const demo = SH.buildDemoHealthV2(NOW);
     const r = S.computeDuoScoreV2({ sessions: sessionsOn([0, -1, -2, -3, -4, -6, -7]), samples: demo.samples, waterGoal: demo.waterGoal, ageGroup: '26-35', now: NOW });
     expect(r.components.every((c: { present: boolean }) => c.present)).toBe(true);
     expect(r.score).toBeGreaterThan(50);

@@ -280,7 +280,7 @@ describe('nenhum JSON.parse solto de chaves @duo_* no app', () => {
     return out;
   }
   // arquivos que lêem JSON do armazenamento sempre dentro de try/catch (ou do protocolo SSE/HTTP, que não é armazenamento)
-  const ALLOWED = ['src/utils/safeStorage.js', 'src/utils/demoSession.js', 'src/hooks/useHealth.js', 'src/services/api.js', 'src/utils/sse.js'];
+  const ALLOWED = ['src/utils/safeStorage.js', 'src/hooks/useHealth.js', 'src/services/api.js', 'src/utils/sse.js'];
   it('AppContext e as telas não usam JSON.parse direto', () => {
     const offenders = walk(path.join(REPO, 'src')).map((f) => path.relative(REPO, f).replace(/\\/g, '/'))
       .filter((f) => !ALLOWED.includes(f))
@@ -288,7 +288,7 @@ describe('nenhum JSON.parse solto de chaves @duo_* no app', () => {
     expect(offenders).toEqual([]);
   });
   it('os leitores permitidos protegem o parse com try/catch', () => {
-    for (const f of ['src/utils/demoSession.js', 'src/utils/safeStorage.js']) // useHealth.js não faz mais parse: lê pelo healthStore (readJsonKey, seguro)
+    for (const f of ['src/utils/safeStorage.js']) // useHealth.js não faz mais parse: lê pelo healthStore (readJsonKey, seguro)
      {
       const src = readFileSync(path.join(REPO, f), 'utf8');
       const i = src.indexOf('JSON.parse(');
@@ -296,12 +296,13 @@ describe('nenhum JSON.parse solto de chaves @duo_* no app', () => {
       expect(src.lastIndexOf('try', i), f).toBeGreaterThan(src.lastIndexOf('\nexport', i) - 400);
     }
   });
-  it('AppContext usa readAppData e App.js protege a leitura do onboarding', () => {
+  it('AppContext usa readAppData e a idade é lida por readJsonKey; App.js não lê mais o onboarding (o portão vem do AppContext)', () => {
     const ctx = readFileSync(path.join(REPO, 'src/context/AppContext.js'), 'utf8');
     expect(ctx).toMatch(/readAppData\(AsyncStorage\)/);
+    expect(ctx).toMatch(/readJsonKey\(AsyncStorage, '@duo_age', sanitizeAgeInfo\)/);
     expect(ctx).not.toMatch(/parseInt\(/);
     const app = readFileSync(path.join(REPO, 'App.js'), 'utf8');
-    expect(app).toMatch(/try \{\s*const val = await AsyncStorage\.getItem\('@duo_onboarded'\)/);
+    expect(app).not.toMatch(/@duo_onboarded|AsyncStorage/);
   });
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -7,11 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
-import { DemoCard } from '../components/DemoControls';
-import AccountCard from '../components/auth/AccountCard';
+import AccountCard, { AccountActions } from '../components/auth/AccountCard';
 import ProfileHealthCard from '../components/health/ProfileHealthCard';
 import { useAuth } from '../auth/AuthContext';
-import { resetToWelcome } from '../navigation/resetNavigation';
 import { computeStreak } from '../utils/health';
 
 const GOAL_LABELS = {
@@ -33,7 +31,7 @@ function formatGoals(goals) {
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, achievements, completedSessions, workouts, getLevel, resetAll } = useApp();
+  const { user, xp, achievements, completedSessions, workouts, getLevel } = useApp();
   const { refreshUser } = useAuth();
   // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
   useEffect(() => {
@@ -47,21 +45,6 @@ export default function ProfileScreen({ navigation }) {
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
   // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria (as faixas de adultos não se aplicam).
   const imcCategoryVisible = showImcCategory(user?.ageGroup);
-
-  const handleReset = () => {
-    Alert.alert('Resetar dados', 'Isso vai apagar todos os seus treinos e progresso. Tem certeza?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Resetar tudo', style: 'destructive',
-        onPress: async () => {
-          // Apaga TODAS as chaves @duo_* (inclusive @duo_health), zera o estado em memória e volta
-          // às boas-vindas de qualquer navegador (também com o app reaberto).
-          await resetAll();
-          resetToWelcome(navigation);
-        },
-      },
-    ]);
-  };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
@@ -209,13 +192,10 @@ export default function ProfileScreen({ navigation }) {
       {/* Saúde: a MESMA tela da aba Início (a rota Saude também existe na pilha do Perfil; o voltar retorna aqui) */}
       <ProfileHealthCard onPress={() => navigation.navigate('Saude')} />
 
-      {!user?.isDemo && <AccountCard />}
-      {user?.isDemo && <DemoCard navigation={navigation} />}
+      <AccountCard />
 
-      <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-        <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-        <Text style={styles.resetText}>Resetar todos os dados</Text>
-      </TouchableOpacity>
+      {/* Seção "Conta", discreta e no fim: Sair da conta e, abaixo, o link "Excluir minha conta" */}
+      <AccountActions />
     </ScrollView>
   );
 }
@@ -268,6 +248,4 @@ const styles = StyleSheet.create({
   infoDivider: { height: 1, backgroundColor: COLORS.border },
   infoLabel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   infoValue: { fontSize: FONTS.sizes.sm, color: COLORS.white, fontWeight: '500' },
-  resetBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.error, borderRadius: RADIUS.md },
-  resetText: { color: COLORS.error, fontSize: FONTS.sizes.sm, fontWeight: '600' },
 });

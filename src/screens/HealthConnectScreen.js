@@ -14,7 +14,7 @@ import { addSamples, disconnectAndErase, grantConsent } from '../utils/healthSto
 // Nada aqui pede permissão ao sistema antes do consentimento e da integração ligada.
 export default function HealthConnectScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { minor, integrationEnabled, provider, connection, changeConnection, update, health, isExample } = useHealth();
+  const { minor, integrationEnabled, provider, connection, changeConnection, update, health } = useHealth();
   const [picked, setPicked] = useState({});
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -169,7 +169,6 @@ export default function HealthConnectScreen({ navigation }) {
             ) : null}
           </>
         )}
-        {isExample ? <Text style={styles.muted}>No Modo Demo nenhuma conexão é feita: os dados são de exemplo.</Text> : null}
       </ScrollView>
 
       <ConfirmModal

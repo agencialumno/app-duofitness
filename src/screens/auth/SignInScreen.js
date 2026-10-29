@@ -1,26 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { Text } from 'react-native';
-import { COLORS, FONTS } from '../../utils/theme';
-import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage, isThrottle, validateEmail } from '../../auth/authErrors';
 import { createAttemptLimiter } from '../../auth/attemptLimiter';
-import { destinationAfterAuth } from '../../auth/authFlow';
 import { AuthField, AuthScreen, Divider, LinkButton, Notice, PrimaryButton } from '../../components/auth/AuthParts';
 import SocialButtons from './SocialButtons';
 
 export default function SignInScreen({ navigation }) {
   const { provider } = useAuth();
-  const { user: appUser } = useApp();
   const limiter = useMemo(() => createAttemptLimiter(), []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const hasRealProfile = !!appUser && !appUser.isDemo;
-
-  const go = () => navigation.reset({ index: 0, routes: [{ name: destinationAfterAuth({ hasRealProfile }) }] });
 
   const submit = async () => {
     if (busy) return;
@@ -36,8 +28,7 @@ export default function SignInScreen({ navigation }) {
     setError('');
     try {
       await provider.signInWithEmail({ email: email.trim(), password });
-      limiter.recordSuccess();
-      go();
+      limiter.recordSuccess(); // o portão do app leva à etapa seguinte sozinho
     } catch (e) {
       limiter.recordFailure();
       if (isThrottle(e)) limiter.lock(60000);
@@ -57,12 +48,8 @@ export default function SignInScreen({ navigation }) {
       <PrimaryButton testID="si-submit" label="Entrar" loading={busy} onPress={submit} />
       <LinkButton testID="si-forgot" label="Esqueci a senha" onPress={() => navigation.navigate('ForgotPassword', { email })} />
       <Divider />
-      <SocialButtons onSuccess={go} />
+      <SocialButtons />
       <LinkButton testID="si-signup" label="Ainda não tenho conta: criar conta" onPress={() => navigation.replace('SignUp')} />
-      <LinkButton testID="si-guest" label="Continuar sem conta" onPress={() => navigation.navigate('ProfileSetup')} />
-      <Text style={{ fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, textAlign: 'center' }}>
-        Sem conta, tudo funciona no seu aparelho, como antes.
-      </Text>
     </AuthScreen>
   );
 }

@@ -249,12 +249,11 @@ describe('razões e etapas (dados reais)', () => {
 });
 
 describe('selo do plano', () => {
-  it('"IA" só com flag, API configurada, fora do demo e série vinda da API', () => {
-    const on = { source: 'ai', aiEnabled: true, apiConfigured: true, isDemo: false };
+  it('"IA" só com flag, API configurada e série vinda da API', () => {
+    const on = { source: 'ai', aiEnabled: true, apiConfigured: true };
     expect(G.getPlanBadge(on)).toBe('IA');
     expect(G.getPlanBadge({ ...on, aiEnabled: false })).toBeNull();
     expect(G.getPlanBadge({ ...on, apiConfigured: false })).toBeNull();
-    expect(G.getPlanBadge({ ...on, isDemo: true })).toBeNull();
     expect(G.getPlanBadge({ ...on, source: 'local' })).toBeNull();
     expect(G.getPlanBadge()).toBeNull();
   });

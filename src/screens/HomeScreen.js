@@ -10,7 +10,6 @@ import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
 import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
-import { DemoBanner } from '../components/DemoControls';
 import { computeStreak, scoreBand } from '../utils/health';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
@@ -38,12 +37,10 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Modo Demo: faixa fixa no topo (já cobre a área segura de cima) */}
-      {user?.isDemo && <DemoBanner navigation={navigation} />}
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.content}>
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: user?.isDemo ? SPACING.sm : insets.top + SPACING.sm }]}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <View>
           <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0]}</Text>
           <Text style={styles.subGreeting}>
@@ -242,7 +239,6 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.gymTitle}>Saúde</Text>
           <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
         </View>
-        {healthInfo.isExample && <ExampleBadge />}
         <View style={styles.healthRow}>
           <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
           <View style={styles.healthSide}>

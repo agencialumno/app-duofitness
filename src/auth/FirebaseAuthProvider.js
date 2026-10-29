@@ -160,11 +160,15 @@ export default class FirebaseAuthProvider {
   }
 
   // Reautentica (exigência do Firebase para excluir) e apaga. Com Apple, revoga o token antes (exigência da Apple).
-  async deleteAccount({ password } = {}) {
+  // `recent: true` = conta recém-criada (etapa de idade recusou a pessoa): apaga direto, sem reautenticar (o Firebase aceita nos
+  // primeiros minutos). Se falhar, quem chamou apenas sai da conta.
+  async deleteAccount({ password, recent = false } = {}) {
     const user = this._need();
     const providers = (user.providerData || []).map((p) => p.providerId);
     let appleCode = null;
-    if (providers.includes('password')) {
+    if (recent) {
+      // sem reautenticar
+    } else if (providers.includes('password')) {
       await this.api.reauthenticateWithCredential(user, this.api.EmailAuthProvider.credential(user.email, password || ''));
     } else if (providers.includes('google.com')) {
       await this.api.reauthenticateWithCredential(user, await this._googleCredential());

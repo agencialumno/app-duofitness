@@ -9,18 +9,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { calculateIMC, getIMCCategory } from '../../utils/imc';
 import InfoButton from '../../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../../utils/imcInfo';
+import { useApp } from '../../context/AppContext';
 
 const GENDERS = [
   { id: 'male', label: 'Masculino', icon: 'man-outline' },
   { id: 'female', label: 'Feminino', icon: 'woman-outline' },
-];
-
-const AGE_GROUPS = [
-  { id: 'under18', label: 'Menor de 18' },
-  { id: '18-25', label: '18–25 anos' },
-  { id: '26-35', label: '26–35 anos' },
-  { id: '36-45', label: '36–45 anos' },
-  { id: '46+',   label: '46+ anos' },
 ];
 
 export default function BodyDataScreen({ navigation, route }) {
@@ -28,7 +21,9 @@ export default function BodyDataScreen({ navigation, route }) {
   const { name, goals } = route.params;
 
   const [gender, setGender] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
+  // A idade já foi informada na etapa de idade da conta: o onboarding só reaproveita a faixa (não pergunta de novo).
+  const { ageInfo } = useApp();
+  const ageGroup = ageInfo ? ageInfo.ageGroup : '';
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
 
@@ -75,24 +70,9 @@ export default function BodyDataScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Faixa etária */}
-        <View style={styles.field}>
-          <Text style={styles.label}>FAIXA ETÁRIA</Text>
-          <View style={styles.ageGrid}>
-            {AGE_GROUPS.map(a => (
-              <TouchableOpacity
-                key={a.id}
-                style={[styles.ageCard, ageGroup === a.id && styles.ageCardActive]}
-                onPress={() => setAgeGroup(a.id)}
-              >
-                <Text style={[styles.ageLabel, ageGroup === a.id && styles.ageLabelActive]}>{a.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {ageGroup === 'under18' && (
-            <Text style={styles.minorNote}>Recomendamos que o treino de menores de 18 anos seja acompanhado por um responsável ou profissional.</Text>
-          )}
-        </View>
+        {ageGroup === 'under18' && (
+          <Text style={styles.minorNote}>Recomendamos que o treino de menores de 18 anos seja acompanhado por um responsável ou profissional.</Text>
+        )}
 
         {/* Peso e altura */}
         <View style={styles.field}>

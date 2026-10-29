@@ -33,6 +33,8 @@ function fakeStorage(initial: Record<string, string> = {}) {
 
 const V1 = { version: 1, weights: [{ date: key(-10), kg: 80 }, { date: key(-3), kg: 79.4 }], water: { [key(-1)]: 6, [key(0)]: 8 }, waterGoal: 9 };
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('chaves', () => {
   it('as chaves novas têm nomes novos e @duo_health não mudou', () => {
     expect(St.HEALTH_V2_KEY).toBe('@duo_health_v2');
@@ -85,94 +87,18 @@ describe('migração do v1 para o v2', () => {
     expect(st.m.get('@duo_health_v2')).toBe('{quebrado');
   });
 
-  it('sem nada gravado: vazio fora do demo; exemplo (não gravado) no Modo Demo', async () => {
+  it('sem nada gravado: vazio (e nada é gravado)', async () => {
     const st = fakeStorage();
     expect((await St.loadHealthV2(st, { now: NOW })).health.samples).toEqual([]);
-    const demo = await St.loadHealthV2(st, { isDemo: true, now: NOW });
-    expect(demo.isExample).toBe(true);
-    expect(demo.health.samples.length).toBeGreaterThan(50);
-    expect(st.calls).toEqual([]); // o exemplo não é gravado
-  });
-});
-
-describe('mudanças puras', () => {
-  const base = St.normalizeHealthV2(undefined);
-  it('addSample valida, substitui a do mesmo dia/origem e ignora a inválida', () => {
-    let h = St.addSample(base, { metric: 'weight', value: 80, date: key(0), source: 'manual' });
-    h = St.addSample(h, { metric: 'weight', value: 79.5, date: key(0), source: 'manual' });
-    expect(h.samples).toHaveLength(1);
-    expect(h.samples[0].value).toBe(79.5);
-    expect(St.addSample(h, { metric: 'weight', value: 5, date: key(0), source: 'manual' }).samples).toHaveLength(1);
-  });
-  it('removeSample, removeBySource e meta de água', () => {
-    let h = St.addSamples(base, [
-      { metric: 'steps', value: 100, date: key(0), source: 'apple_saude', at: '2026-06-10T10:00:00Z' },
-      { metric: 'steps', value: 90, date: key(-1), source: 'manual' },
-    ]);
-    expect(St.removeBySource(h, 'apple_saude').samples).toHaveLength(1);
-    expect(St.removeSample(h, { metric: 'steps', date: key(-1) }).samples).toHaveLength(1);
-    expect(St.setWaterGoalV2(h, 99).waterGoal).toBe(20);
-    expect(St.setWaterGoalV2(h, 0).waterGoal).toBe(1);
-  });
-});
-
-describe('conexão: consentimento explícito e desconectar apagando o importado', () => {
-  it('sem consentimento nada vale; com categorias marcadas registra provedor, data e categorias', () => {
-    expect(St.normalizeConnection({ provider: 'apple_saude', categories: { sleep: true } })).toEqual(St.emptyConnection()); // sem consentAt
-    expect(St.grantConsent(St.emptyConnection(), { provider: 'apple_saude', categories: [] })).toEqual(St.emptyConnection()); // nenhuma categoria
-    expect(St.grantConsent(St.emptyConnection(), { provider: 'fitbit', categories: ['sleep'] })).toEqual(St.emptyConnection());
-    const c = St.grantConsent(St.emptyConnection(), { provider: 'health_connect', categories: ['sleep', 'steps_inexistente', 'activity'], now: NOW });
-    expect(c.provider).toBe('health_connect');
-    expect(c.categories).toEqual({ sleep: true, activity: true });
-    expect(c.consentAt).toBe(NOW.toISOString());
-    expect(St.normalizeConnection(c)).toEqual(c);
-  });
-  it('desconectar apaga só o que veio do aparelho; manual e exemplo ficam', () => {
-    const h = St.addSamples(St.normalizeHealthV2(undefined), [
-      { metric: 'steps', value: 5000, date: key(0), source: 'apple_saude', at: '2026-06-10T10:00:00Z' },
-      { metric: 'sleep_duration', value: 400, date: key(0), source: 'apple_saude' },
-      { metric: 'weight', value: 80, date: key(0), source: 'manual' },
-      { metric: 'water', value: 3, date: key(0), source: 'exemplo' },
-    ]);
-    const conn = St.grantConsent(St.emptyConnection(), { provider: 'apple_saude', categories: ['activity', 'sleep'], now: NOW });
-    const r = St.disconnectAndErase(h, conn);
-    expect(r.removed).toBe(2);
-    expect(r.health.samples.map((s: { source: string }) => s.source).sort()).toEqual(['exemplo', 'manual']);
-    expect(r.connection).toEqual(St.emptyConnection());
-    expect(St.disconnectAndErase(h, St.emptyConnection()).removed).toBe(0); // sem conexão, nada some
-  });
-  it('estado da conexão persiste e volta normalizado', async () => {
-    const st = fakeStorage();
-    const c = St.grantConsent(St.emptyConnection(), { provider: 'apple_saude', categories: ['sleep'], now: NOW });
-    await St.saveConnection(st, c);
-    expect(await St.loadConnection(st)).toEqual(c);
-    expect(await St.loadConnection(fakeStorage({ '@duo_health_connect': 'lixo' }))).toEqual(St.emptyConnection());
-  });
-});
-
-describe('limpeza: Resetar tudo, Sair do demo e Excluir conta', () => {
-  const seed = () => fakeStorage({ '@duo_user': '{}', '@duo_health': JSON.stringify(V1), '@duo_health_v2': JSON.stringify({ version: 2, samples: [{ metric: 'weight', value: 80, date: key(0), source: 'manual', tz: 'UTC', unit: 'kg' }] }), '@duo_health_connect': '{}', outra: 'fica' });
-  it('Resetar tudo e Sair do demo (clearAllDuoData, por prefixo) apagam as chaves novas e o v1', async () => {
-    const st = seed();
-    const removed = await clearAllDuoData(st);
-    expect(removed).toEqual(expect.arrayContaining(['@duo_health_v2', '@duo_health_connect', '@duo_health']));
-    expect([...st.m.keys()]).toEqual(['outra']);
-  });
-  it('Excluir conta limpa as chaves NOVAS (v2 vira marcador vazio, conexão some) e o v1 não ressuscita os dados', async () => {
-    const st = seed();
-    await St.clearHealthData(st, NOW);
-    expect(st.m.has('@duo_health_connect')).toBe(false);
-    const v2 = JSON.parse(st.m.get('@duo_health_v2')!);
-    expect(v2).toMatchObject({ version: 2, samples: [], migratedFromV1: true, clearedAt: NOW.toISOString() });
-    expect(st.m.get('@duo_user')).toBe('{}'); // as outras chaves ficam
+    expect(st.calls).toEqual([]);
     const again = await St.loadHealthV2(st, { now: NOW });
     expect(again.health.samples).toEqual([]); // o @duo_health antigo (ainda lá) não foi migrado de novo
     expect(again.migrated).toBe(false);
   });
 });
 
-describe('Modo Demo: dados de exemplo em TODAS as categorias, rotulados', () => {
-  const demo = St.buildDemoHealthV2(NOW);
+describe('conjunto de exemplo dos testes (helper): todas as categorias, rotulado', () => {
+  const demo = SH.buildDemoHealthV2(NOW);
   it('toda amostra tem origem "exemplo" e todas as categorias têm dados', () => {
     expect(demo.samples.every((s: { source: string }) => s.source === 'exemplo')).toBe(true);
     for (const c of M.CATEGORIES) expect(M.hasCategoryData(demo.samples, c.id), c.id).toBe(true);
@@ -180,7 +106,7 @@ describe('Modo Demo: dados de exemplo em TODAS as categorias, rotulados', () => 
     expect(M.originOf(demo.samples, 'sleep', { days: 7, now: NOW })).toBe('Dados de exemplo');
   });
   it('é determinístico, relativo a "agora", sem datas futuras e idempotente na normalização', () => {
-    expect(St.buildDemoHealthV2(NOW)).toEqual(demo);
+    expect(SH.buildDemoHealthV2(NOW)).toEqual(demo);
     expect(Math.max(...demo.samples.map((s: { date: string }) => s.date.localeCompare(H.dayKey(NOW)))) <= 0).toBe(true);
     expect(St.normalizeHealthV2(demo)).toEqual(demo);
   });
@@ -212,27 +138,16 @@ describe('provedores (interface estendida)', () => {
       expect(await p.readSamples({ categories: ALL })).toBeNull();
     }
   });
-  it('MockProvider: "dados de exemplo", leitura por intervalo e por categoria, e a forma antiga (passos, sono, FC)', async () => {
-    const p = P.createMockProvider({ now: NOW });
-    expect(p.label).toBe('Dados de exemplo');
-    expect(p.isExample).toBe(true);
-    expect(p.sampleSource).toBe('exemplo');
-    const sleep = await p.readSamples({ categories: ['sleep'], from: key(-6), to: key(0) });
-    expect(sleep.every((s: { source: string; metric: string }) => s.source === 'exemplo' && ['sleep_duration', 'bedtime', 'wake_time'].includes(s.metric))).toBe(true);
-    expect(sleep.every((s: { date: string }) => s.date >= key(-6) && s.date <= key(0))).toBe(true);
-    expect(await p.readSamples({ categories: ['sleep'], from: '2020-01-01', to: '2020-01-31' })).toBeNull(); // sem dado = null
-    const steps = await p.getSteps({ from: key(-2), to: key(0) });
-    expect(steps.byDay).toHaveLength(3);
-    expect(steps.total).toBe(steps.byDay.reduce((a: number, d: { steps: number }) => a + d.steps, 0));
-    expect((await p.getSleep({})).byNight.length).toBe(14);
-    expect((await p.getHeartRate({})).samples.length).toBe(14);
-  });
-  it('selectProvider: o Modo Demo usa o Mock; fora dele, o mesmo de selectHealthProvider; a antiga não muda', () => {
-    expect(P.selectProvider({ isDemo: true, flag: 'true', platform: 'ios', now: NOW }).source).toBe('mock');
+  it('selectProvider: manual sem a flag; HealthKit/Health Connect com a flag; e MENOR DE 18 sempre manual, com ou sem a flag', () => {
     expect(P.selectProvider({ flag: 'false', platform: 'ios' }).source).toBe('manual');
     expect(P.selectProvider({ flag: 'true', platform: 'ios' }).source).toBe('healthkit');
     expect(P.selectProvider({ flag: 'true', platform: 'android' }).source).toBe('healthconnect');
-    expect(P.selectHealthProvider({ flag: 'true', platform: 'ios', isDemo: true }).source).toBe('manual'); // compatibilidade
+    for (const platform of ['ios', 'android']) {
+      for (const flag of ['true', '1', 'false', '']) {
+        expect(P.selectProvider({ flag, platform, minor: true }).source, `${platform}/${flag}`).toBe('manual');
+        expect(P.selectHealthProvider({ flag, platform, minor: true }).source).toBe('manual');
+      }
+    }
   });
   it('nenhum módulo nativo novo e a flag continua desligada por padrão', () => {
     const pkg = JSON.parse(readFileSync(path.join(REPO, 'package.json'), 'utf8'));

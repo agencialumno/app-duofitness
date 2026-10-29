@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useApp } from '../../context/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { canOfferDemo } from '../../utils/demoSession';
 import { useAuth } from '../../auth/AuthContext';
 
 const { width } = Dimensions.get('window');
@@ -17,25 +14,10 @@ const FEATURES = [
 ];
 
 export default function WelcomeScreen({ navigation }) {
-  const { loadDemoData } = useApp();
-  // Contas: só com a flag ligada. Desligada, esta tela é idêntica à de antes.
-  const { enabled: accountsEnabled } = useAuth();
-
-  // O link do demo só aparece sem perfil real salvo: o demo nunca sobrescreve dados de verdade.
-  const [demoAllowed, setDemoAllowed] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    AsyncStorage.getItem('@duo_user')
-      .then((stored) => { if (alive) setDemoAllowed(canOfferDemo(stored)); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  const startDemo = async () => {
-    const ok = await loadDemoData();
-    if (!ok) { setDemoAllowed(false); return; }
-    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-  };
+  // O app só entra com conta. Sem provedor de conta neste build (flag desligada ou Firebase ausente), a tela avisa em vez de oferecer
+  // um caminho sem conta.
+  const { enabled, capabilities } = useAuth();
+  const available = enabled && !!capabilities?.email;
 
   return (
     <View style={styles.container}>
@@ -60,33 +42,18 @@ export default function WelcomeScreen({ navigation }) {
       </View>
 
       <View style={styles.footer}>
-        {accountsEnabled ? (
-          <>
-            <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('SignUp')} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Criar conta" testID="wl-signup">
-              <Text style={styles.btnText}>Criar conta</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('SignIn')} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Entrar" testID="wl-signin">
-              <Text style={styles.btnOutlineText}>Entrar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.guestBtn} onPress={() => navigation.navigate('ProfileSetup')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Continuar sem conta" testID="wl-guest">
-              <Text style={styles.guestText}>Continuar sem conta</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={() => navigation.navigate('ProfileSetup')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.btnText}>Começar agora</Text>
-          </TouchableOpacity>
-        )}
+        {!available ? (
+          <Text style={styles.unavailable} testID="wl-unavailable" accessibilityRole="alert">
+            A conta não está disponível nesta versão do app. Atualize o app ou tente de novo mais tarde.
+          </Text>
+        ) : null}
+        <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('SignUp')} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Criar conta" testID="wl-signup">
+          <Text style={styles.btnText}>Criar conta</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('SignIn')} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Entrar" testID="wl-signin">
+          <Text style={styles.btnOutlineText}>Entrar</Text>
+        </TouchableOpacity>
         <Text style={styles.footerNote}>Gratuito · Sem anúncios · Sem assinatura</Text>
-        {demoAllowed && (
-          <TouchableOpacity onPress={startDemo} activeOpacity={0.6}>
-            <Text style={styles.demoLink}>Modo Demo (vendedor)</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   );
@@ -122,8 +89,6 @@ const styles = StyleSheet.create({
   btnText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.black },
   btnOutline: { borderColor: COLORS.primary, borderWidth: 1.5, borderRadius: RADIUS.full, paddingVertical: SPACING.md, width: '100%', alignItems: 'center' },
   btnOutlineText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.primary },
-  guestBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: SPACING.md },
-  guestText: { fontSize: FONTS.sizes.md, color: COLORS.white, textDecorationLine: 'underline' },
-  footerNote: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
-  demoLink: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, textDecorationLine: 'underline', marginTop: SPACING.sm },
+  unavailable: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
+  footerNote: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
 });

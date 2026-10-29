@@ -27,6 +27,8 @@ const run = (over: Record<string, unknown>) => C.buildCoachSuggestions({ samples
 // suplementos, doses, diagnóstico, alerta clínico e linguagem de culpa.
 const PROIBIDOS = /dieta|calor[ií]a|kcal|d[eé]ficit|emagre|perder peso|perda de peso|reduzir peso|queim|jejum|\bdose|dosag|suplement|whey|prote[ií]na em p[oó]|meta de peso|meta de gordura|peso ideal|gordura|obes|magreza|sobrepeso|prazo|em \d+ (dias|semanas|meses)|diagn[oó]stic|doen[cç]|alerta|risco|sintoma|cl[ií]nic|tratamento|culpa|fracass|pregui[cç]|falhou|voc[eê] deveria|resultado garant|milagr|detox|card[aá]pio|r[aá]pid[oa]/i;
 
+// @ts-expect-error módulo JS de teste, sem tipos
+import * as SH from './helpers/sampleHealth.js';
 describe('scanner de termos proibidos', () => {
   it('o scanner funciona: pega frases proibidas e deixa passar as nossas', () => {
     for (const ruim of ['Faça uma dieta', 'Corte as calorias', 'Meta de peso: 70 kg', 'Reduza a gordura corporal', 'Tome um suplemento', 'Dose de 5 g', 'Você falhou de novo', 'Isso pode indicar uma doença', 'Em 30 dias você vai emagrecer', 'Alerta: procure um médico']) {
@@ -46,7 +48,7 @@ describe('scanner de termos proibidos', () => {
       L(days('sleep_duration', [300, 320, 340, 310]), days('bedtime', [1380, 60, 1320, 90])),
       L(days('steps', [2000, 3000, 2500]), days('exercise_minutes', [0, 10, 5]), sample('water', 2, 0), sample('water', 3, -1)),
       L(days('resting_hr', [58, 58, 58, 58, 58, 58, 58, 64, 64, 64, 64, 64, 64, 64])),
-      St.buildDemoHealthV2(NOW).samples,
+      SH.buildDemoHealthV2(NOW).samples,
       [],
     ];
     let n = 0;

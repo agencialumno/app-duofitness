@@ -230,11 +230,9 @@ describe('fiação da tela', () => {
     expect(screen).toMatch(/Share\.share\(/);
     expect(screen.indexOf('Linking.openURL')).toBeLessThan(screen.indexOf('Share.share'));
   });
-  it('no Modo Demo "Confirmar" mostra a prévia e retorna antes de abrir o aplicativo de e-mail', () => {
-    const demo = screen.indexOf('if (isDemo)');
-    expect(demo).toBeGreaterThan(-1);
-    expect(demo).toBeLessThan(screen.indexOf('Linking.openURL'));
-    expect(screen).toMatch(/É assim que o e-mail será montado/);
+  it('não há mais prévia de demo: "Confirmar" abre o e-mail (ou a folha de compartilhamento) direto', () => {
+    expect(screen).not.toMatch(/isDemo|Modo Demo|stage === 'preview'/);
+    expect(screen.indexOf('Linking.openURL')).toBeGreaterThan(-1);
   });
   it('nada do formulário é gravado: a tela não usa AsyncStorage nem localStorage', () => {
     expect(screen).not.toMatch(/AsyncStorage|localStorage/);

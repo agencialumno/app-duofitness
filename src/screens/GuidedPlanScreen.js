@@ -183,7 +183,7 @@ function BuildingStage({ settings, plan, user, onBack, onDone }) {
     return () => clearTimeout(t);
   }, [visible, steps.length, reduceMotion, onDone]);
 
-  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured(), isDemo: !!user?.isDemo });
+  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured() });
 
   return (
     <View style={styles.container}>
@@ -219,7 +219,7 @@ function ReviewStage({ settings, plan, user, onBack, onSwap, onAdjust, onSave, s
   };
 
   const reasons = buildReasons(settings, plan, user);
-  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured(), isDemo: !!user?.isDemo });
+  const badge = getPlanBadge({ source: plan.source, aiEnabled: AI_BADGE_ENABLED, apiConfigured: isApiConfigured() });
   const combo = COMBOS.find((c) => c.id === settings.combo);
   const summary = [
     `${settings.days} ${settings.days === 1 ? 'dia' : 'dias'}`,

@@ -53,10 +53,13 @@ describe('privacidade: dados de saúde nunca saem do aparelho', () => {
     expect(st).toContain("'@duo_health_connect'");
     expect(code('src/utils/health.js')).toContain("HEALTH_KEY = '@duo_health'");
   });
-  it('"Excluir conta" limpa as chaves novas de saúde (e só elas), sem tocar nas outras', () => {
+  it('"Excluir minha conta" apaga TODAS as chaves @duo_ (inclusive as de saúde) e o snapshot do uid; a conta online só depois de reautenticar', () => {
     const acc = code('src/components/auth/AccountCard.js');
-    expect(acc).toMatch(/await provider\.deleteAccount\(\{ password \}\);[\s\S]*clearHealthData\(AsyncStorage\)/);
-    expect(code('src/utils/healthStore.js')).toMatch(/export async function clearHealthData[\s\S]*removeItem\(HEALTH_CONNECT_KEY\)/);
+    expect(acc).toMatch(/deleteAccountAndData\(\{ password \}\)/);
+    expect(code('src/context/AppContext.js')).toMatch(/deleteAccountFlow\(/);
+    const flow = code('src/utils/accountFlow.js');
+    expect(flow).toMatch(/await provider\.deleteAccount\(\{ password \}\);[\s\S]*deleteAccountLocalData\(storage, uid\)/);
+    expect(code('src/utils/accountSnapshot.js')).toMatch(/export async function deleteAccountLocalData[\s\S]*clearAllDuoData\(storage\)/);
   });
   it('o aviso fixo do Duo Score aparece na tela de resumo', () => {
     expect(code('src/screens/HealthScreen.js')).toContain('SCORE_DISCLAIMER');

@@ -6,7 +6,6 @@ import { COLORS, FONTS, HEALTH_UI, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import CategoryCard from '../components/health/CategoryCard';
 import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, WeeklyReport } from '../components/health/HealthParts';
-import { ExampleBadge } from '../components/OccupancyCard';
 import InfoButton from '../components/InfoButton';
 import { SCORE_DISCLAIMER } from '../utils/health';
 import { splitViews } from '../utils/healthView';
@@ -19,7 +18,7 @@ const { space, type } = HEALTH_UI;
 // (g) avisos pequenos. Detalhes, explicação ("i") e histórico ficam na tela de detalhe. Tudo no aparelho; não é aconselhamento médico.
 export default function HealthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { loading, result, score, notes, views, coach, minor, isExample, addGlass } = useHealth();
+  const { loading, result, score, notes, views, coach, minor, addGlass } = useHealth();
   const scrollRef = useRef(null);
   const ys = useRef({ cats: 0, nodata: 0 });
   const [noDataOpen, setNoDataOpen] = useState(false);
@@ -70,8 +69,6 @@ export default function HealthScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
       >
-        {isExample ? <ExampleBadge /> : null}
-
         {/* (a) Duo Score */}
         <View style={styles.firstSection}>
           <ScoreHero loading={loading} result={result} score={score} minor={minor} />

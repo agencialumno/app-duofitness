@@ -18,11 +18,8 @@ import { buildCategoryViews } from '../utils/healthView';
 // Saúde v2: amostras por categoria (@duo_health_v2), Duo Score V2, cartões, coach e conexão. Tudo local: nenhuma chamada de rede
 // e NENHUM log (este arquivo não usa console: dado de saúde nunca é gravado em log). Falhas de leitura/gravação são silenciosas e
 // a tela segue funcionando com o que estiver em memória.
-// No Modo Demo, enquanto nada foi gravado, mostra dados de EXEMPLO em todas as categorias (isExample = true), e o que o vendedor
-// registrar também é de exemplo.
 export default function useHealth() {
   const { user, completedSessions, dataEpoch } = useApp();
-  const isDemo = !!user?.isDemo;
   const [state, setState] = useState(null); // null = carregando
   const [connection, setConnection] = useState(emptyConnection());
   const ref = useRef(emptyHealthV2());
@@ -31,9 +28,9 @@ export default function useHealth() {
     useCallback(() => {
       let alive = true;
       (async () => {
-        let loaded = { health: emptyHealthV2(), isExample: false };
+        let loaded = { health: emptyHealthV2() };
         let conn = emptyConnection();
-        try { loaded = await loadHealthV2(AsyncStorage, { isDemo }); } catch (e) { /* segue vazio */ }
+        try { loaded = await loadHealthV2(AsyncStorage); } catch (e) { /* segue vazio */ }
         try { conn = await loadConnection(AsyncStorage); } catch (e) { /* segue sem conexão */ }
         if (alive) {
           ref.current = loaded.health;
@@ -42,7 +39,7 @@ export default function useHealth() {
         }
       })();
       return () => { alive = false; };
-    }, [isDemo, dataEpoch]),
+    }, [dataEpoch]),
   );
 
   const persist = useCallback(async (next) => {
@@ -55,7 +52,7 @@ export default function useHealth() {
   const update = useCallback((fn) => persist(normalizeHealthV2(fn(ref.current))), [persist]);
 
   // Registro manual: a origem é "manual" (ou "exemplo" no Modo Demo) e o dia é hoje, no fuso do aparelho.
-  const source = isDemo ? 'exemplo' : 'manual';
+  const source = 'manual';
   const record = useCallback((entries, date = dayKey()) => {
     const tz = deviceTz();
     return update((h) => addSamples(h, (Array.isArray(entries) ? entries : [entries]).map((e) => ({ date, tz, source, ...e }))));
@@ -93,7 +90,7 @@ export default function useHealth() {
     () => (state ? buildCoachSuggestions({ samples: health.samples, sessions: completedSessions, goals, ageGroup, waterGoal: health.waterGoal }) : null),
     [state, health, completedSessions, goals, ageGroup],
   );
-  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, isDemo }), [isDemo]);
+  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, minor }), [minor]);
 
   return {
     loading: state === null,
@@ -112,7 +109,6 @@ export default function useHealth() {
     coach,
     score: result ? result.score : null,
     minor,
-    isExample: isDemo,
     provider,
     integrationEnabled,
     connection,

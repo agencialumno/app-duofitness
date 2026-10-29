@@ -25,10 +25,11 @@ const AGE_GROUPS = [
 ];
 
 export default function EditBodyDataScreen({ navigation }) {
-  const { user, saveUser } = useApp();
+  const { user, saveUser, ageInfo } = useApp();
 
   const [gender, setGender] = useState(user?.gender || '');
-  const [ageGroup, setAgeGroup] = useState(user?.ageGroup || '');
+  // A faixa etária vem da idade informada ao criar a conta (etapa de idade): não se escolhe de novo aqui.
+  const ageGroup = (ageInfo && ageInfo.ageGroup) || user?.ageGroup || '';
   const [weight, setWeight] = useState(user?.weight ? String(user.weight) : '');
   const [height, setHeight] = useState(user?.height ? String(user.height) : '');
 
@@ -145,20 +146,13 @@ export default function EditBodyDataScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Faixa etária */}
+          {/* Faixa etária (da idade da conta; só leitura) */}
           <View style={styles.field}>
             <Text style={styles.label}>FAIXA ETÁRIA</Text>
-            <View style={styles.ageGrid}>
-              {AGE_GROUPS.map(a => (
-                <TouchableOpacity
-                  key={a.id}
-                  style={[styles.ageCard, ageGroup === a.id && styles.ageCardActive]}
-                  onPress={() => setAgeGroup(a.id)}
-                >
-                  <Text style={[styles.ageLabel, ageGroup === a.id && styles.ageLabelActive]}>{a.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={styles.ageReadonly} accessibilityLabel={`Faixa etária: ${(AGE_GROUPS.find((x) => x.id === ageGroup) || {}).label || 'não informada'}. Vem da idade informada ao criar a conta.`}>
+              {(AGE_GROUPS.find((x) => x.id === ageGroup) || {}).label || '—'}
+            </Text>
+            <Text style={styles.ageHint}>Vem da idade informada ao criar a conta.</Text>
           </View>
 
           {/* Tabela de referência (faixas de adultos: não aparece para menores de 18) */}
@@ -188,6 +182,8 @@ export default function EditBodyDataScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  ageReadonly: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white },
+  ageHint: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, marginTop: 4 },
   safeArea: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { padding: SPACING.xs },

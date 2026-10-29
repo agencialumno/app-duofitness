@@ -192,8 +192,8 @@ const INTRO_MESSAGE =
 export default function AIPersonalTrainerScreen({ navigation }) {
   const { addWorkouts, saveUser, user } = useApp();
   const [{ steps: INITIAL_STEPS, known: KNOWN_ANSWERS, preSteps: PRE_STEPS }] = useState(() => buildSteps(user));
-  // Modo Demo nunca usa a API; sem EXPO_PUBLIC_API_URL também fica tudo offline.
-  const online = isApiConfigured() && !user?.isDemo;
+  // Sem EXPO_PUBLIC_API_URL tudo fica offline.
+  const online = isApiConfigured();
   // 'pre' = perguntas antes da IA online, 'ai' = conversa com a API, 'script' = roteiro offline
   const [phase, setPhase] = useState(online ? 'pre' : 'script');
   const [stepList, setStepList] = useState(INITIAL_STEPS);

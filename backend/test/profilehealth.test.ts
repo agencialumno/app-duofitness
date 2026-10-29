@@ -49,20 +49,18 @@ describe('navegação', () => {
     expect(p).toMatch(/<ProfileHealthCard onPress=\{\(\) => navigation\.navigate\('Saude'\)\}/);
     expect(read('src/screens/HomeScreen.js')).toContain("navigation.navigate('Saude')");
   });
-  it('Resetar tudo, Sair do demo e Excluir conta seguem como antes', () => {
+  it('Perfil: Sair da conta e Excluir minha conta no fim; sem Resetar tudo nem demo', () => {
     const p = code('src/screens/ProfileScreen.js');
-    expect(p).toMatch(/await resetAll\(\);\s*resetToWelcome\(navigation\);/);
     expect(p).toContain('<AccountCard />');
-    expect(p).toContain('<DemoCard navigation={navigation} />');
-    expect(read('src/navigation/resetNavigation.js')).toMatch(/nav = nav\.getParent\?\.\(\)/);
-    expect(read('src/components/auth/AccountCard.js')).toContain('Excluir conta');
+    expect(p).toContain('<AccountActions />');
+    expect(p).not.toMatch(/resetAll|resetToWelcome|DemoCard/);
+    expect(read('src/components/auth/AccountCard.js')).toContain('Excluir minha conta');
   });
-  it('funciona no Modo Demo e no modo convidado: o cartão não depende de conta nem de perfil real', () => {
+  it('o cartão não depende de conta nem de perfil real; menor de 18: só hábitos', () => {
     const c = code('src/components/health/ProfileHealthCard.js');
     expect(c).toContain('useHealth');
-    expect(c).not.toMatch(/useAuth|isDemo\s*\)\s*return null|user\?\.isDemo/);
-    expect(c).toMatch(/h\.isExample \? <ExampleBadge/); // selo "Dados de exemplo" no demo
-    expect(c).toMatch(/h\.minor/); // menor: só hábitos
+    expect(c).not.toMatch(/useAuth|isDemo|isExample/);
+    expect(c).toMatch(/h\.minor/);
   });
   it('acessibilidade: botão com rótulo completo, alvo de toque grande e sem dado de saúde fora da tela', () => {
     const c = code('src/components/health/ProfileHealthCard.js');

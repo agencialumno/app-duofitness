@@ -1,4 +1,4 @@
-// Dados fictícios usados no "Modo Demo" — carregados instantaneamente
+// (Fixture de teste; antes vivia em src/data e alimentava o Modo Demo, removido.) Dados fictícios — carregados instantaneamente
 // para demonstrações em feiras/eventos, sem precisar preencher o onboarding
 // nem depender de internet.
 

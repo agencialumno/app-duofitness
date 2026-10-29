@@ -108,7 +108,6 @@ describe('cadastro: validação e destino', () => {
     expect(F.validateSignUp(base).canSubmit).toBe(true);
   });
   it.each([
-    ['sem confirmar 18+', { isAdult: false }],
     ['sem aceitar os termos', { accepted: false }],
     ['senhas diferentes', { confirm: SENHA + 'x' }],
     ['confirmação vazia', { confirm: '' }],
@@ -123,9 +122,8 @@ describe('cadastro: validação e destino', () => {
     const r = F.validateSignUp({ ...base, email: 'x', confirm: '' }, { email: true });
     expect(Object.keys(r.errors)).toEqual(['email']);
   });
-  it('destino depois de entrar: perfil existente vai ao app; sem perfil segue o cadastro do perfil', () => {
-    expect(F.destinationAfterAuth({ hasRealProfile: true })).toBe('Main');
-    expect(F.destinationAfterAuth({ hasRealProfile: false })).toBe('ProfileSetup');
+  it('o portão do app decide o destino (conta -> idade -> perfil -> app); authFlow não tem mais destinationAfterAuth', () => {
+    expect(F.destinationAfterAuth).toBeUndefined();
   });
   it('excluir conta: exige digitar EXCLUIR e, para e-mail e senha, a senha', () => {
     expect(F.canConfirmDelete({ providers: ['password'], password: 'x', typed: 'excluir' })).toBe(true);

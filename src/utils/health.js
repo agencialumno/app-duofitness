@@ -364,17 +364,3 @@ export function buildWeeklyReport({ sessions = [], health, goals = [], ageGroup,
 
   return { ...result, categories, recommendations: recs.slice(0, 3), trainingDays: days7, streak };
 }
-
-// ---------- Modo Demo ----------
-
-// Histórico de exemplo (relativo a "agora"): ~5 semanas de peso e 7 dias de água. Tudo é "dado de exemplo".
-export function buildDemoHealth(now = new Date()) {
-  const today = dayKey(now);
-  const weights = [];
-  const kgs = [75.2, 75.4, 75.5, 75.7, 75.8, 76.0];
-  [-35, -28, -21, -14, -7, -1].forEach((off, i) => weights.push({ date: addDays(today, off), kg: kgs[i] }));
-  const glasses = [6, 8, 7, 5, 8, 8, 4];
-  const water = {};
-  glasses.forEach((g, i) => { water[addDays(today, -(6 - i))] = g; });
-  return normalizeHealth({ version: 1, weights, water, waterGoal: DEFAULT_WATER_GOAL });
-}
