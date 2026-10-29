@@ -32,6 +32,23 @@ function resolveConfigFiles(env = process.env, cwd = process.cwd()) {
 // Pods do React Native Firebase usados pelo app (@react-native-firebase/app e /auth).
 const RNFB_STATIC_PODS = ['RNFBApp', 'RNFBAuth'];
 
+// Plugins do login com Google. SÓ com o plist do iOS E o REVERSED_CLIENT_ID lido: o plugin do google-signin, quando recebe opções,
+// exige `iosUrlScheme` (lança "Missing iosUrlScheme" com `{}`), então nunca é chamado com `{}` nem com opções incompletas. Sem o
+// plist (Android) devolve lista vazia: o @react-native-firebase/app cuida do google-services e o Android não depende deste plugin.
+function googlePlugins(iosFile, load = plug) {
+  if (!iosFile) return [];
+  const scheme = readReversedClientId(iosFile);
+  if (!scheme) {
+    console.warn('[withFirebaseOptional] O GoogleService-Info.plist não tem REVERSED_CLIENT_ID: o login com Google no iOS não vai voltar ao app.');
+    return [];
+  }
+  return [
+    [load('@react-native-google-signin/google-signin/app.plugin.js'), { iosUrlScheme: scheme }],
+    // garantia própria e independente do plugin de terceiros (idempotente; preserva os esquemas existentes)
+    (cfg) => withGoogleReversedClientId(cfg, scheme),
+  ];
+}
+
 const withFirebaseOptional = (config) => {
   const { enabled, androidFile, iosFile } = resolveConfigFiles();
   if (!enabled) return config;
@@ -53,16 +70,12 @@ const withFirebaseOptional = (config) => {
     plugins.push(require('./withFirebaseIosFix')); // ajustes do Podfile (só com a flag; idempotente)
   }
   plugins.push(plug('@react-native-firebase/app/app.plugin.js'));
-  // URL scheme do iOS = REVERSED_CLIENT_ID do plist. Passado de forma EXPLÍCITA (não depende de o plugin do Google ler o arquivo):
-  // sem esse esquema no Info.plist o retorno do Google não volta ao app. O valor nunca é impresso.
-  const googleOptions = {};
-  if (iosFile) {
-    const scheme = readReversedClientId(iosFile);
-    if (scheme) googleOptions.iosUrlScheme = scheme;
-    else console.warn('[withFirebaseOptional] O GoogleService-Info.plist não tem REVERSED_CLIENT_ID: o login com Google no iOS não vai voltar ao app.');
-  }
-  plugins.push([plug('@react-native-google-signin/google-signin/app.plugin.js'), googleOptions]);
-  if (iosFile && googleOptions.iosUrlScheme) plugins.push((cfg) => withGoogleReversedClientId(cfg, googleOptions.iosUrlScheme));
+  // O plugin do google-signin só serve ao URL scheme do iOS: com opções ele entra no caminho "sem Firebase" e EXIGE `iosUrlScheme`
+  // (lança "Missing iosUrlScheme" com `{}`). Por isso só é chamado quando o plist do iOS existe E o REVERSED_CLIENT_ID foi lido;
+  // nunca com `{}` nem com opções incompletas. No Android (só google-services.json) ele nem entra: o @react-native-firebase/app já
+  // cuida do google-services (classpath, apply plugin e cópia do arquivo) e o login com Google lê a configuração dele.
+  // O valor do esquema nunca é impresso.
+  plugins.push(...googlePlugins(iosFile));
   return withPlugins(next, plugins);
 };
 
@@ -93,5 +106,6 @@ function readReversedClientId(file) {
 module.exports = withFirebaseOptional;
 module.exports.readReversedClientId = readReversedClientId;
 module.exports.addUrlScheme = addUrlScheme;
+module.exports.googlePlugins = googlePlugins;
 module.exports.resolveConfigFiles = resolveConfigFiles;
 module.exports.RNFB_STATIC_PODS = RNFB_STATIC_PODS;
