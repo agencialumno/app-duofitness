@@ -1,6 +1,6 @@
 // Recuperação de erros de render (usada pelo ErrorBoundary da raiz). Módulo puro, sem React Native e sem
 // navegação nem AppContext: a tela de recuperação precisa funcionar mesmo quando eles estão quebrados.
-import { clearAllDuoData } from './demoSession';
+import { clearAllDuoData } from './duoStorage';
 
 // Se o erro volta dentro desta janela depois de "Tentar novamente", é "repetido" e aparece "Recomeçar do zero".
 export const REPEAT_WINDOW_MS = 15000;
