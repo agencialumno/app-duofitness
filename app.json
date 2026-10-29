@@ -15,7 +15,8 @@
       "./plugins/withAndroidRelease",
       "expo-font",
       "expo-asset",
-      "./plugins/withFirebaseOptional"
+      "./plugins/withFirebaseOptional",
+      "./plugins/withHealthKitOptional"
     ],
     "ios": {
       "bundleIdentifier": "com.duofitness.app",

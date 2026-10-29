@@ -154,6 +154,35 @@ if (needGoogle) {
   }
 }
 
+// 7) HealthKit (só leitura). Com a flag: entitlement e texto de leitura presentes e nada de escrita, background delivery ou registros
+//    clínicos. Sem a flag: nenhuma chave de saúde (o iOS gerado fica idêntico ao de antes).
+{
+  const hkOn = process.argv.includes('--require-healthkit') || process.env.HEALTH_INTEGRATION_ENABLED === 'true';
+  const infoXml = plistPath ? readFileSync(plistPath, 'utf8') : '';
+  const entPath = plistPath ? path.join(path.dirname(plistPath), path.basename(path.dirname(plistPath)) + '.entitlements') : null;
+  const entXml = entPath && existsSync(entPath) ? readFileSync(entPath, 'utf8') : '';
+  const hasKey = (xml, key) => new RegExp('<key>' + key.replace(/\./g, '\\.') + '</key>').test(xml);
+  if (hkOn) {
+    if (!hasKey(entXml, 'com.apple.developer.healthkit') || !/<key>com\.apple\.developer\.healthkit<\/key>\s*<true\s*\/>/.test(entXml)) {
+      fail(`[HealthKit] Esperado: o entitlement com.apple.developer.healthkit = true em ${entPath ? rel(entPath) : 'ios/<Nome>/<Nome>.entitlements'}. Não há. Rode o prebuild com HEALTH_INTEGRATION_ENABLED=true (plugins/withHealthKitOptional.js).`);
+    } else ok('entitlement com.apple.developer.healthkit presente');
+    if (!/<key>NSHealthShareUsageDescription<\/key>\s*<string>[^<]{10,}<\/string>/.test(infoXml)) {
+      fail(`[HealthKit] Esperado: NSHealthShareUsageDescription com texto em ${plistPath ? rel(plistPath) : 'Info.plist'}.`);
+    } else ok('NSHealthShareUsageDescription presente');
+    for (const [xml, key, why] of [
+      [infoXml, 'NSHealthUpdateUsageDescription', 'o app só lê (nunca escreve no HealthKit)'],
+      [entXml, 'com.apple.developer.healthkit.background-delivery', 'sem background delivery'],
+      [entXml, 'com.apple.developer.healthkit.access', 'sem registros clínicos (health-records)'],
+    ]) {
+      if (hasKey(xml, key)) fail(`[HealthKit] ${key} não deveria existir: ${why}.`);
+    }
+  } else {
+    for (const [xml, key] of [[entXml, 'com.apple.developer.healthkit'], [infoXml, 'NSHealthShareUsageDescription'], [infoXml, 'NSHealthUpdateUsageDescription']]) {
+      if (hasKey(xml, key)) fail(`[HealthKit] ${key} existe, mas HEALTH_INTEGRATION_ENABLED não está ligada: o iOS gerado deveria ser idêntico ao de antes.`);
+    }
+  }
+}
+
 if (errors.length > 0) {
   console.log(`\n${errors.length} checagem(ns) do projeto iOS falharam.`);
   process.exit(1);

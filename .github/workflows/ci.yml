@@ -126,6 +126,30 @@ jobs:
         if: always()
         run: node scripts/firebase-prepare.mjs cleanup
 
+  # Gera o projeto iOS COM HealthKit em Linux (sem Mac): instala os módulos fixos, confere o autolinking e o projeto gerado:
+  # entitlement com.apple.developer.healthkit, NSHealthShareUsageDescription, e NADA de escrita, background delivery nem registros clínicos.
+  ios-prebuild-healthkit:
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      HEALTH_INTEGRATION_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Instalar os módulos do HealthKit (grava no package.json do runner)
+        run: node scripts/install-healthkit-deps.mjs
+      - name: Conferir autolinking do iOS com o HealthKit
+        run: node scripts/check-autolinking.mjs --platform ios
+      - name: Gerar projeto iOS com HealthKit (expo prebuild)
+        run: npx expo prebuild --platform ios --no-install
+      - name: Conferir o projeto iOS gerado (entitlement e texto de leitura do HealthKit)
+        run: node scripts/check-ios-project.mjs --bundle-id com.duofitness.app
+
   # Gera o projeto Android COM Firebase em Linux, como o android.yml: só o google-services.json (FALSO), SEM o plist do iOS.
   # Reproduz a regressão em que o plugin do google-signin era chamado com `{}` ("Missing iosUrlScheme") e quebrava o prebuild.
   android-prebuild-firebase:
