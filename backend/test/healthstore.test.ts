@@ -158,3 +158,49 @@ describe('provedores (interface estendida)', () => {
     }
   });
 });
+
+describe('importação do HealthKit (mergeImported, origem Apple)', () => {
+  const T = 'America/Sao_Paulo';
+  const smp = (metric: string, value: number, date: string, source = 'apple_saude') => ({ metric, value, date, tz: T, source });
+  const base = (samples: unknown[]) => St.normalizeHealthV2({ version: 2, samples, waterGoal: 8, migratedFromV1: false });
+
+  it('reler a janela não duplica: as amostras do HealthKit a partir de "from" são substituídas e as mais antigas ficam', () => {
+    const h = base([smp('steps', 1000, '2026-06-01'), smp('steps', 2000, '2026-06-10')]);
+    const out = St.mergeImported(h, [smp('steps', 2500, '2026-06-10')], { from: '2026-06-05' });
+    expect(out.samples.map((s: { date: string; value: number }) => [s.date, s.value])).toEqual([['2026-06-01', 1000], ['2026-06-10', 2500]]);
+    const again = St.mergeImported(out, [smp('steps', 2500, '2026-06-10')], { from: '2026-06-05' });
+    expect(again.samples).toHaveLength(2);
+  });
+  it('peso do HealthKit no mesmo dia e valor PRÓXIMO do registro manual: descartado (mesmo registro, sem duplicar)', () => {
+    const h = base([smp('weight', 78.5, '2026-06-10', 'manual')]);
+    const out = St.mergeImported(h, [smp('weight', 78.6, '2026-06-10')], { from: '2026-06-01' });
+    expect(out.samples).toHaveLength(1);
+    expect(out.samples[0].source).toBe('manual');
+  });
+  it('valor DIFERENTE no mesmo dia entra; no dia seguinte entra; o do aparelho vence na agregação do dia', () => {
+    const h = base([smp('weight', 78.5, '2026-06-10', 'manual')]);
+    const out = St.mergeImported(h, [smp('weight', 80.4, '2026-06-10'), smp('weight', 78.5, '2026-06-11')], { from: '2026-06-01' });
+    expect(out.samples).toHaveLength(3);
+    const day = M.dailyValues(out.samples, 'weight').find((d: { date: string }) => d.date === '2026-06-10');
+    expect(day.source).toBe('apple_saude'); // aparelho > manual, nunca soma nem mistura
+  });
+  it('somas (passos, minutos, água): o aparelho tem prioridade sobre o manual do mesmo dia (não soma duas vezes)', () => {
+    const h = base([smp('steps', 3000, '2026-06-10', 'manual')]);
+    const out = St.mergeImported(h, [smp('steps', 8000, '2026-06-10')], { from: '2026-06-01' });
+    const day = M.dailyValues(out.samples, 'steps')[0];
+    expect(day.value).toBe(8000);
+  });
+  it('desconectar (removeBySource apple_saude) apaga Apple Saúde E Apple Watch e deixa o manual e o exemplo', () => {
+    const h = base([smp('weight', 78, '2026-06-10', 'manual'), smp('steps', 5000, '2026-06-10', 'apple_saude'), smp('heart_rate', 70, '2026-06-10', 'apple_watch'), smp('water', 4, '2026-06-10', 'exemplo')]);
+    const out = St.removeBySource(h, 'apple_saude');
+    expect(out.samples.map((s: { source: string }) => s.source).sort()).toEqual(['exemplo', 'manual']);
+    const r = St.disconnectAndErase(h, { version: 1, provider: 'apple_saude', consentAt: '2026-06-10T10:00:00.000Z', categories: { activity: true }, importedAt: null });
+    expect(r.removed).toBe(2);
+    expect(r.connection.provider).toBeNull();
+  });
+  it('entrada inválida é ignorada sem lançar', () => {
+    const h = base([]);
+    expect(St.mergeImported(h, null as unknown as unknown[], {}).samples).toEqual([]);
+    expect(St.mergeImported(h, [{ metric: 'nao-existe', value: 1, date: '2026-06-10', source: 'apple_saude' }, { metric: 'steps', value: -5, date: '2026-06-10', source: 'apple_saude' }], {}).samples).toEqual([]);
+  });
+});

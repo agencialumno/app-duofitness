@@ -13,11 +13,13 @@ describe('amostras', () => {
     for (const [id, m] of Object.entries(M.METRICS) as [string, { category: string; unit: string }][]) {
       expect(M.getCategory(m.category).metrics, id).toContain(id);
     }
-    expect(Object.keys(M.METRICS)).toHaveLength(12);
+    expect(Object.keys(M.METRICS)).toHaveLength(15); // 12 + energia ativa, frequência cardíaca e VO2 máx. (HealthKit)
   });
 
-  it('as origens são as quatro pedidas, com rótulo em português', () => {
-    expect(M.SOURCES).toEqual(['manual', 'apple_saude', 'health_connect', 'exemplo']);
+  it('as origens (com Apple Watch) têm rótulo em português', () => {
+    expect(M.SOURCES).toEqual(['manual', 'apple_saude', 'apple_watch', 'health_connect', 'exemplo']);
+    expect(M.SOURCE_LABELS.apple_watch).toBe('Apple Watch');
+    expect(M.APPLE_SOURCES).toEqual(['apple_saude', 'apple_watch']);
     expect(M.SOURCE_LABELS.exemplo).toBe('Dados de exemplo');
     expect(M.SOURCE_LABELS.apple_saude).toBe('Apple Saúde');
   });

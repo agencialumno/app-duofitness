@@ -31,7 +31,10 @@ export function buildDemoHealthV2(now = new Date()) {
     add('wake_time', (bed[i] + sleep[i]) % 1440, off);
     add('resting_hr', rhr[i], off);
     add('hrv', hrv[i], off);
+    add('heart_rate', 70 + (i % 5), off);
+    add('active_energy', 300 + i * 10, off);
   }
+  add('vo2max', 42.5, -3);
   // Hidratação: 7 dias (mesmos valores do exemplo antigo)
   [6, 8, 7, 5, 8, 8, 4].forEach((g, i) => add('water', g, -(6 - i)));
   return { version: 2, samples: normalizeSamples(samples), waterGoal: DEFAULT_WATER_GOAL, migratedFromV1: false };

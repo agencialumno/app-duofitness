@@ -4,7 +4,7 @@
 // Os dados de saúde ficam SÓ no aparelho: este módulo nunca usa rede, nunca grava em log e nada daqui vai para o
 // marketplace, o backend ou a conta.
 import { DEFAULT_WATER_GOAL, HEALTH_KEY, normalizeHealth } from './health';
-import { CATEGORIES, deviceTz, makeSample, normalizeSamples } from './healthModel';
+import { APPLE_SOURCES, CATEGORIES, METRICS, deviceTz, makeSample, normalizeSamples } from './healthModel';
 import { readJsonKey, sanitizeObject } from './safeStorage';
 
 export const HEALTH_V2_KEY = '@duo_health_v2';
@@ -81,9 +81,29 @@ export function removeSample(health, { metric, date, source }) {
   return { ...h, samples: h.samples.filter((s) => !(s.metric === metric && s.date === date && (!source || s.source === source))) };
 }
 
+// "apple_saude" remove também "apple_watch" (os dois vêm do HealthKit).
 export function removeBySource(health, source) {
   const h = normalizeHealthV2(health);
-  return { ...h, samples: h.samples.filter((s) => s.source !== source) };
+  const gone = source === 'apple_saude' || source === 'apple_watch' ? APPLE_SOURCES : [source];
+  return { ...h, samples: h.samples.filter((s) => !gone.includes(s.source)) };
+}
+
+// Importação do HealthKit. `incoming` = amostras lidas (origem apple_saude/apple_watch), `from` = primeiro dia lido ("AAAA-MM-DD").
+//  - substitui as amostras do HealthKit a partir de `from` (reler a janela não duplica; o que é mais antigo fica);
+//  - deduplicação com o registro manual: para métricas de "último valor do dia" (peso, % de gordura, massa magra, VO2), se já há um
+//    registro MANUAL no mesmo dia com valor próximo (dentro da tolerância da métrica), a amostra do HealthKit é descartada (é o mesmo
+//    registro); valor diferente no mesmo dia entra, e a agregação do dia usa a origem de maior prioridade (aparelho > manual).
+//    Para somas (passos, minutos, energia, água) o aparelho tem prioridade sobre o manual do mesmo dia: não soma duas vezes.
+export function mergeImported(health, incoming, { from } = {}) {
+  const h = normalizeHealthV2(health);
+  const keep = h.samples.filter((s) => !(APPLE_SOURCES.includes(s.source) && (!from || s.date >= from)));
+  const manual = keep.filter((s) => s.source === 'manual');
+  const fresh = (Array.isArray(incoming) ? incoming : []).filter((s) => {
+    const m = METRICS[s && s.metric];
+    if (!m || m.agg !== 'last') return true;
+    return !manual.some((x) => x.metric === s.metric && x.date === s.date && Math.abs(x.value - s.value) <= m.tol);
+  });
+  return { ...h, samples: normalizeSamples([...keep, ...fresh]) };
 }
 
 export function setWaterGoalV2(health, goal) {
@@ -104,7 +124,7 @@ export function normalizeConnection(raw) {
   const ids = CATEGORIES.map((c) => c.id);
   const categories = {};
   if (raw.categories && typeof raw.categories === 'object') for (const id of ids) if (raw.categories[id] === true) categories[id] = true;
-  const provider = raw.provider === 'apple_saude' || raw.provider === 'health_connect' ? raw.provider : null;
+  const provider = raw.provider === 'apple_saude' || raw.provider === 'health_connect' ? raw.provider : null; // 'apple_saude' cobre também o Apple Watch
   const iso = (v) => (typeof v === 'string' && Number.isFinite(new Date(v).getTime()) ? v : null);
   // sem consentimento registrado, nada vale
   if (!provider || !iso(raw.consentAt)) return base;

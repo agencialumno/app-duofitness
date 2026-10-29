@@ -12,26 +12,33 @@
 // Zero só existe quando a pessoa (ou o aparelho) registrou 0.
 import { addDays, dayKey } from './health';
 
-export const SOURCES = ['manual', 'apple_saude', 'health_connect', 'exemplo'];
+export const SOURCES = ['manual', 'apple_saude', 'apple_watch', 'health_connect', 'exemplo'];
+// Origens que vêm do aparelho de saúde (HealthKit): apagadas juntas ao desconectar. O rótulo "Apple Watch" só é usado quando o dado veio de um
+// relógio; o nome do dispositivo nunca é guardado.
+export const APPLE_SOURCES = ['apple_saude', 'apple_watch'];
 export const SOURCE_LABELS = {
   manual: 'Registro manual',
   apple_saude: 'Apple Saúde',
+  apple_watch: 'Apple Watch',
   health_connect: 'Health Connect',
   exemplo: 'Dados de exemplo',
 };
 // Se há mais de uma origem no mesmo dia, vale a de maior prioridade (aparelho > manual > exemplo): evita contar duas vezes.
-export const SOURCE_PRIORITY = { apple_saude: 3, health_connect: 3, manual: 2, exemplo: 1 };
+export const SOURCE_PRIORITY = { apple_watch: 4, apple_saude: 3, health_connect: 3, manual: 2, exemplo: 1 };
 
 // agg: como juntar as amostras do MESMO dia numa só: soma, média, última ou horário do relógio (média circular).
 // tol: variação mínima para uma tendência deixar de ser "estável".
 export const METRICS = {
   steps: { category: 'activity', label: 'Passos', unit: 'passos', agg: 'sum', min: 0, max: 100000, decimals: 0, tol: 500 },
   distance: { category: 'activity', label: 'Distância', unit: 'km', agg: 'sum', min: 0, max: 200, decimals: 2, tol: 0.5 },
+  active_energy: { category: 'activity', label: 'Energia ativa', unit: 'kcal', agg: 'sum', min: 0, max: 20000, decimals: 0, tol: 50 },
   exercise_minutes: { category: 'activity', label: 'Minutos de exercício', unit: 'min', agg: 'sum', min: 0, max: 1440, decimals: 0, tol: 5 },
   sleep_duration: { category: 'sleep', label: 'Duração do sono', unit: 'min', agg: 'sum', min: 0, max: 1440, decimals: 0, tol: 15 },
   bedtime: { category: 'sleep', label: 'Hora de dormir', unit: 'min do dia', agg: 'clock_bed', min: 0, max: 1439, decimals: 0, tol: 15 },
   wake_time: { category: 'sleep', label: 'Hora de acordar', unit: 'min do dia', agg: 'clock', min: 0, max: 1439, decimals: 0, tol: 15 },
   resting_hr: { category: 'heart', label: 'FC em repouso', unit: 'bpm', agg: 'avg', min: 20, max: 220, decimals: 0, tol: 2 },
+  heart_rate: { category: 'heart', label: 'Frequência cardíaca', unit: 'bpm', agg: 'avg', min: 20, max: 250, decimals: 0, tol: 3 },
+  vo2max: { category: 'heart', label: 'VO₂ máx.', unit: 'ml/kg/min', agg: 'last', min: 5, max: 90, decimals: 1, tol: 1 },
   hrv: { category: 'heart', label: 'Variabilidade da FC', unit: 'ms', agg: 'avg', min: 1, max: 300, decimals: 0, tol: 3 },
   weight: { category: 'body', label: 'Peso', unit: 'kg', agg: 'last', min: 30, max: 300, decimals: 1, tol: 0.3 },
   body_fat: { category: 'body', label: '% de gordura', unit: '%', agg: 'last', min: 3, max: 60, decimals: 1, tol: 0.5 },
@@ -42,9 +49,9 @@ export const METRICS = {
 // Ordem das categorias na tela (o "Resumo" com o Duo Score vem antes, fora desta lista).
 export const CATEGORIES = [
   { id: 'body', label: 'Composição corporal', metrics: ['weight', 'body_fat', 'lean_mass'], primary: 'weight' },
-  { id: 'activity', label: 'Atividade', metrics: ['steps', 'distance', 'exercise_minutes'], primary: 'steps' },
+  { id: 'activity', label: 'Atividade', metrics: ['steps', 'distance', 'exercise_minutes', 'active_energy'], primary: 'steps' },
   { id: 'sleep', label: 'Sono', metrics: ['sleep_duration', 'bedtime', 'wake_time'], primary: 'sleep_duration' },
-  { id: 'heart', label: 'Coração e recuperação', metrics: ['resting_hr', 'hrv'], primary: 'resting_hr' },
+  { id: 'heart', label: 'Coração e recuperação', metrics: ['resting_hr', 'hrv', 'heart_rate', 'vo2max'], primary: 'resting_hr' },
   { id: 'hydration', label: 'Hidratação', metrics: ['water'], primary: 'water' },
 ];
 
@@ -269,6 +276,9 @@ export function formatMetric(metric, value) {
     case 'wake_time': return formatClock(value);
     case 'resting_hr': return `${Math.round(value)} bpm`;
     case 'hrv': return `${Math.round(value)} ms`;
+    case 'heart_rate': return `${Math.round(value)} bpm`;
+    case 'vo2max': return `${pt(value, 1)} ml/kg/min`;
+    case 'active_energy': return `${pt(Math.round(value), 0)} kcal`;
     case 'weight':
     case 'lean_mass': return `${pt(value, 1)} kg`;
     case 'body_fat': return `${pt(value, 1)}%`;
