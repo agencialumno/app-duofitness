@@ -53,10 +53,29 @@ const withFirebaseOptional = (config) => {
     plugins.push(require('./withFirebaseIosFix')); // ajustes do Podfile (só com a flag; idempotente)
   }
   plugins.push(plug('@react-native-firebase/app/app.plugin.js'));
-  plugins.push(plug('@react-native-google-signin/google-signin/app.plugin.js')); // lê o arquivo (URL scheme do iOS, Android)
+  // URL scheme do iOS = REVERSED_CLIENT_ID do plist. Passado de forma EXPLÍCITA (não depende de o plugin do Google ler o arquivo):
+  // sem esse esquema no Info.plist o retorno do Google não volta ao app. O valor nunca é impresso.
+  const googleOptions = {};
+  if (iosFile) {
+    const scheme = readReversedClientId(iosFile);
+    if (scheme) googleOptions.iosUrlScheme = scheme;
+    else console.warn('[withFirebaseOptional] O GoogleService-Info.plist não tem REVERSED_CLIENT_ID: o login com Google no iOS não vai voltar ao app.');
+  }
+  plugins.push([plug('@react-native-google-signin/google-signin/app.plugin.js'), googleOptions]);
   return withPlugins(next, plugins);
 };
 
+// REVERSED_CLIENT_ID do GoogleService-Info.plist ('' se ausente ou ilegível). Só leitura; nunca imprime.
+function readReversedClientId(file) {
+  try {
+    const text = require('fs').readFileSync(file, 'utf8');
+    return /<key>REVERSED_CLIENT_ID<\/key>\s*<string>([^<]+)<\/string>/.exec(text)?.[1] || '';
+  } catch {
+    return '';
+  }
+}
+
 module.exports = withFirebaseOptional;
+module.exports.readReversedClientId = readReversedClientId;
 module.exports.resolveConfigFiles = resolveConfigFiles;
 module.exports.RNFB_STATIC_PODS = RNFB_STATIC_PODS;

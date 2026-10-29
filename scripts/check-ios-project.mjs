@@ -11,7 +11,9 @@
 //   2. há exatamente um *.xcodeproj (o nome vem do prebuild: campo "name" do app.json sem espaços);
 //   3. o project.pbxproj tem PRODUCT_BUNDLE_IDENTIFIER igual ao bundle id (com ou sem aspas);
 //   4. o Info.plist tem ITSAppUsesNonExemptEncryption = false (valor na linha seguinte, como o Expo grava);
-//   5. o Podfile existe e usa os módulos do Expo (use_expo_modules!).
+//   5. o Podfile existe e usa os módulos do Expo (use_expo_modules!);
+//   6. com FIREBASE_ENABLED=true (ou --require-google): o Info.plist tem em CFBundleURLSchemes o REVERSED_CLIENT_ID (esquema
+//      com.googleusercontent.apps.*), sem o qual o retorno do login com Google não volta ao app. Só passa/falha: nunca imprime o valor.
 //
 // Uso: node scripts/check-ios-project.mjs [--root <pasta do app>] [--bundle-id com.duofitness.app]
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -124,6 +126,30 @@ if (!existsSync(podfile)) {
     fail('[Podfile] Esperado: uma linha "use_expo_modules!" (autolinking dos módulos Expo) em ios/Podfile. Não encontrei.');
   } else {
     ok('Podfile com use_expo_modules!');
+  }
+}
+
+// 6) URL scheme do login com Google (só com Firebase): o esquema do Info.plist precisa ser o REVERSED_CLIENT_ID
+const needGoogle = process.argv.includes('--require-google') || process.env.FIREBASE_ENABLED === 'true';
+if (needGoogle) {
+  if (!plistPath) {
+    fail('[Google URL scheme] Esperado: o Info.plist com o URL scheme do Google; o Info.plist não foi encontrado.');
+  } else {
+    const xml = readFileSync(plistPath, 'utf8');
+    const block = /<key>CFBundleURLTypes<\/key>[\s\S]*?<\/array>\s*<\/array>|<key>CFBundleURLTypes<\/key>[\s\S]*?<\/array>/.exec(xml)?.[0] || '';
+    const schemes = [...block.matchAll(/<string>([^<]+)<\/string>/g)].map((m) => m[1]);
+    const google = schemes.filter((v) => v.startsWith('com.googleusercontent.apps.'));
+    // o plist do Firebase é copiado para ios/<Nome>/ pelo prebuild; se estiver lá, o esquema precisa ser IGUAL ao REVERSED_CLIENT_ID
+    const firebasePlist = path.join(path.dirname(plistPath), 'GoogleService-Info.plist');
+    let reversed = '';
+    if (existsSync(firebasePlist)) reversed = /<key>REVERSED_CLIENT_ID<\/key>\s*<string>([^<]+)<\/string>/.exec(readFileSync(firebasePlist, 'utf8'))?.[1] || '';
+    if (google.length === 0) {
+      fail(`[Google URL scheme] Esperado: um esquema com.googleusercontent.apps.* em CFBundleURLSchemes de ${rel(plistPath)} (o REVERSED_CLIENT_ID do GoogleService-Info.plist). Não há. Sem ele o login com Google não volta ao app. Confira se o plist tem REVERSED_CLIENT_ID (baixado depois de ativar o Google no Firebase) e docs/pendencias-usuario.md.`);
+    } else if (reversed && !google.includes(reversed)) {
+      fail(`[Google URL scheme] O esquema do Info.plist não é igual ao REVERSED_CLIENT_ID do GoogleService-Info.plist usado no build. Os valores não são impressos; rode o prebuild de novo com o plist certo.`);
+    } else {
+      ok(`URL scheme do Google presente em ${rel(plistPath)}${reversed ? ' (igual ao REVERSED_CLIENT_ID)' : ''}`);
+    }
   }
 }
 
