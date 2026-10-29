@@ -9,7 +9,7 @@
 // O conteúdo dos arquivos nunca é impresso.
 const fs = require('node:fs');
 const path = require('node:path');
-const { withPlugins } = require('expo/config-plugins');
+const { IOSConfig, withInfoPlist, withPlugins } = require('expo/config-plugins');
 
 // os app.plugin.js dos pacotes exportam o plugin em `default` (interop ESM)
 const plug = (name) => { const m = require(name); return m && m.default ? m.default : m; };
@@ -62,8 +62,23 @@ const withFirebaseOptional = (config) => {
     else console.warn('[withFirebaseOptional] O GoogleService-Info.plist não tem REVERSED_CLIENT_ID: o login com Google no iOS não vai voltar ao app.');
   }
   plugins.push([plug('@react-native-google-signin/google-signin/app.plugin.js'), googleOptions]);
+  if (iosFile && googleOptions.iosUrlScheme) plugins.push((cfg) => withGoogleReversedClientId(cfg, googleOptions.iosUrlScheme));
   return withPlugins(next, plugins);
 };
+
+// Acrescenta um URL scheme ao Info.plist SEM duplicar e SEM apagar os que já existem (o do app, o do Expo...). Puro e idempotente.
+function addUrlScheme(infoPlist, scheme) {
+  if (!scheme) return infoPlist;
+  if (IOSConfig.Scheme.hasScheme(scheme, infoPlist)) return infoPlist;
+  return IOSConfig.Scheme.appendScheme(scheme, infoPlist);
+}
+
+// Garantia independente do plugin do Google: o REVERSED_CLIENT_ID do plist vira URL scheme do app. Sem ele o retorno do login com
+// Google não volta ao app. Só entra com FIREBASE_ENABLED=true e plist presente (ver withFirebaseOptional). O valor nunca é impresso.
+const withGoogleReversedClientId = (config, scheme) => withInfoPlist(config, (cfg) => {
+  cfg.modResults = addUrlScheme(cfg.modResults, scheme);
+  return cfg;
+});
 
 // REVERSED_CLIENT_ID do GoogleService-Info.plist ('' se ausente ou ilegível). Só leitura; nunca imprime.
 function readReversedClientId(file) {
@@ -77,5 +92,6 @@ function readReversedClientId(file) {
 
 module.exports = withFirebaseOptional;
 module.exports.readReversedClientId = readReversedClientId;
+module.exports.addUrlScheme = addUrlScheme;
 module.exports.resolveConfigFiles = resolveConfigFiles;
 module.exports.RNFB_STATIC_PODS = RNFB_STATIC_PODS;
