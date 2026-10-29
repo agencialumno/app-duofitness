@@ -14,7 +14,7 @@ const ANDROID = JSON.stringify({
   project_info: { project_id: 'fake-project' },
   client: [{ client_info: { android_client_info: { package_name: 'com.duofitness.app' } }, api_key: [{ current_key: FAKE_KEY }] }],
 });
-const PLIST = (bundle = 'com.duofitness.app') => `<?xml version="1.0"?><plist version="1.0"><dict><key>BUNDLE_ID</key><string>${bundle}</string><key>GOOGLE_APP_ID</key><string>1:1:ios:1</string><key>PROJECT_ID</key><string>fake</string><key>API_KEY</key><string>${FAKE_KEY}</string></dict></plist>`;
+const PLIST = (bundle = 'com.duofitness.app') => `<?xml version="1.0"?><plist version="1.0"><dict><key>BUNDLE_ID</key><string>${bundle}</string><key>GOOGLE_APP_ID</key><string>1:1:ios:1</string><key>CLIENT_ID</key><string>123-abc.apps.googleusercontent.com</string><key>REVERSED_CLIENT_ID</key><string>com.googleusercontent.apps.123-abc</string><key>PROJECT_ID</key><string>fake</string><key>API_KEY</key><string>${FAKE_KEY}</string></dict></plist>`;
 
 let dir: string;
 let logs: string[];
@@ -65,6 +65,8 @@ describe('firebase-prepare', () => {
     ['android', 'FIREBASE_GOOGLE_SERVICES_JSON_B64', 'project_id', JSON.stringify({ client: [] })],
     ['ios', 'FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64', 'não é um plist válido', 'lixo'],
     ['ios', 'FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64', 'BUNDLE_ID', PLIST('outro.app')],
+    ['ios', 'FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64', 'ANTES de ativar o login com Google', PLIST().replace(/<key>CLIENT_ID<\/key><string>[^<]*<\/string>/, '').replace(/<key>REVERSED_CLIENT_ID<\/key><string>[^<]*<\/string>/, '')],
+    ['ios', 'FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64', 'não corresponde ao CLIENT_ID', PLIST().replace('com.googleusercontent.apps.123-abc', 'com.googleusercontent.apps.outro')],
   ])('secret inválido (%s: %s) falha sem gravar nada e sem imprimir o conteúdo', (plat, secret, motivo, content) => {
     const r = F.prepare(plat, { FIREBASE_REQUESTED: 'true', [secret]: b64(content) }, dir, out);
     expect(r.failed).toBe(true);

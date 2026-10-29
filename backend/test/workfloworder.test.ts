@@ -17,7 +17,7 @@ const stepsOf = (f: string) => Object.values(load(f).jobs)[0]!.steps;
 
 const b64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
 const ANDROID_JSON = JSON.stringify({ project_info: { project_id: 'fake' }, client: [{ client_info: { android_client_info: { package_name: 'com.duofitness.app' } }, api_key: [{ current_key: 'FAKE' }] }] });
-const IOS_PLIST = '<plist version="1.0"><dict><key>BUNDLE_ID</key><string>com.duofitness.app</string><key>GOOGLE_APP_ID</key><string>1:1:ios:1</string><key>PROJECT_ID</key><string>f</string></dict></plist>';
+const IOS_PLIST = '<plist version="1.0"><dict><key>BUNDLE_ID</key><string>com.duofitness.app</string><key>GOOGLE_APP_ID</key><string>1:1:ios:1</string><key>CLIENT_ID</key><string>123-abc.apps.googleusercontent.com</string><key>REVERSED_CLIENT_ID</key><string>com.googleusercontent.apps.123-abc</string><key>PROJECT_ID</key><string>f</string></dict></plist>';
 
 const KEYS = [
   { id: 'npm ci', test: (r: string) => /^npm ci\b/m.test(r) },

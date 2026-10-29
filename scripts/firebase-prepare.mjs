@@ -36,6 +36,17 @@ export function validateIos(text) {
   if (!/<plist[\s>]/.test(text) || !/<dict>/.test(text)) return { ok: false, error: 'o GoogleService-Info.plist não é um plist válido' };
   if (get('BUNDLE_ID') !== APP_ID) return { ok: false, error: `o GoogleService-Info.plist não tem o BUNDLE_ID ${APP_ID}` };
   for (const k of ['GOOGLE_APP_ID', 'PROJECT_ID']) if (!get(k)) return { ok: false, error: `o GoogleService-Info.plist não tem ${k}` };
+  // Login com Google no iOS: sem CLIENT_ID e REVERSED_CLIENT_ID o seletor de contas abre e o retorno nunca volta ao app (o
+  // REVERSED_CLIENT_ID vira o URL scheme do Info.plist). Esses campos só existem se o Google estava ATIVADO no Firebase quando o
+  // plist foi baixado. Os valores nunca são impressos.
+  const clientId = get('CLIENT_ID');
+  const reversed = get('REVERSED_CLIENT_ID');
+  if (!clientId || !reversed) {
+    return { ok: false, error: 'o GoogleService-Info.plist não tem CLIENT_ID e REVERSED_CLIENT_ID: ele foi baixado ANTES de ativar o login com Google no Firebase. Ative o Google em Authentication > Sign-in method, baixe o plist de novo e atualize o secret (docs/pendencias-usuario.md)' };
+  }
+  if (reversed !== `com.googleusercontent.apps.${clientId.replace(/\.apps\.googleusercontent\.com$/, '')}`) {
+    return { ok: false, error: 'o REVERSED_CLIENT_ID do GoogleService-Info.plist não corresponde ao CLIENT_ID (plist editado ou de outro app); baixe o plist de novo no Firebase' };
+  }
   const apiKeys = [get('API_KEY')].filter(Boolean);
   return { ok: true, apiKeys };
 }
