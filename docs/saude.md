@@ -279,7 +279,7 @@ Por que, depois de ler o código dos pacotes (não só o README):
 
 ### Apple Saúde (HealthKit): o que é lido, limites e como testar
 
-**Só leitura.** O app nunca grava no HealthKit: não pede `NSHealthUpdateUsageDescription`, não usa `toShare`, `save*` nem `deleteObjects` (testes varrem o código). Sem registros clínicos (Clinical Health Records), sem background delivery. Tudo atrás de `HEALTH_INTEGRATION_ENABLED=true` (uma só variável: liga o plugin, instala os módulos, liga o JavaScript e exige o entitlement no `.ipa`); sem ela o app e o iOS gerado ficam idênticos aos de antes. Menores de 18 anos: `selectHealthProvider` devolve o provedor manual, a conexão fica indisponível e nada é lido. Android não muda.
+**Só leitura.** O app nunca grava no HealthKit: a autorização é pedida com a lista de escrita (`toShare`) **sempre vazia** e só com `toRead`; não usa `save*` nem `deleteObjects` (um teste varre TODO o código e falha se qualquer tipo de escrita for solicitado em qualquer lugar). Sem registros clínicos (Clinical Health Records), sem background delivery. Tudo atrás de `HEALTH_INTEGRATION_ENABLED=true` (uma só variável: liga o plugin, instala os módulos, liga o JavaScript e exige o entitlement no `.ipa`); sem ela o app e o iOS gerado ficam idênticos aos de antes. Menores de 18 anos: `selectHealthProvider` devolve o provedor manual, a conexão fica indisponível e nada é lido. Android não muda.
 
 **Tipos lidos (últimos 30 dias, dia LOCAL do aparelho):**
 
@@ -320,3 +320,14 @@ Origem: **Apple Watch** quando o dado veio de um relógio, senão **Apple Saúde
 8. Desconectar (tela Conectar): os dados importados somem, o peso manual fica, "Atualizado às" some. Em Ajustes › Saúde, a permissão continua (o app avisa que a revogação é lá).
 9. Crie uma conta de menor de 18 anos: a Saúde não mostra "Conectar" nem lê nada.
 10. Saia da conta e entre com outra: ela não vê os dados do HealthKit da primeira; ao voltar à primeira, eles voltam (snapshot no aparelho).
+
+
+**Por que o Info.plist tem `NSHealthUpdateUsageDescription` mesmo o app não gravando (erro 90683).** A validação do `altool` falhou com `Missing purpose string in Info.plist ... NSHealthUpdateUsageDescription ... (90683)`. A Apple exige a "purpose string" de uma API sempre que o **binário referencia essa API**, mesmo que o app nunca a use, e a biblioteca do HealthKit referencia as APIs de leitura **e de escrita**. Por isso, com `HEALTH_INTEGRATION_ENABLED=true`, o plugin `plugins/withHealthKitOptional.js` escreve as duas chaves:
+- `NSHealthShareUsageDescription` (leitura): "O Duo Fitness lê seus dados de atividade, sono e batimentos do app Saúde para mostrar sua evolução. Os dados ficam no seu aparelho.";
+- `NSHealthUpdateUsageDescription` (só para a Apple aceitar o .ipa): "O Duo Fitness não grava dados no app Saúde. Ele apenas lê os dados que você autorizar. Esta permissão não é usada."
+
+**O app continua sem gravar:** a chave de escrita é só um texto; o app **não pede nenhuma permissão de escrita** (`toShare: []`), o iOS nunca mostra a folha de gravação e não há `save*` no código. Continuam proibidos o background delivery e os registros clínicos (o `check-ios-project` falha se aparecerem). O `check-ios-project` agora **exige** a chave de escrita com o texto "não grava" (sem ela a Apple recusa o .ipa).
+
+**Notas de revisão da App Store:** no envio à App Store, escreva nas notas de revisão: "O Duo Fitness usa o HealthKit **somente para leitura** (atividade, sono, frequência cardíaca, peso e água) para mostrar a evolução do usuário no próprio aparelho. O app não grava dados no app Saúde: a chave NSHealthUpdateUsageDescription existe apenas porque a biblioteca de leitura referencia essas APIs, e ela não é usada."
+
+**Erros do altool no CI:** o `ios-log-hints.mjs --stage altool` (chamado pelo `ios-upload.sh`) classifica a saída do altool: ITMS-90683 (diz qual chave faltou, só o nome), build number repetido, ícone inválido, entitlement fora do perfil e permissão da chave de API, sempre com causa e ação, e nunca manda procurar no log do xcodebuild. A saída completa do altool (sem chave nem JWT) fica em `ipa-validate.log` e `ipa-upload.log` no artifact `xcodebuild-logs-<execução>`.
