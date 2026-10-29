@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -175,7 +175,7 @@ export default function ProfileScreen({ navigation }) {
             { label: 'Nível de condicionamento', value: LEVEL_LABELS[user?.level] || '—' },
             { label: 'Objetivo', value: formatGoals(user?.goals) },
             { label: 'Sexo biológico', value: user?.gender === 'male' ? 'Masculino' : user?.gender === 'female' ? 'Feminino' : '—' },
-            { label: 'Faixa etária', value: user?.ageGroup ? `${user.ageGroup} anos` : '—' },
+            { label: 'Faixa etária', value: user?.ageGroup ? (user.ageGroup === 'under18' ? 'Menor de 18 anos' : `${user.ageGroup} anos`) : '—' },
             { label: 'Membro desde', value: user?.joinedAt ? new Date(user.joinedAt).toLocaleDateString('pt-BR') : '—' },
           ].map((item, i, arr) => (
             <View key={i}>

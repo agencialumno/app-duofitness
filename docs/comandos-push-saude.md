@@ -96,3 +96,27 @@ Depois: workflow **android** nessa branch e, passando, **ios** com `upload=false
 5. **Texto maior** (Ajustes > Acessibilidade > Tamanho do texto, até 150%) e iPhone pequeno: nada cortado nem sobreposto.
 6. **VoiceOver**: cada cartão é lido como um item (categoria, valor, relação com a média, atualizado); com "Reduzir movimento" a rolagem dos chips não anima.
 7. **Menor de 18**: sem Composição, sem "Conectar", "Registrar sono" no lugar do peso, só hábitos.
+
+
+---
+
+# conta-obrigatoria (conta obrigatória, menores a partir de 13 anos e dados por conta; empilhada na google-ios-fix)
+
+Escada: `ajuda-textos` -> `conta-ui` -> `conta-firebase` -> `fix-auth-fundo` -> `saude-categorias` -> `ajustes-perfil` -> `saude-ux` -> `google-ios-fix` -> `conta-obrigatoria`. Nada foi executado (sem push, tag nem deploy).
+
+```
+git push -u origin conta-obrigatoria
+```
+
+Depois: workflow **android** nessa branch e, passando, **ios** com `upload=false`. O build precisa de `EXPO_PUBLIC_AUTH_ENABLED=true` e `FIREBASE_ENABLED=true` (a conta é obrigatória). Leia a seção 10 de `docs/pendencias-usuario.md` antes de enviar ao TestFlight (conta de teste do revisor, revisão jurídica, política de privacidade).
+
+## O que testar no iPhone
+
+1. **Boas-vindas:** só "Criar conta" e "Entrar" (nenhum "Modo Demo" nem "Continuar sem conta").
+2. **Etapa de idade (os três métodos):** crie conta por e-mail, por Google e pela Apple (contas novas). Em todos, a tela "Qual é a sua idade?" vem logo depois do primeiro login e antes do perfil. Teste 12 (mensagem, conta excluída, volta às boas-vindas), 13 e 17 (precisa marcar a autorização; o link abre a Política de Privacidade), 18 e valores inválidos (vazio, letras, 0, 120).
+3. **Onboarding:** nome e objetivos, depois medidas **sem** a pergunta de faixa etária, depois nível.
+4. **Menor de 18:** na Saúde, só hábitos, sem "Conectar", sem peso; Perfil mostra "Menor de 18 anos".
+5. **Sair e entrar:** com dados na conta A (treino, água), "Sair da conta" leva às boas-vindas sem Alert. Entre com a conta B (nova): ela não vê nada de A. Saia, entre de novo com A: volta direto à Home com tudo de A.
+6. **Reabrir o app** com a sessão ativa entra direto na Home.
+7. **Perfil:** sem "Resetar todos os dados". No fim, "Sair da conta" e, abaixo, o link pequeno "Excluir minha conta" (VoiceOver, texto grande e área de toque de 44 pt). Excluir pede senha (e-mail) ou reautentica (Google/Apple; a Apple revoga o token) e depois volta às boas-vindas.
+8. **Quem já usava o app sem conta:** ao entrar pela primeira vez, os treinos de antes aparecem (depois da etapa de idade).

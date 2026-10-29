@@ -2,7 +2,7 @@
 // Sair da conta guarda um snapshot dos dados da conta neste aparelho e limpa os ativos; entrar de novo restaura (accountSnapshot.js).
 // Excluir a conta apaga a conta online, o snapshot do uid e os dados ativos.
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';

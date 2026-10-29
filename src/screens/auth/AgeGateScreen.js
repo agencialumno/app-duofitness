@@ -39,7 +39,7 @@ export default function AgeGateScreen() {
     try { await saveAge(buildAgeInfo(result, guardian)); } finally { setBusy(false); }
   };
 
-  const invalid = touched && text.trim().length > 0 && result.status === 'invalid';
+  const invalid = text.trim().length > 0 && result.status === 'invalid';
   const blocked = result.status === 'blocked';
 
   return (

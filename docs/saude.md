@@ -251,3 +251,14 @@ De cima para baixo:
 **Detalhe da categoria**: valor atual com variação e origem, seletor de período (7 ou 30 dias) com o gráfico, registros com data e origem, a ação
 "Registrar hoje" (o formulário fica recolhido quando já há dados; "Registrar peso" abre direto) e a explicação ("i" no cabeçalho e texto no fim).
 Fonte dinâmica até 150% em 320 e 390 de largura sem cortar nem sobrepor (os botões rápidos passam para uma coluna).
+
+
+### Dados por conta e snapshots (só no aparelho)
+
+O app só entra com conta e cada conta tem os próprios dados. **Nada disto vai a servidor**: ficam no AsyncStorage do aparelho.
+
+- Ao **sair da conta**, o app salva um **snapshot** de todas as chaves `@duo_*` (treinos, XP, **saúde** (`@duo_health`, `@duo_health_v2`, `@duo_health_connect`), a **idade** (`@duo_age`) e a confirmação do responsável) em `@duoacct:<uid>:snapshot` (uid do Firebase), limpa as `@duo_*` ativas e zera o estado em memória. Sem Alert.
+- Ao **entrar**, restaura o snapshot do uid e vai direto à Home, sem refazer a etapa de idade nem o onboarding. Sem snapshot: etapa de idade e onboarding. Dados de antes das contas (`@duo_onboarded` presente e sem dono) são adotados pela primeira conta que entrar, que ainda passa pela etapa de idade.
+- Contas diferentes no mesmo celular não veem dados uma da outra (`@duo_owner` guarda de quem são as chaves ativas).
+- Um snapshot corrompido é **ignorado** (nunca apagado). **Excluir a conta** apaga o snapshot do uid e as chaves ativas.
+- A **idade** (`@duo_age`) nunca é enviada a servidor, ao marketplace nem a log. Menores de 18: só hábitos, sem peso nem meta de peso, e a conexão com Apple Saúde/Health Connect fica indisponível (`selectHealthProvider` devolve o manual para `under18`).

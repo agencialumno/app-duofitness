@@ -91,3 +91,15 @@ O código agora cobre o que dava para cobrir (URL scheme explícito, checagens n
 4. Rode o `ios.yml`. O passo do `firebase-prepare` agora **falha com a mensagem "foi baixado ANTES de ativar o login com Google"** se o plist ainda estiver sem esses campos, e o passo "Conferir o projeto iOS gerado" falha com `[Google URL scheme]` se o `Info.plist` não ficar com o esquema do Google. Nenhum valor é impresso.
 5. No iPhone, ao falhar, a tela mostra o motivo (por exemplo "O Google não devolveu a identificação da conta") e o **código bruto** aparece no console do aparelho (`[Google Sign-In] ...`, nunca token nem e-mail): conecte o iPhone ao Mac e veja pelo Console.app, filtrando por "Google Sign-In", e me diga o código.
 6. Se o erro for do Firebase (`auth/invalid-credential` ou `auth/operation-not-allowed`), confira o passo 1 e, no Google Cloud Console, se o cliente OAuth **iOS** do app existe com o bundle id `com.duofitness.app`.
+
+## 10. Conta obrigatória e menores de 18 anos (branch `conta-obrigatoria`)
+
+O app agora **só entra com conta** (e-mail e senha, Google, Apple no iOS) e aceita **menores de 13 a 17 anos** com a autorização do responsável. Antes de publicar:
+
+1. **Revisão jurídica:** a **idade mínima** (`MIN_ACCOUNT_AGE = 13` em `src/config/account.js`) e o **texto da autorização do responsável** ("Confirmo que tenho autorização do meu responsável legal para usar o app", `GUARDIAN_CONSENT_TEXT` no mesmo arquivo) precisam de revisão de um advogado (LGPD, art. 14, tratamento de dados de crianças e adolescentes; COPPA se houver público nos EUA). Mudar a idade é trocar a constante.
+2. **Política de privacidade e etiqueta de privacidade da App Store** precisam refletir **menores com conta**: quais dados ficam só no aparelho (idade, treinos, saúde), o que o login coleta (e-mail, nome, identificador da conta) e a autorização do responsável. Publique a política e preencha `EXPO_PUBLIC_PRIVACY_URL` (o link da etapa de idade usa essa variável).
+3. **Questionário de classificação etária** (App Store Connect): refaça com as respostas corretas para o conteúdo do app, incluindo que há conta de usuário e menores usando.
+4. **Conta de teste fixa para o revisor da Apple:** como a conta agora é obrigatória, crie uma conta (e-mail e senha, **maior de 18 anos**, e-mail verificado, perfil já preenchido) e informe e-mail e senha em *App Store Connect > Informações do app > Informações de revisão > Conta de demonstração*. Sem isso o revisor não entra no app.
+5. **Sincronização com a nuvem** fica para uma fase futura: hoje os dados de cada conta ficam **só neste aparelho** (snapshot por conta). Trocar de celular ou reinstalar o app começa do zero.
+6. **Build com contas:** como a conta é obrigatória, o build precisa de `EXPO_PUBLIC_AUTH_ENABLED=true` **e** de `FIREBASE_ENABLED=true` com os secrets do Firebase (veja as seções 1 a 3). Sem isso a tela de boas-vindas avisa que a conta está indisponível e ninguém consegue entrar.
+7. Quem usava o app **sem conta** antes: os dados do aparelho são adotados pela **primeira conta que entrar** (que ainda passa pela etapa de idade). Os dados de exemplo do antigo Modo Demo não são adotados.
