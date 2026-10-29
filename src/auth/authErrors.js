@@ -17,11 +17,16 @@ const BY_CODE = {
   'auth/requires-recent-login': 'Por segurança, confirme a sua identidade e tente de novo.',
   'auth/unavailable': 'Conta indisponível nesta versão do app. Você pode continuar sem conta.',
   'auth/no-current-user': 'Você não está com a sessão iniciada.',
+  'auth/google-in-progress': 'O login com o Google já está em andamento. Aguarde um instante.',
+  'auth/google-play-services': 'O Google Play Services não está disponível ou está desatualizado neste aparelho.',
+  'auth/google-no-id-token': 'O Google não devolveu a identificação da conta. Tente de novo; se continuar, o login com Google pode não estar configurado nesta versão.',
+  'auth/google-failed': 'Não foi possível entrar com o Google. Tente de novo em instantes.',
+  'auth/operation-not-allowed': 'Este método de entrada ainda não está ativado.',
 };
 
 // Credenciais erradas, e-mail desconhecido ou senha errada: o MESMO texto, para não revelar quem tem conta.
 const CREDENTIAL_CODES = new Set(['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-login-credentials']);
-const CANCEL_CODES = new Set(['auth/cancelled-popup-request', 'auth/popup-closed-by-user', 'auth/user-cancelled', 'auth/cancelled', 'ERR_REQUEST_CANCELED', 'SIGN_IN_CANCELLED', '12501']);
+const CANCEL_CODES = new Set(['auth/cancelled-popup-request', 'auth/popup-closed-by-user', 'auth/user-cancelled', 'auth/cancelled', 'ERR_REQUEST_CANCELED', 'SIGN_IN_CANCELLED', '12501', '-5']);
 
 export function isCancel(error) {
   return CANCEL_CODES.has(String(error?.code ?? ''));
@@ -32,6 +37,7 @@ export function authErrorMessage(error, context = 'general') {
   if (isCancel(error)) return '';
   if (CREDENTIAL_CODES.has(code)) {
     if (context === 'delete') return 'Senha incorreta. Confira e tente de novo.';
+    if (context === 'social') return 'Não foi possível entrar com esta conta. Tente de novo.'; // credencial do Google/Apple recusada: não é "senha errada"
     return 'E-mail ou senha incorretos.';
   }
   if (code === 'auth/email-already-in-use') {

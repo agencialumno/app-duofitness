@@ -50,24 +50,53 @@ export default class FirebaseAuthProvider {
     return this._pub(cred.user);
   }
 
+  // Código bruto no console para diagnóstico: SÓ o código (nunca token, e-mail nem mensagem do erro). Cancelar não registra nada.
+  _logGoogle(stage, code) {
+    if (code) console.error(`[Google Sign-In] ${stage}: ${code}`);
+  }
+
+  // Erros do google-signin (statusCodes) -> códigos "auth/..." que o authErrors.js traduz. Erros que já são "auth/..." passam.
+  _googleError(e) {
+    const code = String(e?.code ?? '');
+    if (code.startsWith('auth/')) return e;
+    const sc = this.google?.statusCodes || {};
+    const is = (name, fallback) => code === String(sc[name] ?? fallback);
+    if (is('SIGN_IN_CANCELLED', 'SIGN_IN_CANCELLED') || code === '12501' || code === '-5') return authError('auth/user-cancelled');
+    this._logGoogle('google-signin', code || 'sem código');
+    if (is('IN_PROGRESS', 'IN_PROGRESS')) return authError('auth/google-in-progress');
+    if (is('PLAY_SERVICES_NOT_AVAILABLE', 'PLAY_SERVICES_NOT_AVAILABLE')) return authError('auth/google-play-services');
+    return authError('auth/google-failed');
+  }
+
   async _googleCredential() {
     if (!this.google) throw authError('auth/unavailable');
-    if (!this._googleConfigured) {
-      this.google.GoogleSignin.configure({ webClientId: 'autoDetect' }); // lido do arquivo de configuração do Firebase
-      this._googleConfigured = true;
+    try {
+      if (!this._googleConfigured) {
+        // Os IDs de cliente (Web e iOS) vêm do arquivo de configuração do Firebase (GoogleService-Info.plist / google-services.json):
+        // nada é lido de variável de ambiente. O plist precisa ter CLIENT_ID e REVERSED_CLIENT_ID (firebase-prepare confere).
+        this.google.GoogleSignin.configure({ webClientId: 'autoDetect' });
+        this._googleConfigured = true;
+      }
+      await this.google.GoogleSignin.hasPlayServices?.({ showPlayServicesUpdateDialog: true });
+      const res = await this.google.GoogleSignin.signIn();
+      if (res?.type === 'cancelled') throw authError('auth/user-cancelled');
+      const idToken = res?.data?.idToken ?? res?.idToken;
+      if (!idToken) { this._logGoogle('id-token', 'ausente'); throw authError('auth/google-no-id-token'); }
+      return this.api.GoogleAuthProvider.credential(idToken);
+    } catch (e) {
+      throw this._googleError(e);
     }
-    await this.google.GoogleSignin.hasPlayServices?.({ showPlayServicesUpdateDialog: true });
-    const res = await this.google.GoogleSignin.signIn();
-    if (res?.type === 'cancelled') throw authError('auth/user-cancelled');
-    const idToken = res?.data?.idToken ?? res?.idToken;
-    if (!idToken) throw authError('auth/unavailable');
-    return this.api.GoogleAuthProvider.credential(idToken);
   }
 
   async signInWithGoogle() {
     const credential = await this._googleCredential();
-    const cred = await this.api.signInWithCredential(this.auth, credential);
-    return this._pub(cred.user);
+    try {
+      const cred = await this.api.signInWithCredential(this.auth, credential);
+      return this._pub(cred.user);
+    } catch (e) {
+      this._logGoogle('firebase', String(e?.code ?? 'sem código'));
+      throw e;
+    }
   }
 
   // Apple: nonce aleatório. A Apple recebe o HASH (SHA-256); o Firebase valida com o valor bruto.
