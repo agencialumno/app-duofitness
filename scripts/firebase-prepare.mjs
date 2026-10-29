@@ -72,6 +72,12 @@ export function prepare(platform, env = process.env, cwd = process.cwd(), out = 
   const file = path.join(dir, t.file);
   writeFileSync(file, text, { mode: 0o600 });
   try { chmodSync(file, 0o600); } catch { /* Windows */ }
+  // Sem o ID de cliente WEB o login com Google usa 'autoDetect', que o pacote não interpreta (docs/pendencias-usuario.md). Só avisa: o
+  // build segue. O valor, quando existe, nunca é impresso.
+  if (!String(env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '').trim()) {
+    out.log('::warning::EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vazio: o login com Google pode falhar');
+    if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `- ⚠️ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vazio: o login com Google pode falhar` + String.fromCharCode(10));
+  }
   if (env.GITHUB_ENV) appendFileSync(env.GITHUB_ENV, `FIREBASE_ENABLED=true\n${t.envPath}=${file}\n`);
   out.log(`Firebase ligado para ${platform}: configuração gravada em ${DIR}/${t.file} (conteúdo não exibido).`);
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `- Firebase (conta) em ${platform}: **ligado** (configuração vinda dos secrets, conteúdo não exibido)
