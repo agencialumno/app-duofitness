@@ -136,8 +136,9 @@ if (needGoogle) {
     fail('[Google URL scheme] Esperado: o Info.plist com o URL scheme do Google; o Info.plist não foi encontrado.');
   } else {
     const xml = readFileSync(plistPath, 'utf8');
-    const block = /<key>CFBundleURLTypes<\/key>[\s\S]*?<\/array>\s*<\/array>|<key>CFBundleURLTypes<\/key>[\s\S]*?<\/array>/.exec(xml)?.[0] || '';
-    const schemes = [...block.matchAll(/<string>([^<]+)<\/string>/g)].map((m) => m[1]);
+    // O Expo grava um <dict> por tipo de URL (o do app e o do Google): lê TODOS os arrays CFBundleURLSchemes, não só o primeiro.
+    const schemes = [...xml.matchAll(/<key>CFBundleURLSchemes<\/key>\s*<array>([\s\S]*?)<\/array>/g)]
+      .flatMap((m) => [...m[1].matchAll(/<string>([^<]+)<\/string>/g)].map((x) => x[1]));
     const google = schemes.filter((v) => v.startsWith('com.googleusercontent.apps.'));
     // o plist do Firebase é copiado para ios/<Nome>/ pelo prebuild; se estiver lá, o esquema precisa ser IGUAL ao REVERSED_CLIENT_ID
     const firebasePlist = path.join(path.dirname(plistPath), 'GoogleService-Info.plist');
