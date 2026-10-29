@@ -107,6 +107,23 @@ Com a variável de repositório `HEALTH_INTEGRATION_ENABLED=true` (só para a co
 
 **Importante (até a correção estrutural ser validada em macOS):** o archive **sem assinatura** (`sign_archive=false`, o padrão) **não grava entitlements** no app. O `ios.yml` já barrou um build por isso com o Sign in with Apple. Enquanto a correção estrutural dos entitlements não for validada em macOS, **o build com HealthKit deve ser gerado com `sign_archive=true`** (ele cria um certificado de desenvolvimento por execução; revogue os acumulados à mão de vez em quando). Com `HEALTH_INTEGRATION_ENABLED=true` e `sign_archive=false` o log mostra um aviso (`::notice::`) lembrando disso, e se o entitlement faltar o passo falha com `Falta no .ipa o entitlement com.apple.developer.healthkit`.
 
+## HealthKit no build (Apple Saúde, só leitura)
+
+Com a variável de repositório **`HEALTH_INTEGRATION_ENABLED=true`** (uma só variável, um só significado), o `ios.yml`:
+1. instala os módulos nativos fixos (`scripts/install-healthkit-deps.mjs`: `@kingstinct/react-native-healthkit` 16.2.0, `@react-native-healthkit/core` 16.2.0, `react-native-nitro-modules` 0.35.10) no `package.json` do runner, antes do prebuild;
+2. confere o autolinking do iOS (`check-autolinking.mjs --platform ios` exige os três);
+3. o plugin `plugins/withHealthKitOptional.js` escreve no projeto gerado o entitlement `com.apple.developer.healthkit` e `NSHealthShareUsageDescription` (nada de escrita, background delivery nem registros clínicos), e `check-ios-project.mjs` confere isso;
+4. liga o JavaScript do app (`EXPO_PUBLIC_HEALTH_INTEGRATION`, derivada da mesma variável, no `env` do job: chega ao bundle gerado pelo `xcodebuild`);
+5. depois do export, `check-ipa-entitlements.mjs --require-healthkit` exige o entitlement no `.ipa`.
+
+Sem a variável, nada disso acontece e o app e o iOS gerado ficam idênticos aos de antes (um teste e o job `ios-prebuild` do `ci.yml` conferem). O Android não recebe a flag.
+
+**O build com HealthKit usa `sign_archive=true`.** O archive sem assinatura (padrão) não grava entitlements no app: já barrou um build por isso com o Sign in with Apple. Até a correção estrutural dos entitlements ser validada em macOS, rode o `ios.yml` com `sign_archive=true` quando `HEALTH_INTEGRATION_ENABLED=true`. Sem isso o passo "Conferir os entitlements do .ipa" falha com `Falta no .ipa o entitlement com.apple.developer.healthkit` (o log avisa com `::notice::`).
+
+**Capability no portal da Apple:** o App ID `com.duofitness.app` precisa ter a capability **HealthKit** ligada (Certificates, Identifiers & Profiles > Identifiers). Com assinatura automática pela chave da API o Xcode costuma ligá-la; se o export reclamar de perfil sem HealthKit, ligue à mão e rode de novo. **Não** marque "Clinical Health Records".
+
+O job `ios-prebuild-healthkit` do `ci.yml` reproduz os passos 1 a 3 em Linux, sem Mac.
+
 ## Problemas comuns
 
 | Mensagem | O que fazer |
