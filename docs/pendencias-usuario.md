@@ -103,3 +103,14 @@ O app agora **só entra com conta** (e-mail e senha, Google, Apple no iOS) e ace
 5. **Sincronização com a nuvem** fica para uma fase futura: hoje os dados de cada conta ficam **só neste aparelho** (snapshot por conta). Trocar de celular ou reinstalar o app começa do zero.
 6. **Build com contas:** como a conta é obrigatória, o build precisa de `EXPO_PUBLIC_AUTH_ENABLED=true` **e** de `FIREBASE_ENABLED=true` com os secrets do Firebase (veja as seções 1 a 3). Sem isso a tela de boas-vindas avisa que a conta está indisponível e ninguém consegue entrar.
 7. Quem usava o app **sem conta** antes: os dados do aparelho são adotados pela **primeira conta que entrar** (que ainda passa pela etapa de idade). Os dados de exemplo do antigo Modo Demo não são adotados.
+
+## 11. ID de cliente Web do Google (login com Google que "tenta de novo" e não conecta)
+
+Causa técnica: o app configurava o Google com `webClientId: 'autoDetect'`, mas esse valor **não existe** no pacote `@react-native-google-signin/google-signin` 16.1.5 (versão fixada). No iOS, `ios/RNGoogleSignin.mm` (linha 100) repassa `options[@"webClientId"]` direto como `serverClientID` da `GIDConfiguration`; no Android, `android/src/main/java/com/reactnativegooglesignin/Utils.java` (linhas 65 a 66) faz `requestIdToken(webClientId)` com o mesmo texto. Uma busca por `autoDetect` em todo o pacote não encontra nada: nenhuma parte o resolve a partir do `GoogleService-Info.plist` ou do `google-services.json`. Então o texto literal "autoDetect" vira o ID de cliente do servidor, o `idToken` não tem o `aud` que o Firebase aceita (ou o login falha antes), e o Firebase recusa. Por isso o app agora lê **`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`** e só cai no `'autoDetect'` quando a variável está vazia (comportamento antigo).
+
+O que fazer:
+
+1. Firebase Console > **Authentication > Método de login > Google > Configuração do SDK da Web**: copie o **ID do cliente da Web** (termina em `.apps.googleusercontent.com`). Ele é **público**, não é segredo. (Também aparece no `google-services.json`, em `oauth_client` com `client_type: 3`.)
+2. GitHub > Settings > Secrets and variables > Actions > aba **Variables**: crie `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` com esse valor (variável, não secret).
+3. Rode o `android.yml` e o `ios.yml` de novo. Se a variável estiver vazia com `FIREBASE_ENABLED=true`, o passo do Firebase mostra o aviso "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vazio: o login com Google pode falhar" (o build segue; o valor nunca é impresso).
+4. No aparelho, se ainda falhar, a tela mostra "Código: ... · etapa: ..." (sem dados pessoais): me envie essa linha.
