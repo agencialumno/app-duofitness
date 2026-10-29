@@ -80,3 +80,14 @@ Baixe o artifact `xcodebuild-logs-<run>` (sobe em qualquer falha, inclusive do p
 
 - Depois de revogar à mão os certificados de desenvolvimento "Created via API", **não crie mais**: o `ios.yml` agora faz o archive sem assinatura. Se ver de novo "maximum number of certificates", só pode ter rodado com `sign_archive=true`; revogue só os Development "Created via API" (nunca os Distribution nem o "Distribution Managed") e confira antes se outro pipeline os usa.
 - Na próxima execução do `ios.yml` (`upload=false`), confira no resumo: "archive sem assinatura (padrão)", a assinatura de distribuição validada e "entitlements do .ipa conferidos". Se o export recusar o archive sem assinatura, rode com `sign_archive=true` ou considere o certificado fixo (.p12) descrito em `docs/testflight.md`.
+
+## 9. Login com Google abre o seletor de contas e volta com erro (iPhone)
+
+O código agora cobre o que dava para cobrir (URL scheme explícito, checagens no CI e mensagens que dizem o motivo). O que sobra é **configuração sua** e só se confirma no aparelho:
+
+1. **Firebase Console > Authentication > Sign-in method:** confirme que **Google** está **Ativado** (com e-mail de suporte do projeto).
+2. **Baixe o `GoogleService-Info.plist` de novo** (Configurações do projeto > Seus apps > app iOS `com.duofitness.app`) **depois** de ativar o Google. Um plist baixado antes **não tem** `CLIENT_ID`, `REVERSED_CLIENT_ID` nem `SERVER_CLIENT_ID`, e sem eles o retorno do Google não volta ao app.
+3. Gere o base64 do plist novo e **atualize o secret** `FIREBASE_GOOGLE_SERVICE_INFO_PLIST_B64` (GitHub > Settings > Secrets). Faça o mesmo com o `google-services.json` se for testar no Android.
+4. Rode o `ios.yml`. O passo do `firebase-prepare` agora **falha com a mensagem "foi baixado ANTES de ativar o login com Google"** se o plist ainda estiver sem esses campos, e o passo "Conferir o projeto iOS gerado" falha com `[Google URL scheme]` se o `Info.plist` não ficar com o esquema do Google. Nenhum valor é impresso.
+5. No iPhone, ao falhar, a tela mostra o motivo (por exemplo "O Google não devolveu a identificação da conta") e o **código bruto** aparece no console do aparelho (`[Google Sign-In] ...`, nunca token nem e-mail): conecte o iPhone ao Mac e veja pelo Console.app, filtrando por "Google Sign-In", e me diga o código.
+6. Se o erro for do Firebase (`auth/invalid-credential` ou `auth/operation-not-allowed`), confira o passo 1 e, no Google Cloud Console, se o cliente OAuth **iOS** do app existe com o bundle id `com.duofitness.app`.
