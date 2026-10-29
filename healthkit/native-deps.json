@@ -1,0 +1,9 @@
+{
+  "_comentario": "Módulos nativos do HealthKit (iOS). NÃO estão no package.json do repositório: scripts/install-healthkit-deps.mjs os grava no package.json do WORKSPACE do CI só quando HEALTH_INTEGRATION_ENABLED=true (o autolinking só enxerga dependencies da raiz). Sem a flag, o build fica idêntico ao de antes. Versões EXATAS: @kingstinct/react-native-healthkit 16.2.0 e @react-native-healthkit/core 16.2.0 são lançados em conjunto (o podspec exige a mesma versão); react-native-nitro-modules 0.35.10 é a última 0.35.x (peer >= 0.35; a biblioteca é compilada com RN 0.81.5 e nitro ^0.35). O core precisa estar na RAIZ (dependência direta) para o autolinking enxergar o pod ReactNativeHealthkitCore.",
+  "expo": [],
+  "pinned": {
+    "@kingstinct/react-native-healthkit": "16.2.0",
+    "@react-native-healthkit/core": "16.2.0",
+    "react-native-nitro-modules": "0.35.10"
+  }
+}

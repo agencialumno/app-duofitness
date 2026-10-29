@@ -35,6 +35,10 @@ const FIREBASE_EXPO_MODULES = { android: ['expo-crypto'], ios: ['expo-apple-auth
 const FIREBASE_RN_MODULES = ['@react-native-firebase/app', '@react-native-firebase/auth', '@react-native-google-signin/google-signin'];
 // Config plugins (resolvidos a partir da raiz).
 const FIREBASE_ROOT_PACKAGES = [...FIREBASE_RN_MODULES, 'expo-apple-authentication', 'expo-crypto', 'expo-build-properties'];
+// HealthKit (iOS): módulos instalados por scripts/install-healthkit-deps.mjs só com HEALTH_INTEGRATION_ENABLED=true; nesse caso esta checagem
+// os exige no iOS (o Android não muda). O core precisa estar na raiz para o autolinking ver o pod dele.
+const HEALTHKIT_FLAG = String(process.env.HEALTH_INTEGRATION_ENABLED || '').trim().toLowerCase() === 'true';
+const HEALTHKIT_RN_MODULES = ['@kingstinct/react-native-healthkit', '@react-native-healthkit/core', 'react-native-nitro-modules'];
 const ORDER = 'npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking';
 
 const BASE_REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'];
@@ -51,6 +55,8 @@ if (!['android', 'ios'].includes(platform)) {
   console.log(`ERRO  --platform deve ser android ou ios (recebi "${platform}")`);
   process.exit(1);
 }
+const HEALTHKIT_ON = HEALTHKIT_FLAG && platform === 'ios';
+if (HEALTHKIT_ON) RESOLVABLE_FROM_ROOT.push(...HEALTHKIT_RN_MODULES);
 const REQUIRED = [...BASE_REQUIRED, ...(FIREBASE_ON ? FIREBASE_EXPO_MODULES[platform] : [])];
 const PLATFORM_LABEL = platform === 'ios' ? 'iOS' : 'Android';
 const onGithub = process.env.GITHUB_ACTIONS === 'true';
@@ -143,6 +149,34 @@ if (FIREBASE_ON) {
     process.exit(1);
   }
   console.log(`Módulos do React Native CLI presentes (${PLATFORM_LABEL}): ${FIREBASE_RN_MODULES.join(', ')}`);
+}
+
+// Com HealthKit (iOS): a biblioteca, o core e o nitro precisam estar ligados no autolinking do React Native CLI.
+if (HEALTHKIT_ON) {
+  let rnDeps;
+  try {
+    const file = arg('--rn-config-json');
+    let out;
+    if (file) out = readFileSync(path.resolve(file), 'utf8');
+    else {
+      const fromRootHk = createRequire(path.join(root, 'package.json'));
+      let binHk;
+      try { binHk = fromRootHk.resolve('expo-modules-autolinking/bin/expo-modules-autolinking.js'); } catch {
+        binHk = createRequire(path.join(root, 'node_modules', 'expo', 'package.json')).resolve('expo-modules-autolinking/bin/expo-modules-autolinking.js');
+      }
+      out = execFileSync(process.execPath, [binHk, 'react-native-config', '--platform', platform, '--json'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+    }
+    rnDeps = JSON.parse(out.slice(out.indexOf('{'))).dependencies ?? {};
+  } catch (e) {
+    error(`não consegui obter o autolinking do React Native CLI (${platform}): ${String(e.message).split('\n')[0]}`);
+    process.exit(1);
+  }
+  const hkMissing = HEALTHKIT_RN_MODULES.filter((name) => !rnDeps[name]?.platforms?.[platform]);
+  if (hkMissing.length > 0) {
+    for (const name of hkMissing) error(`${name} não está no autolinking do React Native CLI (${platform}). Rode node scripts/install-healthkit-deps.mjs ANTES do prebuild e desta checagem (o autolinking só enxerga o package.json da raiz).`);
+    process.exit(1);
+  }
+  console.log(`Módulos do HealthKit presentes (${PLATFORM_LABEL}): ${HEALTHKIT_RN_MODULES.join(', ')}`);
 }
 
 // Pacotes resolvíveis a partir da raiz (não aninhados).

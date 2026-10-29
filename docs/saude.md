@@ -262,3 +262,16 @@ O app só entra com conta e cada conta tem os próprios dados. **Nada disto vai 
 - Contas diferentes no mesmo celular não veem dados uma da outra (`@duo_owner` guarda de quem são as chaves ativas).
 - Um snapshot corrompido é **ignorado** (nunca apagado). **Excluir a conta** apaga o snapshot do uid e as chaves ativas.
 - A **idade** (`@duo_age`) nunca é enviada a servidor, ao marketplace nem a log. Menores de 18: só hábitos, sem peso nem meta de peso, e a conexão com Apple Saúde/Health Connect fica indisponível (`selectHealthProvider` devolve o manual para `under18`).
+
+
+## Apple Saúde (HealthKit): biblioteca escolhida (branch `saude-healthkit`)
+
+**Escolhida: `@kingstinct/react-native-healthkit` 16.2.0** (com `@react-native-healthkit/core` 16.2.0 e `react-native-nitro-modules` 0.35.10, todas com versão EXATA em `healthkit/native-deps.json`).
+
+Por que, depois de ler o código dos pacotes (não só o README):
+- **Compatível com a nossa pilha:** o `package.json` dela lista como devDependencies `react-native 0.81.5`, `react 19.1.0` e `react-native-nitro-modules ^0.35.0`, exatamente o Expo SDK 54. Usa Nitro Modules (JSI), que não depende da ponte antiga nem exige a nova arquitetura desligada; o podspec define `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES` e já traz o remédio do Swift 6.2/Xcode 26 (o `macos-26` do `ios.yml`).
+- **Mantida:** última publicação em out/2026; API em TypeScript (estatísticas por dia, sono por categoria, treinos). O `react-native-health` (1.19.0) não recebe publicação desde out/2024, é da ponte antiga e não é a escolha para RN 0.81.
+- **Plugin do Expo próprio nosso:** o plugin da biblioteca liga por padrão o *background delivery* e pede `NSHealthUpdateUsageDescription`; aqui isso é proibido (só leitura). Por isso o app usa o **seu próprio plugin** (`plugins/withHealthKitOptional.js`), que escreve só o entitlement do HealthKit e `NSHealthShareUsageDescription`.
+- **Exige módulos extras:** o `react-native-nitro-modules` e o `@react-native-healthkit/core` (o podspec da biblioteca exige o core na MESMA versão). O core precisa estar como dependência direta na raiz, senão o autolinking não enxerga o pod dele.
+- **Não está no `package.json` do repositório:** como o Firebase, `scripts/install-healthkit-deps.mjs` grava os três no `package.json` do workspace do CI só com `HEALTH_INTEGRATION_ENABLED=true`. Sem a flag o app e o iOS gerado ficam idênticos aos de antes. Em Android nada muda.
+- **Risco que só o Mac resolve:** o app usa frameworks estáticos por causa do Firebase (`useFrameworks static`). Nitro + frameworks estáticos + React Native pré-compilado não foi compilado aqui. Se o `ios.yml` falhar com "non-modular header" ou erro de Swift/Nitro, o `ios-log-hints` classifica o erro; o primeiro remédio a testar é acrescentar `ReactNativeHealthkit`, `ReactNativeHealthkitCore` e `NitroModules` ao `forceStaticLinking` do plugin do Firebase.
