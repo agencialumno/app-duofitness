@@ -126,6 +126,42 @@ jobs:
         if: always()
         run: node scripts/firebase-prepare.mjs cleanup
 
+  # Gera o projeto Android COM Firebase em Linux, como o android.yml: só o google-services.json (FALSO), SEM o plist do iOS.
+  # Reproduz a regressão em que o plugin do google-signin era chamado com `{}` ("Missing iosUrlScheme") e quebrava o prebuild.
+  android-prebuild-firebase:
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Configuração FALSA do Firebase (só o google-services.json, sem o plist)
+        run: |
+          set -euo pipefail
+          mkdir -p .firebase-config
+          cat > .firebase-config/google-services.json <<'JSON'
+          {"project_info":{"project_number":"000000000000","project_id":"ci-project"},
+           "client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.duofitness.app"}},
+                      "api_key":[{"current_key":"CI-NOT-A-REAL-KEY"}]}],
+           "configuration_version":"1"}
+          JSON
+          echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
+          echo "FIREBASE_ANDROID_CONFIG=$PWD/.firebase-config/google-services.json" >> "$GITHUB_ENV"
+      - name: Instalar os módulos de conta (grava no package.json do runner)
+        run: node scripts/install-firebase-deps.mjs
+      - name: Conferir autolinking do Android com os módulos de conta
+        run: node scripts/check-autolinking.mjs --platform android
+      - name: Gerar projeto Android com Firebase (expo prebuild)
+        run: npx expo prebuild --platform android --no-install
+      - name: Apagar a configuração falsa
+        if: always()
+        run: node scripts/firebase-prepare.mjs cleanup
+
   backend:
     runs-on: ubuntu-latest
     defaults:

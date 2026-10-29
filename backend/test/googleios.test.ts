@@ -102,10 +102,9 @@ describe('plugin: URL scheme do Google vem do plist', () => {
     expect(plugin.readReversedClientId(f)).toBe('');
     expect(plugin.readReversedClientId(path.join(dir, 'nao.plist'))).toBe('');
   });
-  it('o plugin do Google recebe o iosUrlScheme de forma explícita e nunca imprime o valor', () => {
+  it('o plugin do Google recebe o iosUrlScheme só pelo googlePlugins e nunca imprime o valor', () => {
     const src = readFileSync(path.join(REPO, 'plugins/withFirebaseOptional.js'), 'utf8');
-    expect(src).toMatch(/googleOptions\.iosUrlScheme = scheme/);
-    expect(src).toMatch(/plugins\.push\(\[plug\('@react-native-google-signin\/google-signin\/app\.plugin\.js'\), googleOptions\]\)/);
+    expect(src).toMatch(/\{ iosUrlScheme: scheme \}/);
     expect(src).not.toMatch(/console\.(log|warn|error)\([^)]*scheme[^)]*\)/);
   });
 });
@@ -251,7 +250,7 @@ describe('plugin: addUrlScheme (withInfoPlist próprio, idempotente)', () => {
   it('só entra com a flag e o plist: o código do plugin protege os dois caminhos e o iOS sem a flag segue intacto', () => {
     const src = readFileSync(path.join(REPO, 'plugins/withFirebaseOptional.js'), 'utf8');
     expect(src).toMatch(/if \(!enabled\) return config;/);
-    expect(src).toMatch(/if \(iosFile && googleOptions\.iosUrlScheme\) plugins\.push\(\(cfg\) => withGoogleReversedClientId\(cfg, googleOptions\.iosUrlScheme\)\)/);
+    expect(src).toMatch(/\(cfg\) => withGoogleReversedClientId\(cfg, scheme\)/);
     expect(src).not.toMatch(/console\.(log|warn|error)\([^)]*(scheme|REVERSED)[^)]*\$\{/);
     const cfg = { name: 'x' };
     const before = process.env;
@@ -273,5 +272,56 @@ describe('ci.yml: o job do iOS com Firebase reproduz o erro do Mac', () => {
     const check = job.indexOf('node scripts/check-ios-project.mjs');
     expect(prebuild).toBeGreaterThan(-1);
     expect(check).toBeGreaterThan(prebuild);
+  });
+});
+
+describe('REGRESSÃO Android: o plugin do google-signin nunca é chamado com {} ou opções incompletas', () => {
+  let dir: string;
+  beforeEach(() => { dir = mkdtempSync(path.join(tmpdir(), 'g-and-')); });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  const { googlePlugins } = req('../../plugins/withFirebaseOptional.js') as { googlePlugins: (f: string | null, load?: (n: string) => unknown) => any[] };
+  const loads: string[] = [];
+  const fakeLoad = (n: string) => { loads.push(n); return function fakePlugin() { /* ... */ }; };
+  const plist = (body: string) => { const f = path.join(dir, 'GoogleService-Info.plist'); writeFileSync(f, `<plist><dict>${body}</dict></plist>`); return f; };
+
+  it('sem plist (Android, só google-services.json): nada é aplicado e o plugin de terceiros nem é carregado', () => {
+    loads.length = 0;
+    expect(googlePlugins(null, fakeLoad)).toEqual([]);
+    expect(loads).toEqual([]);
+  });
+  it('plist SEM REVERSED_CLIENT_ID: não aplica o plugin de terceiros (nunca com {}) e não lança', () => {
+    loads.length = 0;
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      expect(() => googlePlugins(plist('<key>BUNDLE_ID</key><string>x</string>'), fakeLoad)).not.toThrow();
+      expect(googlePlugins(plist('<key>BUNDLE_ID</key><string>x</string>'), fakeLoad)).toEqual([]);
+      expect(googlePlugins(plist('<key>REVERSED_CLIENT_ID</key><string></string>'), fakeLoad)).toEqual([]);
+      expect(spy.mock.calls.join(' ')).not.toMatch(/com\.googleusercontent/); // não imprime valor
+    } finally { spy.mockRestore(); }
+    expect(loads).toEqual([]);
+  });
+  it('com plist e REVERSED_CLIENT_ID: aplica o plugin com iosUrlScheme preenchido + o withInfoPlist próprio', () => {
+    loads.length = 0;
+    const list = googlePlugins(plist('<key>REVERSED_CLIENT_ID</key><string>com.googleusercontent.apps.123-abc</string>'), fakeLoad);
+    expect(loads).toEqual(['@react-native-google-signin/google-signin/app.plugin.js']);
+    expect(list).toHaveLength(2);
+    expect(list[0][1]).toEqual({ iosUrlScheme: 'com.googleusercontent.apps.123-abc' });
+    expect(Object.keys(list[0][1])).toEqual(['iosUrlScheme']); // opções completas, nunca {}
+    expect(typeof list[1]).toBe('function');
+  });
+  it('o plugin não chama o google-signin em nenhum outro lugar (nada de opções montadas à parte)', () => {
+    const src = readFileSync(path.join(REPO, 'plugins/withFirebaseOptional.js'), 'utf8');
+    expect((src.match(/google-signin\/app\.plugin\.js/g) || []).length).toBe(1); // só dentro de googlePlugins
+    expect(src).not.toMatch(/googleOptions/);
+    expect(src).toMatch(/plugins\.push\(\.\.\.googlePlugins\(iosFile\)\)/);
+    expect(src).toMatch(/plug\('@react-native-firebase\/app\/app\.plugin\.js'\)/); // o Android segue pelo RNFB (google-services)
+  });
+  it('ci.yml: há um job de prebuild do Android com Firebase, só com google-services.json e SEM o plist', () => {
+    const ci = readFileSync(path.join(REPO, '.github/workflows/ci.yml'), 'utf8');
+    const job = ci.slice(ci.indexOf('  android-prebuild-firebase:'), ci.indexOf('\n  backend:'));
+    expect(job).toContain('FIREBASE_ENABLED=true');
+    expect(job).toContain('google-services.json');
+    expect(job).not.toMatch(/GoogleService-Info\.plist|FIREBASE_IOS_CONFIG/);
+    expect(job).toContain('npx expo prebuild --platform android --no-install');
   });
 });
