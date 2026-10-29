@@ -13,6 +13,7 @@ import {
   saveConnection, saveHealthV2, setWaterGoalV2,
 } from '../utils/healthStore';
 import { isIntegrationEnabled, selectProvider } from '../utils/healthProviders';
+import loadHealthKitLib from '../utils/healthKitLib';
 import { buildCategoryViews } from '../utils/healthView';
 
 // Saúde v2: amostras por categoria (@duo_health_v2), Duo Score V2, cartões, coach e conexão. Tudo local: nenhuma chamada de rede
@@ -90,7 +91,7 @@ export default function useHealth() {
     () => (state ? buildCoachSuggestions({ samples: health.samples, sessions: completedSessions, goals, ageGroup, waterGoal: health.waterGoal }) : null),
     [state, health, completedSessions, goals, ageGroup],
   );
-  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, minor }), [minor]);
+  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, minor, loadLib: loadHealthKitLib }), [minor]);
 
   return {
     loading: state === null,
