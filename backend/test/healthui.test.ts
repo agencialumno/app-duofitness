@@ -141,7 +141,7 @@ describe('conectar dispositivos: desligado, com consentimento e opção de apaga
     expect((src.match(/requestPermissions/g) || []).length).toBe(1);
   });
   it('o que será lido e para quê, as permissões, que os dados ficam no aparelho e a opção de apagar', () => {
-    expect(C.CONNECT_COPY.reads.map((r: { category: string }) => r.category)).toEqual(['activity', 'sleep', 'heart', 'body']);
+    expect(C.CONNECT_COPY.reads.map((r: { category: string }) => r.category)).toEqual(['activity', 'sleep', 'heart', 'body', 'hydration']);
     for (const r of C.CONNECT_COPY.reads as { items: string[]; why: string }[]) { expect(r.items.length).toBeGreaterThan(0); expect(r.why.length).toBeGreaterThan(20); }
     expect(C.CONNECT_COPY.permissions.join(' ')).toMatch(/Só leitura/);
     expect(C.CONNECT_COPY.privacy[0]).toBe('Seus dados de saúde ficam só neste aparelho.');

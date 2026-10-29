@@ -6,15 +6,16 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import { ConfirmModal, Notice } from '../components/auth/AuthParts';
 import { CONNECT_COPY } from '../data/healthConnectContent';
-import { addSamples, disconnectAndErase, grantConsent } from '../utils/healthStore';
+import { disconnectAndErase, grantConsent } from '../utils/healthStore';
+import { summarizeReport, updatedAtLabel } from '../utils/healthSync';
 
-// Conectar dispositivos (iOS: Apple Saúde; Android: Health Connect). DESLIGADO enquanto EXPO_PUBLIC_HEALTH_INTEGRATION não for
-// "true": mostra o que será lido e para quê, as permissões, que os dados ficam no aparelho, o consentimento explícito por categoria
-// (nada vem marcado) e "Em breve". O botão "Conectar" fica desabilitado. Menores de 18 não veem a conexão.
-// Nada aqui pede permissão ao sistema antes do consentimento e da integração ligada.
+// Conectar dispositivos. iOS com a integração ligada (EXPO_PUBLIC_HEALTH_INTEGRATION=true e o módulo do HealthKit no build): fluxo REAL e SÓ
+// LEITURA do Apple Saúde (inclui o Apple Watch pareado): explica o que será lido, consentimento por categoria (nada vem marcado), "Conectar ao
+// Apple Saúde" e "Desconectar" (para de ler e apaga o que veio do HealthKit; o registro manual fica). Android, web e a integração desligada
+// seguem como "Em breve"/indisponível, e menores de 18 não veem a conexão. Nada pede permissão ao sistema antes do consentimento.
 export default function HealthConnectScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { minor, integrationEnabled, provider, connection, changeConnection, update, health } = useHealth();
+  const { minor, integrationEnabled, provider, connection, changeConnection, update, health, sync, lastSyncAt } = useHealth();
   const [picked, setPicked] = useState({});
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -25,23 +26,28 @@ export default function HealthConnectScreen({ navigation }) {
   const enabled = integrationEnabled && !!target && !minor;
   const picks = Object.keys(picked).filter((k) => picked[k]);
   const canConnect = enabled && picks.length > 0 && !busy;
+  const connectLabel = enabled && os === 'ios' ? CONNECT_COPY.connectButtonApple : CONNECT_COPY.connectButton;
 
   const connect = async () => {
     if (!canConnect) return;
     setBusy(true);
     setMsg(null);
     try {
-      const res = await provider.requestPermissions(picks); // só depois do consentimento marcado
+      const res = await provider.requestPermissions(picks); // só depois do consentimento marcado; só leitura
       if (res.unavailable || res.granted.length === 0) {
-        setMsg({ kind: 'error', text: 'Não foi possível conectar agora. Nada foi lido.' });
+        setMsg({ kind: 'error', text: CONNECT_COPY.connectError });
         return;
       }
       await changeConnection(grantConsent(connection, { provider: target.id, categories: res.granted }));
-      const samples = await provider.readSamples({ categories: res.granted });
-      if (samples) await update((h) => addSamples(h, samples));
-      setMsg({ kind: 'success', text: 'Conectado. Os dados lidos ficam só neste aparelho.' });
+      const r = await sync({ force: true }); // lê os últimos 30 dias; sem bloquear as outras telas
+      if (!r || r.skipped) { setMsg({ kind: 'info', text: CONNECT_COPY.connectedNoRead }); return; }
+      const sum = summarizeReport(r.report);
+      // vazio NÃO é erro nem "negado" (o iOS não diz): "sem dados ainda" e onde conferir
+      if (sum.allEmpty) setMsg({ kind: 'info', text: `${CONNECT_COPY.connectedEmpty} ${CONNECT_COPY.noDataHelp}` });
+      else if (sum.failed > 0) setMsg({ kind: 'info', text: `${CONNECT_COPY.connectedOk} ${CONNECT_COPY.connectedFailed}` });
+      else setMsg({ kind: 'success', text: CONNECT_COPY.connectedOk });
     } catch (e) {
-      setMsg({ kind: 'error', text: 'Não foi possível conectar agora. Nada foi lido.' });
+      setMsg({ kind: 'error', text: CONNECT_COPY.connectError });
     } finally {
       setBusy(false);
     }
@@ -151,12 +157,21 @@ export default function HealthConnectScreen({ navigation }) {
                 aria-disabled={!canConnect}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !canConnect, busy }}
-                accessibilityLabel={`${CONNECT_COPY.connectButton}${integrationEnabled ? '' : ' (indisponível: em breve)'}`}
+                accessibilityLabel={`${connectLabel}${integrationEnabled && target ? '' : ' (indisponível: em breve)'}`}
               >
-                <Text style={styles.okBtnText}>{CONNECT_COPY.connectButton}</Text>
+                <Text style={styles.okBtnText}>{connectLabel}</Text>
               </TouchableOpacity>
               {msg ? <Notice kind={msg.kind} text={msg.text} testID="connect-msg" /> : null}
             </View>
+
+            {connection.provider ? (
+              <View style={styles.card} testID="connect-status">
+                <Text style={styles.cardTitle}>{CONNECT_COPY.connectedTitle}</Text>
+                {lastSyncAt ? <Text style={styles.muted} testID="connect-updated">{updatedAtLabel(lastSyncAt)}</Text> : null}
+                <Text style={styles.muted}>{CONNECT_COPY.watchText}</Text>
+                <Text style={styles.muted} testID="connect-nodata-help">{CONNECT_COPY.noDataHelp}</Text>
+              </View>
+            ) : null}
 
             {connection.provider ? (
               <View style={styles.card} testID="connect-disconnect">

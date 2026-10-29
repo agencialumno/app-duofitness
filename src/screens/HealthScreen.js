@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, LayoutAnimation, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, LayoutAnimation, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, HEALTH_UI, SPACING } from '../utils/theme';
@@ -9,6 +10,7 @@ import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, W
 import InfoButton from '../components/InfoButton';
 import { SCORE_DISCLAIMER } from '../utils/health';
 import { splitViews } from '../utils/healthView';
+import { updatedAtLabel } from '../utils/healthSync';
 import { HEALTH_PRIVACY_LINES } from '../data/healthInfoContent';
 
 const { space, type } = HEALTH_UI;
@@ -18,7 +20,7 @@ const { space, type } = HEALTH_UI;
 // (g) avisos pequenos. Detalhes, explicação ("i") e histórico ficam na tela de detalhe. Tudo no aparelho; não é aconselhamento médico.
 export default function HealthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { loading, result, score, notes, views, coach, minor, addGlass } = useHealth();
+  const { loading, result, score, notes, views, coach, minor, addGlass, sync, syncing, canSync, lastSyncAt } = useHealth();
   const scrollRef = useRef(null);
   const ys = useRef({ cats: 0, nodata: 0 });
   const [noDataOpen, setNoDataOpen] = useState(false);
@@ -34,6 +36,9 @@ export default function HealthScreen({ navigation }) {
   // "Reduzir movimento": sem animação de layout nem rolagem animada.
   const animate = () => { if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); };
   const scrollToY = (y) => scrollRef.current?.scrollTo({ y: Math.max(y - space.inner, 0), animated: !reduceMotion });
+
+  // Apple Saúde: sincroniza ao abrir a Saúde (sem bloquear a tela; no mínimo 30 s entre chamadas) e no puxar para atualizar.
+  useFocusEffect(useCallback(() => { if (!loading) sync(); }, [loading, sync]));
 
   const { withData, noData } = splitViews(views);
   const openCategory = (category) => navigation.navigate('SaudeDetalhe', { category });
@@ -60,6 +65,7 @@ export default function HealthScreen({ navigation }) {
         <View style={styles.headerText}>
           <Text style={styles.title} accessibilityRole="header">Saúde</Text>
           <Text style={styles.subtitle}>Seus hábitos da semana</Text>
+          {canSync && lastSyncAt ? <Text style={styles.updated} testID="health-updated" accessibilityLiveRegion="polite">{updatedAtLabel(lastSyncAt)}</Text> : null}
         </View>
         <InfoButton tema="saude" />
       </View>
@@ -67,6 +73,7 @@ export default function HealthScreen({ navigation }) {
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        refreshControl={canSync ? <RefreshControl refreshing={syncing} onRefresh={() => sync({ force: true })} tintColor={COLORS.primary} colors={[COLORS.primary]} /> : undefined}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
       >
         {/* (a) Duo Score */}
@@ -155,6 +162,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   subtitle: { ...type.support, color: COLORS.textSecondary },
+  updated: { ...type.caption, color: COLORS.textSecondary },
   content: { paddingHorizontal: space.screen, paddingTop: space.inner },
   firstSection: { marginTop: space.inner },
   section: { marginTop: space.section },

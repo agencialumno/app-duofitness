@@ -94,9 +94,10 @@ export function removeBySource(health, source) {
 //    registro MANUAL no mesmo dia com valor próximo (dentro da tolerância da métrica), a amostra do HealthKit é descartada (é o mesmo
 //    registro); valor diferente no mesmo dia entra, e a agregação do dia usa a origem de maior prioridade (aparelho > manual).
 //    Para somas (passos, minutos, energia, água) o aparelho tem prioridade sobre o manual do mesmo dia: não soma duas vezes.
-export function mergeImported(health, incoming, { from } = {}) {
+export function mergeImported(health, incoming, { from, metrics } = {}) {
   const h = normalizeHealthV2(health);
-  const keep = h.samples.filter((s) => !(APPLE_SOURCES.includes(s.source) && (!from || s.date >= from)));
+  // `metrics` (opcional) limita a troca às métricas lidas agora: uma categoria que falhou não perde o que já tinha
+  const keep = h.samples.filter((s) => !(APPLE_SOURCES.includes(s.source) && (!from || s.date >= from) && (!metrics || metrics.includes(s.metric))));
   const manual = keep.filter((s) => s.source === 'manual');
   const fresh = (Array.isArray(incoming) ? incoming : []).filter((s) => {
     const m = METRICS[s && s.metric];
