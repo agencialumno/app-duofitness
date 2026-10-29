@@ -163,3 +163,115 @@ describe('check-ios-project: URL scheme do Google no Info.plist', () => {
     expect(run({ FIREBASE_ENABLED: 'true' }).code).toBe(1);
   });
 });
+
+describe('REGRESSÃO: Info.plist como o Expo grava (um <dict> por tipo de URL)', () => {
+  let dir: string;
+  beforeEach(() => { dir = mkdtempSync(path.join(tmpdir(), 'g-real-')); });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  const SCHEME = 'com.googleusercontent.apps.000000000000-ci';
+  // formato real: o esquema do app num <dict> e o do Google em OUTRO <dict> (o regex antigo só enxergava o primeiro)
+  const REAL = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.duofitness.app</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>${SCHEME}</string>
+        </array>
+      </dict>
+    </array>
+    <key>UIRequiresFullScreen</key>
+    <false/>
+  </dict>
+</plist>
+`;
+  function project(infoXml: string, firebase = true) {
+    const ios = path.join(dir, 'ios');
+    mkdirSync(path.join(ios, 'DuoFitness.xcodeproj'), { recursive: true });
+    mkdirSync(path.join(ios, 'DuoFitness'), { recursive: true });
+    writeFileSync(path.join(ios, 'DuoFitness.xcodeproj', 'project.pbxproj'), 'PRODUCT_BUNDLE_IDENTIFIER = "com.duofitness.app";\n');
+    writeFileSync(path.join(ios, 'DuoFitness', 'Info.plist'), infoXml);
+    writeFileSync(path.join(ios, 'Podfile'), 'use_expo_modules!\n');
+    if (firebase) writeFileSync(path.join(ios, 'DuoFitness', 'GoogleService-Info.plist'), `<plist><dict><key>REVERSED_CLIENT_ID</key><string>${SCHEME}</string></dict></plist>`);
+  }
+  const run = () => {
+    const r = spawnSync(process.execPath, [path.join(REPO, 'scripts/check-ios-project.mjs'), '--root', dir], { encoding: 'utf8', env: { ...process.env, GITHUB_ACTIONS: 'true', FIREBASE_ENABLED: 'true' } });
+    return { code: r.status, out: `${r.stdout}${r.stderr}` };
+  };
+  it('o esquema do Google no SEGUNDO <dict> é encontrado (antes dava falso negativo) e o valor não é impresso', () => {
+    project(REAL);
+    const r = run();
+    expect(r.code, r.out).toBe(0);
+    expect(r.out).toContain('URL scheme do Google presente');
+    expect(r.out).not.toContain(SCHEME);
+  });
+  it('sem o <dict> do Google o check FALHA, também com o esquema do app presente', () => {
+    project(REAL.replace(/<dict>\s*<key>CFBundleURLSchemes<\/key>\s*<array>\s*<string>com\.googleusercontent[^<]*<\/string>\s*<\/array>\s*<\/dict>/, ''));
+    const r = run();
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('[Google URL scheme]');
+    expect(r.out).not.toContain(SCHEME);
+  });
+});
+
+describe('plugin: addUrlScheme (withInfoPlist próprio, idempotente)', () => {
+  const { addUrlScheme } = req('../../plugins/withFirebaseOptional.js') as { addUrlScheme: (p: any, s: string) => any };
+  const G = 'com.googleusercontent.apps.123-abc';
+  it('sem esquema prévio: cria o CFBundleURLTypes com o esquema', () => {
+    expect(addUrlScheme({}, G).CFBundleURLTypes).toEqual([{ CFBundleURLSchemes: [G] }]);
+  });
+  it('com esquemas prévios (o do app/Expo): preserva todos e acrescenta o do Google', () => {
+    const before = { CFBundleURLTypes: [{ CFBundleURLSchemes: ['com.duofitness.app'] }, { CFBundleURLSchemes: ['duofitness'] }] };
+    const after = addUrlScheme(JSON.parse(JSON.stringify(before)), G);
+    const all = after.CFBundleURLTypes.flatMap((t: { CFBundleURLSchemes: string[] }) => t.CFBundleURLSchemes);
+    expect(all).toEqual(expect.arrayContaining(['com.duofitness.app', 'duofitness', G]));
+    expect(all).toHaveLength(3);
+  });
+  it('idempotente: chamar de novo (ou já existir) não duplica', () => {
+    const once = addUrlScheme({ CFBundleURLTypes: [{ CFBundleURLSchemes: ['com.duofitness.app'] }] }, G);
+    const twice = addUrlScheme(once, G);
+    const all = twice.CFBundleURLTypes.flatMap((t: { CFBundleURLSchemes: string[] }) => t.CFBundleURLSchemes);
+    expect(all.filter((s: string) => s === G)).toHaveLength(1);
+    expect(addUrlScheme({ CFBundleURLTypes: [{ CFBundleURLSchemes: [G] }] }, G).CFBundleURLTypes).toHaveLength(1);
+  });
+  it('sem esquema (plist sem REVERSED_CLIENT_ID) não muda nada', () => {
+    const p = { CFBundleURLTypes: [{ CFBundleURLSchemes: ['x'] }] };
+    expect(addUrlScheme(p, '')).toBe(p);
+  });
+  it('só entra com a flag e o plist: o código do plugin protege os dois caminhos e o iOS sem a flag segue intacto', () => {
+    const src = readFileSync(path.join(REPO, 'plugins/withFirebaseOptional.js'), 'utf8');
+    expect(src).toMatch(/if \(!enabled\) return config;/);
+    expect(src).toMatch(/if \(iosFile && googleOptions\.iosUrlScheme\) plugins\.push\(\(cfg\) => withGoogleReversedClientId\(cfg, googleOptions\.iosUrlScheme\)\)/);
+    expect(src).not.toMatch(/console\.(log|warn|error)\([^)]*(scheme|REVERSED)[^)]*\$\{/);
+    const cfg = { name: 'x' };
+    const before = process.env;
+    process.env = { ...before, FIREBASE_ENABLED: '' };
+    try { expect((req('../../plugins/withFirebaseOptional.js') as (c: unknown) => unknown)(cfg)).toBe(cfg); } finally { process.env = before; }
+  });
+});
+
+describe('ci.yml: o job do iOS com Firebase reproduz o erro do Mac', () => {
+  const ci = readFileSync(path.join(REPO, '.github/workflows/ci.yml'), 'utf8');
+  const job = ci.slice(ci.indexOf('  ios-prebuild-firebase:'), ci.indexOf('\n  backend:'));
+  it('o plist falso tem CLIENT_ID e REVERSED_CLIENT_ID no formato com.googleusercontent.apps.<numero>-<id>', () => {
+    expect(job).toMatch(/<key>CLIENT_ID<\/key><string>\d+-[a-z0-9]+\.apps\.googleusercontent\.com<\/string>/);
+    expect(job).toMatch(/<key>REVERSED_CLIENT_ID<\/key><string>com\.googleusercontent\.apps\.\d+-[a-z0-9]+<\/string>/);
+  });
+  it('roda o check-ios-project com FIREBASE_ENABLED=true, depois do prebuild', () => {
+    expect(job).toContain('FIREBASE_ENABLED=true');
+    const prebuild = job.indexOf('npx expo prebuild --platform ios --no-install');
+    const check = job.indexOf('node scripts/check-ios-project.mjs');
+    expect(prebuild).toBeGreaterThan(-1);
+    expect(check).toBeGreaterThan(prebuild);
+  });
+});

@@ -112,6 +112,10 @@ jobs:
         run: npx expo prebuild --platform ios --no-install
       - name: Conferir o Podfile do Firebase (forceStaticLinking e plugin)
         run: node scripts/check-firebase-podfile.mjs
+      # Com FIREBASE_ENABLED=true (definido acima) esta checagem também exige o URL scheme do Google (REVERSED_CLIENT_ID) no
+      # Info.plist gerado, o mesmo que o ios.yml confere no Mac. Antes este job não rodava o check-ios-project e não reproduzia o erro.
+      - name: Conferir o projeto iOS gerado (inclui o URL scheme do Google)
+        run: node scripts/check-ios-project.mjs --bundle-id com.duofitness.app
       - name: Sintaxe Ruby do Podfile
         run: ruby -c ios/Podfile
       - name: Idempotência (prebuild de novo, sem --clean, não duplica o Podfile)
