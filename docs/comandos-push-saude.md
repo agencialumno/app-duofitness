@@ -120,3 +120,14 @@ Depois: workflow **android** nessa branch e, passando, **ios** com `upload=false
 6. **Reabrir o app** com a sessão ativa entra direto na Home.
 7. **Perfil:** sem "Resetar todos os dados". No fim, "Sair da conta" e, abaixo, o link pequeno "Excluir minha conta" (VoiceOver, texto grande e área de toque de 44 pt). Excluir pede senha (e-mail) ou reautentica (Google/Apple; a Apple revoga o token) e depois volta às boas-vindas.
 8. **Quem já usava o app sem conta:** ao entrar pela primeira vez, os treinos de antes aparecem (depois da etapa de idade).
+
+
+---
+
+# saude-healthkit (Apple Saúde / HealthKit, só leitura; empilhada na conta-obrigatoria)
+
+```
+git push -u origin saude-healthkit
+```
+
+Depois: crie a variável `HEALTH_INTEGRATION_ENABLED=true` e ligue a capability HealthKit do App ID (seção 12 de `docs/pendencias-usuario.md`); rode o **ios.yml com `sign_archive=true`**. O **android.yml não muda** e não recebe a flag. O job `ios-prebuild-healthkit` do `ci.yml` roda sozinho no push. Roteiro de teste com iPhone + Apple Watch: `docs/saude.md`.

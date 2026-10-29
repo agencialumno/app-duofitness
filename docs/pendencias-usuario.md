@@ -114,3 +114,11 @@ O que fazer:
 2. GitHub > Settings > Secrets and variables > Actions > aba **Variables**: crie `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` com esse valor (variável, não secret).
 3. Rode o `android.yml` e o `ios.yml` de novo. Se a variável estiver vazia com `FIREBASE_ENABLED=true`, o passo do Firebase mostra o aviso "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vazio: o login com Google pode falhar" (o build segue; o valor nunca é impresso).
 4. No aparelho, se ainda falhar, a tela mostra "Código: ... · etapa: ..." (sem dados pessoais): me envie essa linha.
+
+## 12. HealthKit (Apple Saúde): o que fazer antes de testar com o Apple Watch
+
+1. **Variável do repositório:** GitHub > Settings > Secrets and variables > Actions > **Variables** > `HEALTH_INTEGRATION_ENABLED` = `true`. Uma só variável liga tudo (plugin, módulos, JavaScript e a checagem do `.ipa`). Sem ela o app fica como sempre.
+2. **Capability no portal da Apple:** developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > `com.duofitness.app` > marque **HealthKit** (e **não** marque "Clinical Health Records"). Salve. Se o export reclamar de perfil, regenere pelo próprio workflow.
+3. **Rode o `ios.yml` com `sign_archive=true`** (o archive sem assinatura não grava entitlements; ver `docs/testflight.md`). Se o passo "Conferir os entitlements do .ipa" falhar com `Falta no .ipa o entitlement com.apple.developer.healthkit`, é isso.
+4. **Política de privacidade e etiqueta da App Store:** declare que o app **lê** dados de saúde (atividade, sono, frequência cardíaca, peso, água) do Apple Saúde **no aparelho**, só leitura, sem enviar a servidores e sem uso para publicidade. A App Store exige a justificativa do HealthKit na revisão: mencione "mostrar a evolução do usuário na tela Saúde".
+5. **Risco de compilação:** o primeiro build com a biblioteca (Nitro) e frameworks estáticos pode falhar no Mac. Baixe o artifact `xcodebuild-logs-<run>` e me envie o erro; o primeiro remédio é descrito em `docs/saude.md` (forceStaticLinking dos três pods).

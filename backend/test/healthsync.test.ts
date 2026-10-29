@@ -159,3 +159,29 @@ describe('privacidade da conta: dados do HealthKit ficam só no aparelho e somem
     }
   });
 });
+
+describe('Duo Score: dados do HealthKit alimentam os componentes certos, sem mudar as fórmulas', () => {
+  it('passos, minutos de treino, sono, água e peso do Apple Saúde/Watch entram nas categorias de atividade, sono, hidratação e composição', async () => {
+    // @ts-expect-error módulo JS do app, sem tipos
+    const Sc = await import('../../src/utils/healthScores.js');
+    const days = Array.from({ length: 10 }, (_, i) => `2026-06-${String(5 + i).padStart(2, '0')}`);
+    const samples = [
+      ...days.map((d) => smp('steps', 9000, d, 'apple_watch')),
+      ...days.map((d) => smp('exercise_minutes', 40, d, 'apple_saude')),
+      ...days.map((d) => smp('sleep_duration', 450, d, 'apple_watch')),
+      ...days.map((d) => smp('bedtime', 23 * 60, d, 'apple_watch')),
+      ...days.map((d) => smp('water', 8, d, 'apple_saude')),
+      smp('weight', 78, '2026-06-05', 'apple_saude'), smp('weight', 77.5, '2026-06-14', 'apple_saude'),
+    ];
+    const r = Sc.computeDuoScoreV2({ sessions: [], samples, waterGoal: 8, ageGroup: '26-35', now: NOW });
+    const present = r.components.filter((c: { present: boolean }) => c.present).map((c: { id: string }) => c.id);
+    for (const id of ['activity', 'sleep', 'hydration', 'composition']) expect(present, id).toContain(id);
+    expect(Sc.SCORE_WEIGHTS_V2).toEqual({ consistency: 30, streak: 10, activity: 15, sleep: 20, hydration: 15, composition: 10 }); // fórmulas e pesos intactos
+  });
+  it('categoria sem dados do HealthKit não penaliza (regra já existente): fica de fora do cálculo', async () => {
+    // @ts-expect-error módulo JS do app, sem tipos
+    const Sc = await import('../../src/utils/healthScores.js');
+    const r = Sc.computeDuoScoreV2({ sessions: [], samples: [], waterGoal: 8, ageGroup: '26-35', now: NOW });
+    expect(r.components.filter((c: { id: string; present: boolean }) => ['activity', 'sleep', 'hydration', 'composition'].includes(c.id) && c.present)).toEqual([]);
+  });
+});

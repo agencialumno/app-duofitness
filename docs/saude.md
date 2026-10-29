@@ -275,3 +275,48 @@ Por que, depois de ler o código dos pacotes (não só o README):
 - **Exige módulos extras:** o `react-native-nitro-modules` e o `@react-native-healthkit/core` (o podspec da biblioteca exige o core na MESMA versão). O core precisa estar como dependência direta na raiz, senão o autolinking não enxerga o pod dele.
 - **Não está no `package.json` do repositório:** como o Firebase, `scripts/install-healthkit-deps.mjs` grava os três no `package.json` do workspace do CI só com `HEALTH_INTEGRATION_ENABLED=true`. Sem a flag o app e o iOS gerado ficam idênticos aos de antes. Em Android nada muda.
 - **Risco que só o Mac resolve:** o app usa frameworks estáticos por causa do Firebase (`useFrameworks static`). Nitro + frameworks estáticos + React Native pré-compilado não foi compilado aqui. Se o `ios.yml` falhar com "non-modular header" ou erro de Swift/Nitro, o `ios-log-hints` classifica o erro; o primeiro remédio a testar é acrescentar `ReactNativeHealthkit`, `ReactNativeHealthkitCore` e `NitroModules` ao `forceStaticLinking` do plugin do Firebase.
+
+
+### Apple Saúde (HealthKit): o que é lido, limites e como testar
+
+**Só leitura.** O app nunca grava no HealthKit: não pede `NSHealthUpdateUsageDescription`, não usa `toShare`, `save*` nem `deleteObjects` (testes varrem o código). Sem registros clínicos (Clinical Health Records), sem background delivery. Tudo atrás de `HEALTH_INTEGRATION_ENABLED=true` (uma só variável: liga o plugin, instala os módulos, liga o JavaScript e exige o entitlement no `.ipa`); sem ela o app e o iOS gerado ficam idênticos aos de antes. Menores de 18 anos: `selectHealthProvider` devolve o provedor manual, a conexão fica indisponível e nada é lido. Android não muda.
+
+**Tipos lidos (últimos 30 dias, dia LOCAL do aparelho):**
+
+| HealthKit | Vira (healthModel) | Como |
+|---|---|---|
+| Passos | `steps` (Atividade) | soma por dia (estatística do próprio HealthKit: já junta iPhone e Watch sem contar em dobro) |
+| Energia ativa | `active_energy` (Atividade, kcal) | soma por dia |
+| Treinos (workouts) | `exercise_minutes` (Atividade) | soma das durações por dia |
+| Frequência cardíaca | `heart_rate` (Coração) | média por dia |
+| Frequência cardíaca em repouso | `resting_hr` | média por dia |
+| Variabilidade (SDNN) | `hrv` | média por dia |
+| VO₂ máx. | `vo2max` | último valor do dia |
+| Sono (análise do sono) | `sleep_duration`, `bedtime`, `wake_time` (Sono) | fases dormidas (núcleo, profundo, REM, sem detalhe) somadas por noite; "na cama" ignorado quando há fases detalhadas; intervalos sobrepostos (iPhone + Watch) não contam em dobro; a noite é o dia local em que acaba; pausas de até 2 h continuam a mesma noite |
+| Massa corporal | `weight` (Composição) | último valor do dia |
+| Percentual de gordura | `body_fat` | último valor do dia (o HealthKit entrega fração; vira %) |
+| Água | `water` (Hidratação) | mL por dia / 250 = copos |
+
+Origem: **Apple Watch** quando o dado veio de um relógio, senão **Apple Saúde**. O nome do dispositivo/fonte só decide o rótulo e **nunca é guardado**. Os dados vão em `@duo_health_v2` (origens `apple_saude`/`apple_watch`) e a conexão em `@duo_health_connect`; ambos entram no snapshot da conta, ficam só no aparelho e são apagados ao excluir a conta. Nenhum valor de saúde vai a servidor, log, analytics ou marketplace.
+
+**Regras que importam**
+- **Deduplicação:** reler a janela substitui as amostras do HealthKit dela (não duplica). Peso/gordura/VO₂ do HealthKit no mesmo dia e com valor **próximo** (dentro da tolerância da métrica) do registro manual é descartado (é o mesmo registro); valor diferente entra e, na agregação do dia, o aparelho vence o manual. Em somas (passos, minutos, água) o aparelho vence o manual do mesmo dia: nunca soma duas vezes.
+- **Falha isolada:** cada categoria é lida e gravada separadamente; falhar numa mantém o que já havia e atualiza as outras.
+- **Duo Score:** os dados do HealthKit alimentam os mesmos componentes (atividade, sono, hidratação, composição); fórmulas e pesos não mudaram; categoria sem dados continua fora do cálculo, sem penalizar.
+- **Quando sincroniza:** ao abrir a tela Saúde (no mínimo 30 s entre chamadas automáticas, uma de cada vez, sem bloquear a interface) e no puxar para atualizar; a tela mostra "Atualizado às HH:MM".
+
+**Limite do HealthKit: a negação é invisível.** O iOS NÃO informa se a pessoa negou a leitura de um tipo: a consulta simplesmente volta vazia. Por isso o app **não trata vazio como "negado" nem como erro**: mostra "Sem dados ainda" e, na tela Conectar, "Se nada aparecer, confira em Ajustes › Saúde › Acesso a dados e dispositivos › Duo Fitness." Também por isso `getPermissions` nunca devolve "negado". Desconectar para de ler e apaga o que veio do HealthKit (o registro manual fica); a **revogação da permissão em si** só se faz em Ajustes › Saúde › Acesso a dados e dispositivos › Duo Fitness.
+
+**Só dá para validar com um iPhone (e um Apple Watch pareado):** compilar com Nitro + frameworks estáticos, a folha de autorização, que a consulta devolve dados reais, o rótulo "Apple Watch", o sono por noite com as fases do Watch, o fuso/virada de dia reais, e o comportamento quando uma permissão é negada.
+
+**Roteiro de teste (iPhone com Apple Watch pareado)**
+1. No GitHub, crie a variável `HEALTH_INTEGRATION_ENABLED=true` e rode o `ios.yml` com `sign_archive=true` (`upload=true` para o TestFlight). Confira no resumo o entitlement do HealthKit.
+2. Antes de abrir o app: no iPhone, o app Saúde deve ter dados (passos, sono do Watch, frequência cardíaca). Use o Watch por algumas horas e durma com ele uma noite.
+3. Abra o Duo Fitness com uma conta **maior de 18 anos**. Perfil > Saúde > "Conectar" (ou Saúde > Conectar). Leia o que será lido; marque as categorias; toque em **Conectar ao Apple Saúde**. A folha do iOS lista os tipos de leitura (e **não** os de gravação). Permita tudo.
+4. Volte à Saúde: devem aparecer passos, energia ativa, FC e FC em repouso, sono da noite (com "Origem: Apple Watch" quando vier do relógio). Confira "Atualizado às HH:MM".
+5. Puxe a tela para atualizar: o horário muda e nada duplica.
+6. Registre um peso à mão e, se o Apple Saúde tiver um peso do mesmo dia com valor próximo, confirme que aparece uma vez só.
+7. Negação invisível: em Ajustes › Saúde › Acesso a dados e dispositivos › Duo Fitness, desligue "Passos" e puxe a Saúde: a categoria vira "Sem dados ainda" **sem erro**; a tela Conectar mostra onde conferir.
+8. Desconectar (tela Conectar): os dados importados somem, o peso manual fica, "Atualizado às" some. Em Ajustes › Saúde, a permissão continua (o app avisa que a revogação é lá).
+9. Crie uma conta de menor de 18 anos: a Saúde não mostra "Conectar" nem lê nada.
+10. Saia da conta e entre com outra: ela não vê os dados do HealthKit da primeira; ao voltar à primeira, eles voltam (snapshot no aparelho).
