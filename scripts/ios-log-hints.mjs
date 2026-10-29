@@ -2,7 +2,7 @@
 // provável e o que fazer. Só imprime texto próprio e códigos "ITMS-xxxxx" da Apple: nunca linhas
 // cruas do log (que podem ter caminhos e identificadores) e nunca segredos.
 //
-// Uso: node scripts/ios-log-hints.mjs <arquivo-de-log> [--unsigned]
+// Uso: node scripts/ios-log-hints.mjs <arquivo-de-log> [--unsigned] [--stage altool]
 //   --unsigned  o archive foi feito SEM assinatura (time Apple sem dispositivos); acrescenta a dica de
 //               registrar um iPhone para voltar ao caminho normal.
 // Saída: código 0 se achou alguma causa conhecida, 1 se não reconheceu nada.
@@ -11,10 +11,15 @@
 //   node scripts/ios-log-hints.mjs --sanitize-dir <pasta>   reescreve no lugar os .log da pasta, omitindo linhas que possam
 //                                                          ter conteúdo de arquivos do Firebase ou segredos (antes de subir o artifact)
 //   --stage <nome>   rótulo da etapa (prebuild, pod-install, archive...) usado na mensagem de "causa não reconhecida"
+//   --stage altool   classifica a SAÍDA DO ALTOOL (validar/enviar o .ipa): ITMS-90683 (qual chave de permissão faltou, só o nome da chave),
+//                    build number repetido, ícone inválido, entitlement fora do perfil e permissão da chave de API. Quando a causa é do
+//                    altool, a mensagem NUNCA manda procurar no log do xcodebuild (manda abrir ipa-validate.log / ipa-upload.log).
 // Quando NENHUMA causa é reconhecida, imprime as primeiras 40 linhas com "error:", "Undefined symbol", "No such module",
 // "fatal error" ou "PhaseScriptExecution failed", sanitizadas (ver scripts/ios-log-sanitize.mjs), e as grava no resumo do job.
 import { appendFileSync, readFileSync } from 'node:fs';
-import { extractErrorLines, sanitizeDir } from './ios-log-sanitize.mjs';
+import { extractErrorLines, sanitizeDir, sanitizeLine } from './ios-log-sanitize.mjs';
+
+const NL_ = String.fromCharCode(10);
 
 const args = process.argv.slice(2);
 const sanitizeIdx = args.indexOf('--sanitize-dir');
@@ -47,6 +52,42 @@ try {
 
 const onGithub = process.env.GITHUB_ACTIONS === 'true';
 const out = (msg) => console.log(onGithub ? `::error::${msg}` : `ERRO  ${msg}`);
+const ALTOOL = stage === 'altool';
+
+// ---- Saída do altool (validação/envio do .ipa). Só texto próprio e NOMES de chaves do Info.plist; nunca valores nem segredos. ----
+const usageKeys = (text) => [...new Set([...text.matchAll(/\bNS[A-Za-z]+UsageDescription\b/g)].map((m) => m[0]))].slice(0, 8);
+const ALTOOL_RULES = [
+  {
+    id: 'purpose-string',
+    re: /\(?90683\)?|Missing purpose string in Info\.plist|ITMS-90683/i,
+    msg: () => {
+      const keys = usageKeys(log);
+      return `CAUSA (ITMS-90683): o Info.plist do app não tem ${keys.length ? `a chave ${keys.join(', ')}` : 'uma chave de texto de permissão ("purpose string")'}. A Apple exige essa chave sempre que o binário referencia a API correspondente, mesmo que o app não a use (bibliotecas e SDKs, como a do HealthKit, referenciam as APIs de leitura e de escrita). AÇÃO: acrescente a chave com um texto claro para o usuário. Para o HealthKit, o plugin plugins/withHealthKitOptional.js escreve NSHealthShareUsageDescription (leitura) e NSHealthUpdateUsageDescription ("não grava dados", sem uso), com HEALTH_INTEGRATION_ENABLED=true; confira o Info.plist gerado com node scripts/check-ios-project.mjs. Outras chaves: ios.infoPlist no app.json.`;
+    },
+  },
+  {
+    id: 'build-repetido',
+    re: /already been used|ITMS-90189|\(90189\)|Redundant Binary Upload|bundle version must be higher|ITMS-4238|\(90062\)|ITMS-90062/i,
+    msg: 'CAUSA: o número do build já foi usado (CFBundleVersion repetido para esta versão no App Store Connect). O build number é o run_number do workflow, então rodar o ios.yml de novo já gera um número maior; não renomeie o ios.yml (a contagem reinicia). Se precisar recomeçar a contagem, suba a versão (ios.version) no app.json.',
+  },
+  {
+    id: 'icone',
+    re: /ITMS-9071[0-9]|\(9071[0-9]\)|ITMS-90022|\(90022\)|ITMS-90023|\(90023\)|ITMS-90032|ITMS-90704|\(90704\)|ITMS-90236|Missing required icon file|alpha channel|Invalid large app icon|Invalid Image/i,
+    msg: 'CAUSA: a Apple recusou o ícone do app. AÇÃO: o ícone precisa ser PNG 1024x1024, sem transparência (sem canal alfa) e sem cantos arredondados. Confira assets/icon.png com node scripts/check-pngs.mjs (RGB, 8 bits) e rode o prebuild de novo.',
+  },
+  {
+    id: 'entitlement-perfil',
+    re: /ITMS-90046|\(90046\)|ITMS-90078|\(90078\)|ITMS-90161|\(90161\)|entitlements?[^\n]{0,120}(not (supported|included|in the provisioning)|doesn'?t match|isn'?t (in|supported))|provisioning profile[^\n]{0,80}(does ?n.t|does not) include[^\n]{0,60}entitlement|Invalid Code Signing Entitlements/i,
+    msg: 'CAUSA: um entitlement do app não está no perfil de provisionamento (a capability não está ligada no App ID, ou o perfil foi gerado sem ela). AÇÃO: em developer.apple.com > Identifiers > com.duofitness.app ligue as capabilities usadas (Sign in with Apple e, com HEALTH_INTEGRATION_ENABLED=true, HealthKit; NÃO ligue Clinical Health Records) e rode o ios.yml de novo com sign_archive=true (o archive sem assinatura não grava entitlements). Veja docs/testflight.md.',
+  },
+  {
+    id: 'permissao-api',
+    re: /\b(401|403)\b[^\n]{0,80}(Unauthorized|Forbidden|not authorized)|NOT_AUTHORIZED|FORBIDDEN|does not have (the )?(required |sufficient )?(permission|privileges?)|insufficient (permissions?|privileges?)|Unable to authenticate|Authentication credentials are missing or invalid|No Accounts with App Store Connect Access|Failed to find an? (API )?(private )?key/i,
+    msg: 'CAUSA: o envio ao App Store Connect não conseguiu autenticar ou o App Store Connect recusou a chave da API (permissão) para validar/enviar o .ipa. AÇÃO: APPSTORE_KEY_ID, APPSTORE_ISSUER_ID e APPSTORE_PRIVATE_KEY precisam ser da MESMA chave; a chave é de EQUIPE (Team Key) com papel App Manager ou Admin (o papel Developer não envia builds); e o app com.duofitness.app precisa existir na conta. Se o Issuer ID estiver certo e a chave for Individual, gere uma chave de equipe em Users and Access > Integrations.',
+  },
+];
+// regras genéricas que também valem para a saída do altool (acordo pendente, SDK, criptografia)
+const ALTOOL_GENERIC = (rules) => rules.filter((r) => /required agreement|SDK version issue|Missing Compliance|Invalid Info/.test(String(r.re)));
 
 const RULES = [
   {
@@ -123,7 +164,20 @@ const RULES = [
 
 let found = false;
 const matched = new Set();
-for (const rule of RULES) {
+if (ALTOOL) {
+  for (const rule of ALTOOL_RULES) {
+    if (!rule.re.test(log)) continue;
+    matched.add(rule.id);
+    out(typeof rule.msg === 'function' ? rule.msg() : rule.msg);
+    found = true;
+  }
+  for (const rule of ALTOOL_GENERIC(RULES)) {
+    if (!rule.re.test(log)) continue;
+    out(rule.msg);
+    found = true;
+  }
+}
+for (const rule of ALTOOL ? [] : RULES) {
   if (!rule.re.test(log)) continue;
   if (rule.suppressedBy && [rule.suppressedBy].flat().some((id) => matched.has(id))) continue;
   if (rule.id) matched.add(rule.id);
@@ -135,14 +189,33 @@ if (unsigned) {
   found = true;
 }
 
-// Códigos ITMS da Apple (texto da própria Apple, sem dados do usuário).
+// Códigos ITMS da Apple (texto da própria Apple, sem dados do usuário). No altool também aparecem como "(90683)" no fim da linha.
 const itms = [...new Set([...log.matchAll(/ITMS-\d+[:\s][^\n"]{0,180}/g)].map((m) => m[0].trim().replace(/[\r\n]+/g, ' ')))].slice(0, 5);
 for (const line of itms) {
   out(`Apple: ${line}`);
   found = true;
 }
 
-if (!found) {
+if (!found && ALTOOL) {
+  out('Não reconheci a causa na saída do altool. Esta falha é do envio ao App Store Connect, NÃO do xcodebuild: baixe o artifact "xcodebuild-logs-<número da execução>" e abra ipa-validate.log (validação) e ipa-upload.log (envio), que têm a saída completa do altool (sem chave nem JWT). Abaixo, as primeiras linhas de erro dela (sanitizadas).');
+  const seenA = new Set();
+  const linesA = [];
+  for (const raw of log.split(String.fromCharCode(10))) {
+    if (!/\*\*\* Error|\bERROR\b|Error[: ]|ITMS-\d+|\(\d{5}\)|Unable to|Failed to/i.test(raw)) continue;
+    const t = sanitizeLine(raw).trim();
+    if (!t || seenA.has(t)) continue;
+    seenA.add(t);
+    linesA.push(t);
+    if (linesA.length >= 40) break;
+  }
+  if (linesA.length === 0) linesA.push('(a saída do altool não tem linhas de erro reconhecíveis: abra ipa-validate.log e ipa-upload.log no artifact)');
+  console.log('::group::Primeiras linhas de erro (altool)');
+  for (const l of linesA) console.log(l);
+  console.log('::endgroup::');
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    try { appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${NL_}### Primeiras linhas de erro (altool, sanitizadas)${NL_}${NL_}${'`'.repeat(3)}${NL_}${linesA.join(NL_)}${NL_}${'`'.repeat(3)}${NL_}`); } catch { /* resumo indisponível */ }
+  }
+} else if (!found) {
   out(`Não reconheci a causa no log (${stage}). Baixe o artifact "xcodebuild-logs" desta execução e procure a primeira linha com "error:". Abaixo, as primeiras linhas de erro (sanitizadas).`);
   const lines = extractErrorLines(log, 40);
   if (lines.length === 0) lines.push('(nenhuma linha com error:, Undefined symbol, No such module, fatal error ou PhaseScriptExecution failed)');

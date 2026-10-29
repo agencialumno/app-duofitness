@@ -106,8 +106,9 @@ looks_failed() {
 
 fail_with_hints() {
   local log="$1" rc="$2" what="$3"
-  err "$what falhou (código $rc). Causas prováveis abaixo."
-  node "$HERE/ios-log-hints.mjs" "$log" || true
+  err "$what falhou (código $rc). A saída completa do altool está em $(basename "$log") no artifact xcodebuild-logs. Causas prováveis abaixo."
+  # a causa é do altool (validar/enviar): classifica a saída DELE e nunca manda procurar no log do xcodebuild
+  node "$HERE/ios-log-hints.mjs" "$log" --stage altool || true
   exit "${rc:-1}"
 }
 
