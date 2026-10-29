@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // @ts-expect-error módulo JS do app, sem tipos
 import FirebaseAuthProvider from '../../src/auth/FirebaseAuthProvider.js';
 // @ts-expect-error módulo JS do app, sem tipos
-import { authErrorMessage, isCancel } from '../../src/auth/authErrors.js';
+import { authErrorDetail, authErrorMessage, isCancel } from '../../src/auth/authErrors.js';
 
 const REPO = path.resolve(__dirname, '../..');
 const req = createRequire(import.meta.url);
@@ -60,8 +60,8 @@ describe('FirebaseAuthProvider: erros do Google', () => {
       expect(authErrorMessage(e, 'social')).toMatch(text);
     }
     const out = logged();
-    expect(out).toContain('[Google Sign-In] google-signin: IN_PROGRESS');
-    expect(out).toContain('google-signin: 10');
+    expect(out).toContain('[Google Sign-In] signIn: IN_PROGRESS');
+    expect(out).toContain('signIn: 10');
     expect(out).not.toMatch(/segredo|SEGREDO|@/); // nunca e-mail, token nem a mensagem do erro
   });
 
@@ -69,7 +69,7 @@ describe('FirebaseAuthProvider: erros do Google', () => {
     const e = await make(async () => ({ type: 'success', data: { idToken: null } })).signInWithGoogle().catch((x: Error & { code: string }) => x);
     expect(e.code).toBe('auth/google-no-id-token');
     expect(authErrorMessage(e, 'social')).toMatch(/não devolveu a identificação/);
-    expect(logged()).toContain('id-token: ausente');
+    expect(logged()).toContain('idToken: ID_TOKEN_NULO');
   });
 
   it('erro de credencial do Firebase no Google: registra o código e a mensagem NÃO diz "senha incorreta"', async () => {
@@ -323,5 +323,90 @@ describe('REGRESSÃO Android: o plugin do google-signin nunca é chamado com {} 
     expect(job).toContain('google-services.json');
     expect(job).not.toMatch(/GoogleService-Info\.plist|FIREBASE_IOS_CONFIG/);
     expect(job).toContain('npx expo prebuild --platform android --no-install');
+  });
+});
+
+describe('diagnóstico na tela: só o código e a etapa', () => {
+  let spy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => { spy = vi.spyOn(console, 'error').mockImplementation(() => undefined); });
+  afterEach(() => spy.mockRestore());
+  const MSG = 'falhou para segredo@exemplo.com com token SEGREDO-123 e nome Ana Souza';
+  const line = (e: unknown) => authErrorDetail(e) as string;
+
+  it('erro do google-signin no signIn: "Código: DEVELOPER_ERROR · etapa: signIn", sem a mensagem bruta', async () => {
+    const e = await make(async () => { throw err('DEVELOPER_ERROR', MSG); }).signInWithGoogle().catch((x: Error) => x);
+    expect(line(e)).toBe('Código: DEVELOPER_ERROR · etapa: signIn');
+    expect(authErrorMessage(e, 'social')).toMatch(/Não foi possível entrar com o Google/);
+    for (const t of [line(e), authErrorMessage(e, 'social'), spy.mock.calls.join(' ')]) expect(t).not.toMatch(/segredo|SEGREDO|Ana|@/);
+  });
+  it('códigos numéricos (10, 12500, 7) viram texto curto', async () => {
+    for (const code of [10, 12500, 7]) {
+      const e = await make(async () => { throw Object.assign(new Error(MSG), { code }); }).signInWithGoogle().catch((x: Error) => x);
+      expect(line(e)).toBe(`Código: ${code} · etapa: signIn`);
+    }
+  });
+  it('sem error.code usa error.name; sem nenhum dos dois, DESCONHECIDO', async () => {
+    const a = await make(async () => { const x = new Error(MSG); x.name = 'TypeError'; throw x; }).signInWithGoogle().catch((x: Error) => x);
+    expect(line(a)).toBe('Código: TypeError · etapa: signIn');
+    const b = await make(async () => { throw Object.assign(new Error(MSG), { name: 'nome com espaços e @' }); }).signInWithGoogle().catch((x: Error) => x);
+    expect(line(b)).toBe('Código: DESCONHECIDO · etapa: signIn');
+  });
+  it('configure: falha ao configurar mostra "etapa: configure"', async () => {
+    const p = make(async () => ({ type: 'success', data: { idToken: 't' } }));
+    p.google.GoogleSignin.configure = () => { throw err('configure', MSG); };
+    const e = await p.signInWithGoogle().catch((x: Error) => x);
+    expect(line(e)).toBe('Código: configure · etapa: configure');
+  });
+  it('idToken nulo: "Código: ID_TOKEN_NULO · etapa: idToken"', async () => {
+    const e = await make(async () => ({ type: 'success', data: { idToken: null } })).signInWithGoogle().catch((x: Error) => x);
+    expect(line(e)).toBe('Código: ID_TOKEN_NULO · etapa: idToken');
+  });
+  it('credencial do Firebase: código do Firebase e "etapa: signInWithCredential"', async () => {
+    for (const code of ['auth/invalid-credential', 'auth/operation-not-allowed', 'auth/invalid-api-key', 'auth/app-not-authorized', 'auth/network-request-failed']) {
+      const e = await make(async () => ({ type: 'success', data: { idToken: 'tok' } }), { credentialFails: code }).signInWithGoogle().catch((x: Error) => x);
+      expect(line(e)).toBe(`Código: ${code} · etapa: signInWithCredential`);
+      expect((e as { code: string }).code).toBe(code); // a tradução em português continua pelo código original
+    }
+  });
+  it('cancelar não tem diagnóstico nem erro; login que funciona não registra nada', async () => {
+    const e = await make(async () => { throw err('SIGN_IN_CANCELLED'); }).signInWithGoogle().catch((x: Error) => x);
+    expect(line(e)).toBe('');
+    expect(authErrorMessage(e, 'social')).toBe('');
+    const u = await make(async () => ({ type: 'success', data: { idToken: 'tok' } })).signInWithGoogle();
+    expect(u.providers).toEqual(['google.com']);
+    expect(spy).not.toHaveBeenCalled();
+  });
+  it('erro sem detalhe (e-mail e senha) não ganha linha de código', () => {
+    expect(line(err('auth/wrong-password'))).toBe('');
+    expect(line(null)).toBe('');
+  });
+  it('a tela mostra a linha em cor neutra e pequena, abaixo da mensagem; o texto não usa error.message', () => {
+    const s = readFileSync(path.join(REPO, 'src/screens/auth/SocialButtons.js'), 'utf8');
+    expect(s).toMatch(/authErrorDetail\(e\)/);
+    expect(s).toMatch(/testID="social-error-detail"[\s\S]*COLORS\.textSecondary/);
+    expect(s).not.toMatch(/\.message/);
+    const p = readFileSync(path.join(REPO, 'src/auth/FirebaseAuthProvider.js'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
+    expect(p).not.toMatch(/console\.error\([^)]*\.message/);
+    expect(p).not.toMatch(/detail[^;\n]*\.message/);
+  });
+});
+
+describe('ID de cliente Web por variável', () => {
+  it('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID é lido (público); vazio mantém o comportamento anterior', () => {
+    const cfg = readFileSync(path.join(REPO, 'src/data/authConfig.js'), 'utf8');
+    expect(cfg).toContain('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID');
+    const mk = (webClientId?: string) => {
+      const calls: unknown[] = [];
+      const p = make(async () => ({ type: 'success', data: { idToken: 't' } }));
+      p.webClientId = webClientId ?? '';
+      p.google.GoogleSignin.configure = (o: unknown) => { calls.push(o); };
+      return { p, calls };
+    };
+    const a = mk('123-abc.apps.googleusercontent.com');
+    return a.p.signInWithGoogle().then(() => {
+      expect(a.calls).toEqual([{ webClientId: '123-abc.apps.googleusercontent.com' }]);
+      const b = mk('');
+      return b.p.signInWithGoogle().then(() => expect(b.calls).toEqual([{ webClientId: 'autoDetect' }]));
+    });
   });
 });

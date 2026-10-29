@@ -4,15 +4,22 @@
 // googleSignin, appleAuth (expo-apple-authentication), crypto (expo-crypto) e os.
 import { authError } from './authInterface';
 
+// Código curto e seguro para mostrar: error.code (string ou número) ou, sem ele, error.name. Só letras, números e _ - . / ; nunca a mensagem.
+export function safeCode(e) {
+  const pick = (v) => { const t = String(v ?? '').trim(); return /^[A-Za-z0-9_\-./]{1,40}$/.test(t) ? t : ''; };
+  return pick(e && e.code) || pick(e && e.name) || 'DESCONHECIDO';
+}
+
 const hex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 
 export default class FirebaseAuthProvider {
-  constructor({ authApi, googleSignin, appleAuth, crypto, os }) {
+  constructor({ authApi, googleSignin, appleAuth, crypto, os, webClientId = '' }) {
     this.api = authApi;
     this.google = googleSignin;
     this.apple = appleAuth;
     this.crypto = crypto;
     this.os = os;
+    this.webClientId = String(webClientId || '').trim(); // ID de cliente Web (público, não é segredo); vazio = comportamento anterior
     this.auth = authApi.getAuth();
     // e-mails de verificação e de nova senha em português
     try { this.auth.languageCode = 'pt-BR'; } catch { /* ignora */ }
@@ -55,36 +62,52 @@ export default class FirebaseAuthProvider {
     if (code) console.error(`[Google Sign-In] ${stage}: ${code}`);
   }
 
+  // Diagnóstico mostrado na tela: SÓ { stage, code } (código curto e etapa). Nunca a error.message (pode ter e-mail ou token).
+  // stage: 'configure' | 'signIn' | 'idToken' | 'firebase'. O código vem de error.code (google-signin ou Firebase) ou, se não houver, error.name.
+  _detail(stage, e) {
+    return { stage, code: safeCode(e) };
+  }
+
   // Erros do google-signin (statusCodes) -> códigos "auth/..." que o authErrors.js traduz. Erros que já são "auth/..." passam.
-  _googleError(e) {
+  // Todo erro (menos cancelar) sai com `detail` { stage, code } para a tela.
+  _googleError(e, stage) {
     const code = String(e?.code ?? '');
-    if (code.startsWith('auth/')) return e;
     const sc = this.google?.statusCodes || {};
     const is = (name, fallback) => code === String(sc[name] ?? fallback);
-    if (is('SIGN_IN_CANCELLED', 'SIGN_IN_CANCELLED') || code === '12501' || code === '-5') return authError('auth/user-cancelled');
-    this._logGoogle('google-signin', code || 'sem código');
-    if (is('IN_PROGRESS', 'IN_PROGRESS')) return authError('auth/google-in-progress');
-    if (is('PLAY_SERVICES_NOT_AVAILABLE', 'PLAY_SERVICES_NOT_AVAILABLE')) return authError('auth/google-play-services');
-    return authError('auth/google-failed');
+    if (is('SIGN_IN_CANCELLED', 'SIGN_IN_CANCELLED') || code === '12501' || code === '-5' || code === 'auth/user-cancelled') {
+      return code === 'auth/user-cancelled' ? e : authError('auth/user-cancelled');
+    }
+    let out;
+    if (code.startsWith('auth/')) out = e;
+    else if (is('IN_PROGRESS', 'IN_PROGRESS')) out = authError('auth/google-in-progress');
+    else if (is('PLAY_SERVICES_NOT_AVAILABLE', 'PLAY_SERVICES_NOT_AVAILABLE')) out = authError('auth/google-play-services');
+    else out = authError('auth/google-failed');
+    const detail = e && e.detail ? e.detail : this._detail(stage, e);
+    out.detail = detail;
+    this._logGoogle(detail.stage, detail.code);
+    return out;
   }
 
   async _googleCredential() {
     if (!this.google) throw authError('auth/unavailable');
+    let stage = 'configure';
     try {
       if (!this._googleConfigured) {
-        // Os IDs de cliente (Web e iOS) vêm do arquivo de configuração do Firebase (GoogleService-Info.plist / google-services.json):
-        // nada é lido de variável de ambiente. O plist precisa ter CLIENT_ID e REVERSED_CLIENT_ID (firebase-prepare confere).
-        this.google.GoogleSignin.configure({ webClientId: 'autoDetect' });
+        // Os IDs de cliente: o iOS lê o CLIENT_ID do GoogleService-Info.plist. O ID de cliente WEB (público) vem de
+        // EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID quando existir; sem ele fica o 'autoDetect' de antes (este pacote não o interpreta: ver docs).
+        this.google.GoogleSignin.configure({ webClientId: this.webClientId || 'autoDetect' });
         this._googleConfigured = true;
       }
+      stage = 'signIn';
       await this.google.GoogleSignin.hasPlayServices?.({ showPlayServicesUpdateDialog: true });
       const res = await this.google.GoogleSignin.signIn();
       if (res?.type === 'cancelled') throw authError('auth/user-cancelled');
+      stage = 'idToken';
       const idToken = res?.data?.idToken ?? res?.idToken;
-      if (!idToken) { this._logGoogle('id-token', 'ausente'); throw authError('auth/google-no-id-token'); }
+      if (!idToken) { const e = authError('auth/google-no-id-token'); e.detail = { stage: 'idToken', code: 'ID_TOKEN_NULO' }; throw e; }
       return this.api.GoogleAuthProvider.credential(idToken);
     } catch (e) {
-      throw this._googleError(e);
+      throw this._googleError(e, stage);
     }
   }
 
@@ -94,8 +117,7 @@ export default class FirebaseAuthProvider {
       const cred = await this.api.signInWithCredential(this.auth, credential);
       return this._pub(cred.user);
     } catch (e) {
-      this._logGoogle('firebase', String(e?.code ?? 'sem código'));
-      throw e;
+      throw this._googleError(e, 'firebase');
     }
   }
 

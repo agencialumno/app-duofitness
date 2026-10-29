@@ -47,6 +47,15 @@ export function authErrorMessage(error, context = 'general') {
   return BY_CODE[code] || GENERIC;
 }
 
+// Linha pequena de diagnóstico do login com Google: "Código: X · etapa: Y". Só o código curto e a etapa (nunca token, e-mail ou a
+// mensagem bruta do erro). Vazia quando o erro não traz detalhe (ex.: erros de e-mail e senha).
+const STAGE_LABEL = { configure: 'configure', signIn: 'signIn', idToken: 'idToken', firebase: 'signInWithCredential' };
+export function authErrorDetail(error) {
+  const d = error && error.detail;
+  if (!d || !d.code) return '';
+  return `Código: ${d.code} · etapa: ${STAGE_LABEL[d.stage] || d.stage}`;
+}
+
 // Resposta única da recuperação de senha, exista ou não a conta.
 export const RESET_SENT = 'Se existir uma conta com este e-mail, enviamos as instruções para criar uma nova senha. Confira também a caixa de spam.';
 

@@ -5,6 +5,7 @@
 // quebra se o pacote não existir). Não troque por uma função auxiliar.
 import { Platform } from 'react-native';
 import FirebaseAuthProvider from './FirebaseAuthProvider';
+import { GOOGLE_WEB_CLIENT_ID } from '../data/authConfig';
 
 export default function loadNativeProvider() {
   let authApi = null;
@@ -21,5 +22,5 @@ export default function loadNativeProvider() {
   try { googleSignin = require('@react-native-google-signin/google-signin'); } catch (e) { googleSignin = null; }
   try { appleAuth = require('expo-apple-authentication'); } catch (e) { appleAuth = null; }
   try { crypto = require('expo-crypto'); } catch (e) { crypto = null; }
-  return new FirebaseAuthProvider({ authApi, googleSignin, appleAuth, crypto, os: Platform.OS });
+  return new FirebaseAuthProvider({ authApi, googleSignin, appleAuth, crypto, os: Platform.OS, webClientId: GOOGLE_WEB_CLIENT_ID });
 }
