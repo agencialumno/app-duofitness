@@ -2,7 +2,7 @@
 // @kingstinct/react-native-healthkit, que entra por injeção (`loadLib` devolve o módulo ou null), então tudo é testável com um falso.
 //
 // Regras duras:
-//  - nenhuma escrita: só requestAuthorization({ toRead }) e consultas; nunca toShare nem save*;
+//  - nenhuma escrita: só requestAuthorization({ toShare: [], toRead }) (a lista de escrita é SEMPRE vazia) e consultas; nunca save*;
 //  - nenhum valor de saúde em log, console, rede ou analytics (este arquivo não usa console nem fetch);
 //  - falha de uma categoria não derruba as outras (cada uma roda isolada);
 //  - o iOS NÃO informa se a leitura foi negada: uma consulta sem permissão volta VAZIA. Vazio é "sem dados ainda", nunca "negado" nem erro;
@@ -36,7 +36,7 @@ export function createHealthKitProvider({ loadLib, now = () => new Date() } = {}
     const l = getLib();
     const toRead = typesFor(categories).filter((t) => !authorized.has(t));
     if (toRead.length === 0) return true;
-    await l.requestAuthorization({ toRead }); // só leitura: nunca toShare
+    await l.requestAuthorization({ toShare: [], toRead }); // só leitura: a lista de ESCRITA vai SEMPRE vazia (nenhum tipo de escrita é pedido)
     for (const t of toRead) authorized.add(t);
     return true;
   }

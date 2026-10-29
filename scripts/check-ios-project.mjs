@@ -169,8 +169,11 @@ if (needGoogle) {
     if (!/<key>NSHealthShareUsageDescription<\/key>\s*<string>[^<]{10,}<\/string>/.test(infoXml)) {
       fail(`[HealthKit] Esperado: NSHealthShareUsageDescription com texto em ${plistPath ? rel(plistPath) : 'Info.plist'}.`);
     } else ok('NSHealthShareUsageDescription presente');
+    // a chave de escrita existe SÓ porque a Apple exige (ITMS-90683) e precisa dizer que o app não grava
+    if (!/<key>NSHealthUpdateUsageDescription<\/key>\s*<string>[^<]*não grava[^<]*<\/string>/.test(infoXml)) {
+      fail(`[HealthKit] Esperado: NSHealthUpdateUsageDescription com o texto "não grava" em ${plistPath ? rel(plistPath) : 'Info.plist'}. Sem ela a Apple recusa o .ipa (ITMS-90683); o texto precisa dizer que o app não grava no app Saúde.`);
+    } else ok('NSHealthUpdateUsageDescription presente (texto "não grava")');
     for (const [xml, key, why] of [
-      [infoXml, 'NSHealthUpdateUsageDescription', 'o app só lê (nunca escreve no HealthKit)'],
       [entXml, 'com.apple.developer.healthkit.background-delivery', 'sem background delivery'],
       [entXml, 'com.apple.developer.healthkit.access', 'sem registros clínicos (health-records)'],
     ]) {

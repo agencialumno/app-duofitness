@@ -139,13 +139,17 @@ describe('segurança do fluxo', () => {
   beforeEach(() => { spies = (['log', 'warn', 'error', 'info', 'debug'] as const).map((m) => vi.spyOn(console, m).mockImplementation(() => undefined)); });
   afterEach(() => spies.forEach((s) => s.mockRestore()));
 
-  it('SÓ LEITURA: pede autorização com toRead e nunca toShare; nenhuma função de escrita é chamada', async () => {
+  it('SÓ LEITURA: a autorização vai com a lista de escrita (toShare) SEMPRE vazia; nenhuma função de escrita é chamada', async () => {
     const f = fakeLib({ HKQuantityTypeIdentifierStepCount: [day(10, { sumQuantity: { quantity: 1000 } })] });
     const p = make(f);
     await p.requestPermissions(['activity', 'sleep', 'heart', 'body', 'hydration']);
     await p.readDetailed({});
     expect(f.calls.auth.length).toBeGreaterThan(0);
-    for (const a of f.calls.auth) { expect(Object.keys(a)).toEqual(['toRead']); expect(a.toShare).toBeUndefined(); }
+    for (const a of f.calls.auth) {
+      expect(a.toShare).toEqual([]); // nenhum tipo de escrita
+      expect(a.toRead.length).toBeGreaterThan(0);
+      expect(Object.keys(a).sort()).toEqual(['toRead', 'toShare']);
+    }
     expect(f.calls.writes).toEqual([]);
   });
   it('autoriza ANTES de consultar e só consulta tipos que foram pedidos (consultar outro derruba o app)', async () => {
@@ -205,11 +209,17 @@ describe('segurança do fluxo', () => {
     for (const f of ['src/utils/healthKitMapping.js', 'src/utils/healthKitProvider.js', 'src/utils/healthKitLib.js']) {
       const c = readFileSync(path.join(REPO, f), 'utf8').replace(/^\s*\/\/.*$/gm, '');
       expect(c, f).not.toMatch(/\bconsole\.|\bfetch\s*\(|XMLHttpRequest|WebSocket|Share\.share|Linking\.openURL/);
-      expect(c, f).not.toMatch(/\bsave(Quantity|Category|Workout|Correlation)Sample|deleteObjects|toShare\s*:/);
+      expect(c, f).not.toMatch(/\bsave(Quantity|Category|Workout|Correlation)Sample|deleteObjects/);
+      expect(c, f).not.toMatch(/toShare\s*:\s*(?!\s*\[\s*\])/); // só `toShare: []`
     }
-    // o app inteiro: nenhuma chamada de escrita ao HealthKit
+    // o app inteiro: nenhuma chamada de escrita ao HealthKit e nenhum tipo de escrita solicitado (só `toShare: []` é permitido)
     const walk = (d: string): string[] => readdirSync(path.join(REPO, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : e.name.endsWith('.js') ? [`${d}/${e.name}`] : []));
-    for (const f of walk('src')) expect(readFileSync(path.join(REPO, f), 'utf8').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, ''), f).not.toMatch(/saveQuantitySample|saveCategorySample|saveWorkoutSample|toShare/);
+    for (const f of walk('src')) {
+      const c = readFileSync(path.join(REPO, f), 'utf8').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, '');
+      expect(c, f).not.toMatch(/saveQuantitySample|saveCategorySample|saveWorkoutSample|saveCorrelationSample|saveStateOfMindSample|deleteObjects/);
+      expect(c, f).not.toMatch(/toShare\s*:\s*(?!\s*\[\s*\])/); // qualquer toShare com tipos falha
+      expect(c, f).not.toMatch(/toShare\s*=\s*(?!\s*\[\s*\])/);
+    }
   });
 });
 

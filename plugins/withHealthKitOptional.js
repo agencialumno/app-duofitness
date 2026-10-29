@@ -3,14 +3,18 @@
 //
 // Com a flag escreve APENAS:
 //   - o entitlement com.apple.developer.healthkit (true);
-//   - NSHealthShareUsageDescription (texto em português, abaixo).
-// NÃO escreve: NSHealthUpdateUsageDescription (o app não grava no HealthKit), background delivery
-// (com.apple.developer.healthkit.background-delivery) nem registros clínicos (com.apple.developer.healthkit.access / health-records).
-// Por isso não usamos o plugin da biblioteca (ele liga o background delivery por padrão e pede o texto de escrita).
+//   - NSHealthShareUsageDescription (leitura, texto em português, abaixo);
+//   - NSHealthUpdateUsageDescription com um texto que diz que o app NÃO grava ("Esta permissão não é usada"). Ela existe só porque a Apple exige
+//     (validação ITMS-90683 / 90683 do altool): a biblioteca do HealthKit referencia as APIs de escrita, e a App Store Connect pede a "purpose
+//     string" mesmo que o app nunca grave. O app continua sem pedir nenhuma permissão de escrita (toShare vazio; um teste varre o código).
+// NÃO escreve: background delivery (com.apple.developer.healthkit.background-delivery) nem registros clínicos
+// (com.apple.developer.healthkit.access / health-records). Não usamos o plugin da biblioteca (liga o background delivery por padrão).
 const { withEntitlementsPlist, withInfoPlist } = require('expo/config-plugins');
 
 const HEALTHKIT_ENTITLEMENT = 'com.apple.developer.healthkit';
 const USAGE_DESCRIPTION = 'O Duo Fitness lê seus dados de atividade, sono e batimentos do app Saúde para mostrar sua evolução. Os dados ficam no seu aparelho.';
+
+const UPDATE_USAGE_DESCRIPTION = 'O Duo Fitness não grava dados no app Saúde. Ele apenas lê os dados que você autorizar. Esta permissão não é usada.';
 
 const isEnabled = (env = process.env) => String(env.HEALTH_INTEGRATION_ENABLED || '').trim().toLowerCase() === 'true';
 
@@ -19,9 +23,7 @@ function applyEntitlements(entitlements) {
   return { ...entitlements, [HEALTHKIT_ENTITLEMENT]: true };
 }
 function applyInfoPlist(infoPlist) {
-  const next = { ...infoPlist, NSHealthShareUsageDescription: USAGE_DESCRIPTION };
-  delete next.NSHealthUpdateUsageDescription; // só leitura: nunca pedimos a de escrita
-  return next;
+  return { ...infoPlist, NSHealthShareUsageDescription: USAGE_DESCRIPTION, NSHealthUpdateUsageDescription: UPDATE_USAGE_DESCRIPTION };
 }
 
 const withHealthKitOptional = (config) => {
@@ -36,4 +38,5 @@ module.exports.isEnabled = isEnabled;
 module.exports.applyEntitlements = applyEntitlements;
 module.exports.applyInfoPlist = applyInfoPlist;
 module.exports.USAGE_DESCRIPTION = USAGE_DESCRIPTION;
+module.exports.UPDATE_USAGE_DESCRIPTION = UPDATE_USAGE_DESCRIPTION;
 module.exports.HEALTHKIT_ENTITLEMENT = HEALTHKIT_ENTITLEMENT;
