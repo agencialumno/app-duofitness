@@ -59,6 +59,10 @@ jobs:
       HEALTH_INTEGRATION_ENABLED: ${{ vars.HEALTH_INTEGRATION_ENABLED }}
       EXPO_PUBLIC_TERMS_URL: ${{ vars.EXPO_PUBLIC_TERMS_URL }}
       EXPO_PUBLIC_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_PRIVACY_URL }}
+      # ID de cliente WEB do Firebase para o login com Google (valor PÚBLICO, não é segredo; vai dentro do app). Está no env do job, então
+      # chega ao passo que gera o bundle JavaScript (Gradle / fase "Bundle React Native code and images" do xcodebuild), não só ao prebuild.
+      # Vazio = 'autoDetect' (o pacote do Google não o interpreta; o login pode falhar). Veja docs/pendencias-usuario.md.
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
       # Tag sempre envia; execução manual envia só com upload=true.
       UPLOAD: ${{ (github.event_name == 'push' || inputs.upload) && 'true' || 'false' }}
       # Padrão (false, também nas tags): archive SEM assinatura; a assinatura de distribuição (cloud signing) é só no export.
