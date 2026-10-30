@@ -70,14 +70,18 @@ const hasName = (t: Touch) => {
   return /<Text[\s>]/.test(t.inner) || /\{[a-zA-Z_.]*label[a-zA-Z_.]*\}/i.test(t.inner);
 };
 const hasRole = (t: Touch) => /accessibilityRole=|\brole=/.test(t.attrs);
+// Área de toque efetiva = tamanho do estilo + hitSlop (de cada lado). Menor que 44 pt em qualquer eixo = alvo pequeno.
+const slopOf = (attrs: string) => {
+  const m = /hitSlop=\{\{([^}]*)\}\}/.exec(attrs);
+  const n = (k: string) => Number(new RegExp(`${k}:\\s*(\\d+(?:\\.\\d+)?)`).exec(m?.[1] ?? '')?.[1] ?? 0);
+  return { x: n('left') + n('right'), y: n('top') + n('bottom') };
+};
 const smallTarget = (t: Touch) => {
   const b = styleBox(t);
-  const h = Math.max(b.height ?? 0, 0);
-  const w = Math.max(b.width ?? 0, 0);
-  const tooSmallH = b.height !== undefined && h < 44 && !(b.minHeight && b.minHeight >= 44);
-  const tooSmallW = b.width !== undefined && w < 44 && !(b.minWidth && b.minWidth >= 44);
-  if (!(tooSmallH || tooSmallW)) return false;
-  return !/hitSlop=/.test(t.attrs);
+  const slop = slopOf(t.attrs);
+  const tooSmallH = b.height !== undefined && !(b.minHeight && b.minHeight >= 44) && b.height + slop.y < 44;
+  const tooSmallW = b.width !== undefined && !(b.minWidth && b.minWidth >= 44) && b.width + slop.x < 44;
+  return tooSmallH || tooSmallW;
 };
 
 // BASELINE de achados (bugs B3, B4 e B5 do docs/relatorio-testes.md), por arquivo:linha. Dois tipos de teste:
@@ -124,10 +128,7 @@ const CONHECIDOS_SEM_PAPEL: string[] = [
   'src/screens/WorkoutsScreen.js:62',
   'src/screens/WorkoutsScreen.js:80',
 ];
-const CONHECIDOS_ALVO_PEQUENO: string[] = [
-  'src/screens/AIPersonalTrainerScreen.js:619',
-  'src/screens/WorkoutsScreen.js:17',
-];
+const CONHECIDOS_ALVO_PEQUENO: string[] = []; // B5 corrigido: hitSlop leva os 2 alvos a 44 pt
 
 describe('acessibilidade estática dos toques', () => {
   it('o levantamento encontra os toques do app (sanidade do analisador)', () => {
@@ -158,7 +159,7 @@ describe('acessibilidade estática dos toques', () => {
     const bad = TOUCHES.filter((t) => !hasRole(t)).map(where);
     expect(bad, `toques sem accessibilityRole:\n${bad.join('\n')}`).toEqual([]);
   });
-  it.fails('REGRA COMPLETA: alvo mínimo de 44 pt: nenhum toque usa um estilo com largura ou altura menor que 44 sem minHeight/minWidth ou hitSlop', () => {
+  it('REGRA COMPLETA: alvo mínimo de 44 pt: nenhum toque tem estilo menor que 44 pt, contando o hitSlop (tamanho + folga dos dois lados)', () => {
     const bad = TOUCHES.filter(smallTarget).map(where);
     expect(bad, `alvos menores que 44 pt:\n${bad.join('\n')}`).toEqual([]);
   });
@@ -175,5 +176,19 @@ describe('acessibilidade estática dos toques', () => {
   it('imagens decorativas ficam fora da leitura ou têm descrição; ícones soltos não são tocáveis sem rótulo', () => {
     // um Ionicons dentro de um toque não precisa de rótulo próprio (o toque tem); aqui só se confere que o analisador viu os toques com ícone
     expect(TOUCHES.some((t) => /<Ionicons/.test(t.inner))).toBe(true);
+  });
+});
+
+describe('B5: os dois alvos que eram menores que 44 pt', () => {
+  it('o botão "+" de Treinos (38 pt) e o confirmar chips do Personal Trainer (32 pt) chegam a 44 pt pelo hitSlop, sem mudar o estilo visível', () => {
+    const alvo = (file: string, label: string) => TOUCHES.find((t) => t.file === file && t.attrs.includes(`accessibilityLabel="${label}"`))!;
+    const add = alvo('src/screens/WorkoutsScreen.js', 'Criar treino');
+    expect(styleBox(add).width! + slopOf(add.attrs).x).toBeGreaterThanOrEqual(44);
+    expect(styleBox(add).height! + slopOf(add.attrs).y).toBeGreaterThanOrEqual(44);
+    expect(styleBox(add)).toMatchObject({ width: 38, height: 38 }); // o desenho continua 38x38
+    const chip = alvo('src/screens/AIPersonalTrainerScreen.js', 'Confirmar seleção');
+    expect(styleBox(chip).width! + slopOf(chip.attrs).x).toBeGreaterThanOrEqual(44);
+    expect(styleBox(chip).height! + slopOf(chip.attrs).y).toBeGreaterThanOrEqual(44);
+    expect(styleBox(chip)).toMatchObject({ width: 32, height: 32 });
   });
 });

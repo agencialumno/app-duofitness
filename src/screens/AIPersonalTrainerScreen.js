@@ -616,7 +616,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
               );
             })}
             {currentStep.multi && (
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Confirmar seleção" accessibilityState={{ disabled: chipSelection.length === 0 }}
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Confirmar seleção" accessibilityState={{ disabled: chipSelection.length === 0 }} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 style={[styles.chipConfirm, chipSelection.length === 0 && styles.chipConfirmDisabled]}
                 onPress={confirmChips}
                 disabled={chipSelection.length === 0}
