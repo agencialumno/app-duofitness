@@ -139,6 +139,15 @@ jobs:
       - name: Conferir vídeos e capas dos exercícios (extensão, formato real, nome, tamanho, mapa em dia)
         run: node scripts/check-videos.mjs
 
+      # Portão de procedência das fotos de referência (assets/exercicios-ref/, fora do git): só roda se a variável RELEASE_BUILD do repositório existir
+      # (Settings > Variables). Com RELEASE_BUILD=true e fotos presentes sem "CONFIRMADO: sim" em docs/procedencia-midia.md, o build falha em segundos.
+      # Sem a variável, o passo é pulado: o comportamento de hoje não muda. Em CI as fotos não existem (a pasta não é versionada).
+      - name: Conferir procedência das fotos de referência (builds de loja)
+        if: vars.RELEASE_BUILD != ''
+        env:
+          RELEASE_BUILD: ${{ vars.RELEASE_BUILD }}
+        run: node scripts/check-media-provenance.mjs
+
       - name: Conferir que nenhum segredo do Firebase/Google está versionado (repositório público)
         run: node scripts/check-no-secrets.mjs
 
