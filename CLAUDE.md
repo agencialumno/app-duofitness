@@ -64,6 +64,8 @@ Os atalhos "Personal Trainer IA" (rota `AIPersonalTrainer`) abrem a **série gui
 | `EXPO_PUBLIC_APP_KEY` | mesmo valor do `APP_KEY` do backend (não é segredo de verdade) |
 | `EXPO_PUBLIC_API_FIRST_TOKEN_TIMEOUT_MS` | tempo até o primeiro token antes de cair no offline; padrão 10000 |
 | `EXPO_PUBLIC_OCCUPANCY_REMOTE` | `true` liga a lotação real (precisa de `EXPO_PUBLIC_API_URL`); vazio = dados de exemplo |
+| `EXPO_PUBLIC_TERMS_URL` | URL dos Termos de Uso (`https://duofitnessoficial.com.br/termos/`); vazio = o link some (`LegalLinks`, `src/utils/legalLinks.js`) |
+| `EXPO_PUBLIC_PRIVACY_URL` | URL da Política de Privacidade; vazio = o link some |
 | `EXPO_PUBLIC_MARKETPLACE_WHATSAPP` | número do WhatsApp do marketplace (dígitos com DDI); vazio = botão avisa que falta configurar |
 | `EXPO_PUBLIC_EXERCISE_VIDEOS` | ligada por padrão; `false` esconde a área "Como fazer" do exercício. Depois de mudar um `EXPO_PUBLIC_*` localmente, rode o Metro com `--clear` (o cache guarda o valor antigo) |
 | `EXPO_PUBLIC_HEALTH_INTEGRATION` | `false` (padrão): integração com Apple Saúde / Health Connect desligada (só stubs) |

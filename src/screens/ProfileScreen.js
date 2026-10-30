@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import EditNameRow from '../components/EditNameRow';
+import LegalLinks from '../components/LegalLinks';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
@@ -194,6 +195,9 @@ export default function ProfileScreen({ navigation }) {
       <ProfileHealthCard onPress={() => navigation.navigate('Saude')} />
 
       <AccountCard />
+
+      {/* Legal: Termos de Uso e Política de Privacidade (só os que têm URL configurada) */}
+      <LegalLinks testIDPrefix="profile" />
 
       {/* Seção "Conta", discreta e no fim: Sair da conta e, abaixo, o link "Excluir minha conta" */}
       <AccountActions />

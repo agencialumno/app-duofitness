@@ -243,7 +243,7 @@ describe('telas (código-fonte)', () => {
     const g = code('src/screens/auth/AgeGateScreen.js');
     expect(g).toContain('evaluateAge');
     expect(g).toContain('GUARDIAN_CONSENT_TEXT');
-    expect(g).toContain('PRIVACY_URL');
+    expect(g).toContain('<LegalLinks'); // o link da política (e dos termos) vem do LegalLinks, que lê PRIVACY_URL e TERMS_URL
     expect(g).toContain('MIN_ACCOUNT_AGE');
     expect(g).toContain('rejectUnderage');
     expect(g).toContain('testID="age-guardian"');

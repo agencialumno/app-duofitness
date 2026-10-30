@@ -1,16 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Linking, Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { COLORS, FONTS, SPACING } from '../../utils/theme';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/authErrors';
 import { validateSignUp } from '../../auth/authFlow';
 import { PRIVACY_URL, TERMS_URL } from '../../data/authConfig';
+import LegalLinks from '../../components/LegalLinks';
+import { LEGAL_PENDING_NOTE, acceptanceText, legalLinks } from '../../utils/legalLinks';
 import {
   AuthField, AuthScreen, CheckRow, Divider, LinkButton, Notice, PasswordChecklist, PrimaryButton, StrengthBar,
 } from '../../components/auth/AuthParts';
 import SocialButtons from './SocialButtons';
 import { useApp } from '../../context/AppContext';
 import { MAX_NAME_LENGTH, NAME_HINT } from '../../utils/accountName';
+
+// Frase de aceite: cita só o que tem link (URL ausente esconde o link e a menção); sem nenhuma URL, cita os dois e avisa que estão em revisão.
+const ACCEPT = acceptanceText(legalLinks({ termsUrl: TERMS_URL, privacyUrl: PRIVACY_URL }));
 
 export default function SignUpScreen({ navigation }) {
   const { provider } = useAuth();
@@ -20,16 +25,10 @@ export default function SignUpScreen({ navigation }) {
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [legalNote, setLegalNote] = useState('');
 
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }));
   const touch = (k) => () => setTouched((t) => ({ ...t, [k]: true }));
   const v = useMemo(() => validateSignUp({ ...f, accepted }, touched), [f, accepted, touched]);
-
-  const openLegal = (url) => {
-    if (url) { Linking.openURL(url).catch(() => setLegalNote('Não foi possível abrir o documento agora.')); return; }
-    setLegalNote('Este documento está em revisão e será publicado em breve.');
-  };
 
   const submit = async () => {
     if (!v.canSubmit || busy) return;
@@ -62,14 +61,10 @@ export default function SignUpScreen({ navigation }) {
       <AuthField label="Confirmar senha" secure value={f.confirm} onChangeText={set('confirm')} onBlur={touch('confirm')} error={v.errors.confirm} testID="su-confirm"
         textContentType="newPassword" autoComplete="new-password" autoCapitalize="none" autoCorrect={false} />
 
-      <CheckRow testID="su-terms" checked={accepted} onToggle={() => setAccepted((x) => !x)} label="Li e aceito os Termos de Uso e a Política de Privacidade">
-        <Text style={styles.checkText}>Li e aceito os Termos de Uso e a Política de Privacidade.</Text>
+      <CheckRow testID="su-terms" checked={accepted} onToggle={() => setAccepted((x) => !x)} label={ACCEPT}>
+        <Text style={styles.checkText}>{ACCEPT}.</Text>
       </CheckRow>
-      <View style={styles.legalLinks}>
-        <LinkButton label="Ler os Termos de Uso" onPress={() => openLegal(TERMS_URL)} testID="su-terms-link" />
-        <LinkButton label="Ler a Política de Privacidade" onPress={() => openLegal(PRIVACY_URL)} testID="su-privacy-link" />
-      </View>
-      <Notice kind="info" text={legalNote} testID="su-legal-note" />
+      <LegalLinks termsUrl={TERMS_URL} privacyUrl={PRIVACY_URL} testIDPrefix="su" emptyNote={LEGAL_PENDING_NOTE} style={styles.legalLinks} />
 
       <Notice kind="error" text={error} testID="su-error" />
       <PrimaryButton testID="su-submit" label="Criar conta" disabled={!v.canSubmit} loading={busy} onPress={submit} />

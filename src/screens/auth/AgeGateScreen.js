@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { COLORS, FONTS, SPACING } from '../../utils/theme';
 import { useApp } from '../../context/AppContext';
-import { PRIVACY_URL } from '../../data/authConfig';
+import LegalLinks from '../../components/LegalLinks';
+import { LEGAL_PENDING_NOTE } from '../../utils/legalLinks';
 import { GUARDIAN_CONSENT_TEXT, MIN_ACCOUNT_AGE } from '../../config/account';
 import { buildAgeInfo, canContinueAge, evaluateAge } from '../../utils/accountAge';
 import { AuthField, AuthScreen, CheckRow, LinkButton, Notice, PrimaryButton } from '../../components/auth/AuthParts';
@@ -20,11 +21,6 @@ export default function AgeGateScreen() {
 
   const result = useMemo(() => evaluateAge(text), [text]);
   const canGo = canContinueAge(result, guardian);
-
-  const openPrivacy = () => {
-    if (PRIVACY_URL) { Linking.openURL(PRIVACY_URL).catch(() => setNote('Não foi possível abrir a Política de Privacidade agora.')); return; }
-    setNote('A Política de Privacidade está em revisão e será publicada em breve.');
-  };
 
   const submit = async () => {
     if (busy) return;
@@ -74,7 +70,7 @@ export default function AgeGateScreen() {
           <CheckRow testID="age-guardian" checked={guardian} onToggle={() => setGuardian((x) => !x)} label={GUARDIAN_CONSENT_TEXT}>
             <Text style={styles.checkText}>{GUARDIAN_CONSENT_TEXT}.</Text>
           </CheckRow>
-          <LinkButton testID="age-privacy" label="Ler a Política de Privacidade" onPress={openPrivacy} />
+          <LegalLinks testIDPrefix="age" emptyNote={LEGAL_PENDING_NOTE} />
           <Notice kind="info" text={note} testID="age-note" />
         </>
       ) : null}

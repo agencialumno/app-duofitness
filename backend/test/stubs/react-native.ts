@@ -33,3 +33,14 @@ export const AccessibilityInfo = {
   __set(v: boolean) { AccessibilityInfo.__reduce = v; [...motionListeners].forEach((f) => f(v)); },
   __count: () => motionListeners.size,
 };
+
+
+// Linking falso: registra o que foi aberto (os testes dos links legais conferem a URL).
+export const Linking = {
+  opened: [] as string[],
+  fail: false,
+  openURL: async (url: string) => {
+    if (Linking.fail) throw new Error('falha simulada');
+    Linking.opened.push(url);
+  },
+};

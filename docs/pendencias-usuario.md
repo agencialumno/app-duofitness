@@ -35,8 +35,8 @@ Variáveis (Settings > Secrets and variables > Actions > **Variables**), todas o
 | Variável | Valor | Para quê |
 |---|---|---|
 | `EXPO_PUBLIC_AUTH_ENABLED` | `true` | liga as telas de conta (vazio = desligadas) |
-| `EXPO_PUBLIC_TERMS_URL` | URL dos termos | link na tela de cadastro (vazio = "em revisão") |
-| `EXPO_PUBLIC_PRIVACY_URL` | URL da política | idem |
+| `EXPO_PUBLIC_TERMS_URL` | `https://duofitnessoficial.com.br/termos/` | link "Termos de Uso" no cadastro, no login, na etapa de idade e no Perfil (vazio = o link some e a frase de aceite cita só a política) |
+| `EXPO_PUBLIC_PRIVACY_URL` | URL da política | idem, para a Política de Privacidade |
 | `FIREBASE_ENABLED` | `true` | inclui o Firebase no build; cada plataforma só liga se o secret dela existir (sem secret: aviso e build normal) |
 
 Secrets (Settings > Secrets and variables > Actions > **Secrets**), em base64 de uma linha:
@@ -162,3 +162,11 @@ O que fazer:
 - **PENDENTE: origem e licença das 6 imagens** (`banner-anuncie`, `banner-treino`, `banner-vitrine`, `suplemento`, `proteina`, `whey`): anote de onde vieram (criadas por você, por um designer ou geradas por IA, e com qual ferramenta/termos) e confirme o direito de uso comercial. As cenas têm pessoas/partes do corpo (braços, tronco) e o logotipo da Duo Fitness: confirme que não há rosto, marca ou foto de terceiros reconhecível. Sem essa confirmação, não publique.
 - **Nome dos arquivos:** dois banners têm nome que não combina com o texto (docs/marketplace.md, "Mapa das 6 imagens"); decida se quer renomear.
 - Os 6 arquivos foram regravados como JPEG de verdade (os originais eram PNG com extensão .jpg) e otimizados para ~100 a 200 KB; guarde os originais grandes **fora do git**.
+
+## 17. URL dos Termos de Uso e validação por código de condomínio
+
+- **Crie a variável `EXPO_PUBLIC_TERMS_URL`** = `https://duofitnessoficial.com.br/termos/` no GitHub (Settings > Secrets and variables > Actions > **Variables**, não em Secrets). Sem ela os builds saem sem o link dos Termos (o app não quebra: some o link e a frase de aceite cita só a política). Os workflows `android.yml` e `ios.yml` já a repassam ao app.
+- **EAS:** se algum dia o build passar pelo EAS (`eas.json` é só plano B), crie as variáveis `EXPO_PUBLIC_TERMS_URL` e `EXPO_PUBLIC_PRIVACY_URL` também no EAS (Project > Environment variables). Hoje o EAS não é usado.
+- **Política de Privacidade:** `EXPO_PUBLIC_PRIVACY_URL` continua pendente (a URL ainda não foi informada). Quando existir, crie a variável do mesmo jeito; os dois links passam a aparecer.
+- Para testar localmente, copie o `.env.example` para `.env` e rode o Metro com `--clear`.
+- **Tarefa futura:** validação do cadastro por **código de condomínio** (hoje qualquer pessoa com 13 anos ou mais cria conta). Não implementada.

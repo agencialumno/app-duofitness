@@ -1,3 +1,4 @@
+import LegalLinks from '../../components/LegalLinks';
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage, isThrottle, validateEmail } from '../../auth/authErrors';
@@ -50,6 +51,7 @@ export default function SignInScreen({ navigation }) {
       <Divider />
       <SocialButtons />
       <LinkButton testID="si-signup" label="Ainda não tenho conta: criar conta" onPress={() => navigation.replace('SignUp')} />
+      <LegalLinks testIDPrefix="si" />
     </AuthScreen>
   );
 }
