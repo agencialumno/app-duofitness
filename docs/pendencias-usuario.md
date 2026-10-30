@@ -136,3 +136,21 @@ O que fazer:
 - **Anote a data de validade**: certificado e perfil valem 1 ano; renove e atualize os secrets antes (o resumo do job mostra "expira em").
 - Se ligar HealthKit ou Sign in with Apple depois de criar o perfil, **recrie o perfil** e atualize `IOS_PROVISIONING_PROFILE_B64`.
 - Não foi possível testar o keychain nem a assinatura fora do macOS do GitHub: a primeira execução com `upload=false` é a validação.
+
+## 15. Health Connect (Android) e a Google Play
+
+- **Variável:** a mesma `HEALTH_INTEGRATION_ENABLED=true` (Settings > Secrets and variables > Actions > Variables) liga o Health Connect no `android.yml` e o HealthKit no `ios.yml`. Sem ela, nada muda.
+- **O APK avulso funciona sem declaração nenhuma** (instalação direta, teste interno por arquivo). **A loja exige a declaração** para publicar um app que usa o Health Connect.
+- **Formulário "Health apps" (Play Console > o app > Política > Conteúdo do app > Declaração de apps de saúde)**: marque a categoria Saúde e fitness e, na tela seguinte, para **cada tipo** justifique o uso, em português simples e sem promessa médica. Tipos usados e justificativa sugerida (todos **somente leitura**):
+  - Passos, energia ativa, exercício: "Mostrar a atividade do dia e a tendência de 7 e 30 dias dentro do app."
+  - Frequência cardíaca, em repouso, variabilidade, VO₂ máx.: "Mostrar o valor e a tendência da própria pessoa, comparando com ela mesma. Não há diagnóstico."
+  - Sono: "Mostrar duração e horários de dormir e acordar."
+  - Peso e % de gordura (só maiores de 18): "Acompanhar as medidas ao longo do tempo."
+  - Hidratação: "Mostrar os copos de água do dia."
+  - Declare que o app **não grava** no Health Connect, **não lê em segundo plano** e **não pede o histórico** além dos 30 dias.
+- **Seção "Segurança dos dados" (Data safety):** dados de saúde e fitness coletados: sim, **tratados só no aparelho**; **não compartilhados** com terceiros; **não enviados ao servidor**; coleta **opcional** (o usuário concede); o usuário pode pedir a exclusão (Desconectar apaga os dados importados; Excluir conta apaga o resto). Confira se o texto bate com a política de privacidade.
+- **Política de privacidade:** precisa estar publicada em uma URL (`EXPO_PUBLIC_PRIVACY_URL`) e na ficha da loja, e **mencionar** o Health Connect: o que é lido, para quê, que fica só no aparelho, que não é compartilhado, e como retirar a permissão. O rascunho está em `docs/juridico/`. A tela Conectar tem o botão que abre essa política.
+- **Tela de justificativa:** o app declara o filtro e o alias exigidos pelo Health Connect, mas ambos abrem o app (não uma tela dedicada). Se a revisão pedir que abram a política direto, avise: o próximo passo é uma activity nativa mínima.
+- **Notas de revisão (cole no envio):** "O Duo Fitness lê dados do Health Connect SOMENTE PARA LEITURA (passos, energia ativa, exercício, frequência cardíaca, sono, peso, % de gordura e hidratação) para mostrar a evolução do usuário no próprio aparelho, depois que ele concede cada permissão. O app não grava no Health Connect, não lê em segundo plano, não usa o histórico além de 30 dias e não envia esses dados a servidores. Menores de 18 anos não têm acesso à integração. Para testar: Saúde > Conectar > Conectar ao Health Connect."
+- **Teste num Android real com relógio** antes de enviar (roteiro em `docs/saude.md`, seção "Health Connect"): nada disto pôde ser validado no CI.
+- Os nomes exatos das telas da Play Console mudam; confira o guia oficial "Declare access to Health Connect data types" (developer.android.com/health-and-fitness).

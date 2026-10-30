@@ -331,3 +331,54 @@ Origem: **Apple Watch** quando o dado veio de um relógio, senão **Apple Saúde
 **Notas de revisão da App Store:** no envio à App Store, escreva nas notas de revisão: "O Duo Fitness usa o HealthKit **somente para leitura** (atividade, sono, frequência cardíaca, peso e água) para mostrar a evolução do usuário no próprio aparelho. O app não grava dados no app Saúde: a chave NSHealthUpdateUsageDescription existe apenas porque a biblioteca de leitura referencia essas APIs, e ela não é usada."
 
 **Erros do altool no CI:** o `ios-log-hints.mjs --stage altool` (chamado pelo `ios-upload.sh`) classifica a saída do altool: ITMS-90683 (diz qual chave faltou, só o nome), build number repetido, ícone inválido, entitlement fora do perfil e permissão da chave de API, sempre com causa e ação, e nunca manda procurar no log do xcodebuild. A saída completa do altool (sem chave nem JWT) fica em `ipa-validate.log` e `ipa-upload.log` no artifact `xcodebuild-logs-<execução>`.
+
+
+## Health Connect (Android): biblioteca escolhida (branch `saude-healthconnect`)
+
+Só leitura, atrás de `HEALTH_INTEGRATION_ENABLED=true` (a mesma variável do HealthKit; o `android.yml` recebe `HEALTH_INTEGRATION_ENABLED` e `EXPO_PUBLIC_HEALTH_INTEGRATION`, como o `ios.yml`). Sem a variável o Android gerado (manifest e gradle) é o mesmo de antes; o iOS não mudou.
+
+**Biblioteca: `react-native-health-connect` 4.1.3** (versão exata em `healthconnect/native-deps.json`, instalada só no CI por `scripts/install-healthconnect-deps.mjs`, que grava no `package.json` do workspace do runner; o `package.json` do repositório não muda). Lido no código e no README do pacote (tarballs 3.5.3 e 4.1.3 do npm):
+
+| Critério | 4.1.3 (escolhida) | 3.5.3 (anterior) |
+|---|---|---|
+| Cliente do Android | `androidx.health.connect:connect-client` **1.1.0 (estável)** | 1.1.0-**alpha11** |
+| Nova arquitetura | TurboModule (codegen `RNHealthConnectSpec`); o `build.gradle` trata `newArchEnabled` | idem |
+| Expo | integração **dentro do pacote**: um módulo Expo (`expo-module.config.json`, `android-expo/`) registra sozinho o delegate de permissões, **sem editar o `MainActivity`**; o autolinking do Expo o enxerga | exigia editar o `MainActivity` à mão |
+| minSdk | **26** (o README confirma; o app tem 24) | 26 |
+| Plugin de config | `app.plugin.js`: só acrescenta o filtro de justificativa e o alias; **não declara permissões** | idem |
+| Módulos extras | nenhum (peer: `expo`, `react`, `react-native`, `@expo/config-plugins`) | nenhum |
+| API usada | `getSdkStatus`, `initialize`, `requestPermission`, `getGrantedPermissions`, `readRecords` (com `pageToken`), `revokeAllPermissions`, `openHealthConnectSettings` | idem |
+
+Motivos: cliente estável (não alpha), o delegate de permissões entra pelo módulo Expo (menos código nativo nosso e nada a patchar), e a API de revogação existe. Risco: a linha 4.x saiu em 1-6/ago/2026 (poucas semanas de uso quando foi fixada), por isso a versão é exata e o primeiro build precisa ser testado num Android real. O fallback é fixar a 3.5.3 (mudaria o `MainActivity`).
+
+**Plugin próprio (`plugins/withHealthConnectOptional.js`)**, só com a flag e só Android. Não usamos o `app.plugin.js` do pacote porque ele não declara permissões e queremos garantir que só existam `READ_*`. Escreve:
+- as 11 permissões de leitura: `READ_STEPS`, `READ_ACTIVE_CALORIES_BURNED`, `READ_EXERCISE`, `READ_HEART_RATE`, `READ_RESTING_HEART_RATE`, `READ_HEART_RATE_VARIABILITY`, `READ_VO2_MAX`, `READ_SLEEP`, `READ_WEIGHT`, `READ_BODY_FAT`, `READ_HYDRATION` (todas `android.permission.health.*`);
+- **nunca** `WRITE_*`, `READ_HEALTH_DATA_IN_BACKGROUND` (leitura em segundo plano) nem `READ_HEALTH_DATA_HISTORY` (fica o padrão: só os 30 dias anteriores à concessão);
+- `<queries>` do pacote `com.google.android.apps.healthdata` (visibilidade de pacote no Android 11 a 13);
+- as exigências da tela de justificativa de permissões: o intent filter `androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE` na activity principal (Android 13 e abaixo) e o `activity-alias` `ViewPermissionUsageActivity` com `android.intent.action.VIEW_PERMISSION_USAGE` + categoria `android.intent.category.HEALTH_PERMISSIONS`, protegido por `android.permission.START_VIEW_PERMISSION_USAGE` (Android 14 e acima);
+- `android.minSdkVersion=26` em `gradle.properties` (só com a flag).
+
+**Limite conhecido da tela de justificativa:** o filtro e o alias abrem o app (a activity principal), não uma tela dedicada: sem código nativo próprio não dá para o React Native saber que a abertura veio do Health Connect. A política de privacidade e o texto do que é lido estão na tela **Saúde > Conectar** (cartão "Política de privacidade", `EXPO_PUBLIC_PRIVACY_URL`). Se a revisão da Play pedir que o link do Health Connect abra a política direto, o próximo passo é uma activity nativa mínima (registrar no relatório de pendências).
+
+### Health Connect: o que é lido, limites e como testar
+
+**Tipos lidos (últimos 30 dias, só com o app aberto):** passos, energia ativa, sessões de exercício (minutos), frequência cardíaca (média do dia), em repouso, variabilidade (o Health Connect só tem RMSSD; o HealthKit usa SDNN, e o app mostra o valor em ms como vier), VO₂ máx., sono (sessões e fases), peso, % de gordura e hidratação (copos de 250 mL). Mapeamento em `src/utils/healthConnectMapping.js`; provedor em `healthConnectProvider.js` (interface `HealthProvider`); sincronização genérica em `healthSync.js` (`syncHealth`, o mesmo código do HealthKit).
+
+**Regras do mapeamento:** o dia é o **dia local do aparelho**; passos, energia e água somam **por fonte** e vale a fonte de maior total no dia (celular e relógio gravando os mesmos passos não são somados em dobro); sono de duas fontes que se sobrepõem conta uma vez (união dos intervalos), na noite que termina naquele dia; a mesma sessão de treino gravada por dois apps conta uma vez; dia sem dado nunca vira zero; peso e % de gordura iguais ao registro **manual** do mesmo dia (dentro da tolerância) são descartados. A origem é `health_connect` ("Health Connect") ou `health_connect_watch` ("Relógio"), quando o metadata do registro diz que o dispositivo é um relógio (`device.type` 1). **Nome de dispositivo e pacote de origem nunca são guardados** (o pacote só existe na memória durante a leitura).
+
+**Disponibilidade:** `getSdkStatus` -> disponível (Android 14+ ou app instalado), "precisa instalar/atualizar" (botão "Abrir a Play Store") ou indisponível (texto claro; o registro manual segue). **Permissões:** aqui o app sabe o que foi concedido (`getGrantedPermissions`): a tela mostra "Ativa"/"Sem permissão" por categoria; permissão parcial é normal, e categoria concedida sem registros é "Sem dados ainda", nunca erro. **Atraso:** dados de relógios chegam quando o app do fabricante sincroniza; a Saúde mostra "Atualizado às HH:MM" e a dica "abra o app do relógio para sincronizar". **Leitura paginada:** `readRecords` com `pageToken`, páginas de 1000, no máximo 30 páginas por tipo (trava de segurança). **Desconectar:** apaga do aparelho só o que veio do Health Connect (manual e dados de outras origens ficam) e chama `revokeAllPermissions`. Limite documentado da biblioteca e da plataforma: **a revogação só vale depois que o app é reiniciado**, então a tela avisa isso e oferece "Abrir as configurações do Health Connect" (Permissões do app > Duo Fitness) para retirar na hora.
+
+**Menores de 18:** `selectHealthProvider` devolve o provedor manual também no Android (testado). Web: indisponível. Os dados importados ficam em `@duo_health_v2` e `@duo_health_connect`, entram no snapshot por conta e somem ao excluir a conta; nada vai a servidor, log, analytics nem ao marketplace (testes varrem o código; nenhum arquivo do Health Connect usa `console`, rede ou `Linking`).
+
+**Só leitura, garantido em quatro camadas:** (1) o manifest só tem `READ_*` (o `check-android-project.mjs` falha no CI com qualquer `WRITE_*`, segundo plano ou histórico); (2) o provedor só pede `accessType: 'read'`; (3) uma varredura de testes falha se existir `insertRecords`, `deleteRecords` ou `WRITE_` no código do app; (4) a biblioteca contém código de escrita, mas sem a permissão no manifest o Android recusa qualquer escrita.
+
+**Só dá para validar num Android real (com um relógio):** a folha de permissões do Health Connect; o delegate de permissões do módulo Expo; o build Gradle com o minSdk 26; dados de Pixel Watch/Galaxy Watch/Fitbit/Garmin chegando pelos apps deles (e o atraso); o rótulo "Relógio" (depende do `device.type` que o app do fabricante grava); sono com duas fontes; a revogação e o aviso de reinício; o botão da Play Store (Android 13 ou menos); os filtros da justificativa abrindo o app; e a aprovação da Play.
+
+**Roteiro de teste (Android 14, depois Android 13 sem o Health Connect):**
+1. Build com `HEALTH_INTEGRATION_ENABLED=true`; instale; conta de adulto; abra Saúde > Conectar.
+2. Android 13 sem o app: aparece "Instale ou atualize o Health Connect"; o botão abre a Play Store. Instale e volte.
+3. Marque todas as categorias, "Conectar ao Health Connect", conceda **só** passos e sono: a tela mostra Atividade e Sono "Ativa", as demais "Sem permissão", sem erro.
+4. Com o relógio pareado, sincronize o app dele; puxe a tela Saúde para atualizar: passos, sono e FC; origem "Relógio"; "Atualizado às" aparece e a dica do relógio também.
+5. Registre um peso manual igual ao do Health Connect no mesmo dia: não duplica.
+6. Desconectar: os dados importados somem, o manual fica; leia o aviso; abra as configurações do Health Connect e confira que a permissão foi retirada (ou retire à mão).
+7. Conta de menor de 18: a tela Conectar diz que não está disponível e nenhuma permissão é pedida.
