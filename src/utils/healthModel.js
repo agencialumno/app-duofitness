@@ -5,26 +5,36 @@
 //   unit    sempre a unidade da métrica (METRICS[metric].unit)
 //   date    dia LOCAL "AAAA-MM-DD" (o dia em que a pessoa viveu aquele dado, no fuso `tz`)
 //   tz      fuso IANA do aparelho quando a amostra foi criada (ex.: "America/Sao_Paulo")
-//   source  "manual" | "apple_saude" | "health_connect" | "exemplo"
+//   source  "manual" | "apple_saude" | "apple_watch" | "health_connect" | "health_connect_watch" | "exemplo"
 //   at      horário ISO opcional (distingue várias leituras no mesmo dia)
 //
 // REGRA DE OURO: dado ausente é AUSENTE, nunca zero. Dia sem amostra não entra na média, não vira 0 e não penaliza.
 // Zero só existe quando a pessoa (ou o aparelho) registrou 0.
 import { addDays, dayKey } from './health';
 
-export const SOURCES = ['manual', 'apple_saude', 'apple_watch', 'health_connect', 'exemplo'];
+export const SOURCES = ['manual', 'apple_saude', 'apple_watch', 'health_connect', 'health_connect_watch', 'exemplo'];
 // Origens que vêm do aparelho de saúde (HealthKit): apagadas juntas ao desconectar. O rótulo "Apple Watch" só é usado quando o dado veio de um
 // relógio; o nome do dispositivo nunca é guardado.
 export const APPLE_SOURCES = ['apple_saude', 'apple_watch'];
+// Origens do Health Connect (Android), apagadas juntas ao desconectar. "Relógio" só quando o metadata do registro diz que o dispositivo é um
+// relógio (tipo de dispositivo); nomes de dispositivos e pacotes de origem nunca são guardados.
+export const HEALTH_CONNECT_SOURCES = ['health_connect', 'health_connect_watch'];
+// Conexão ('apple_saude' | 'health_connect') -> origens de amostras que ela produz.
+export function sourcesOfProvider(provider) {
+  if (provider === 'health_connect') return HEALTH_CONNECT_SOURCES;
+  if (provider === 'apple_saude') return APPLE_SOURCES;
+  return [];
+}
 export const SOURCE_LABELS = {
   manual: 'Registro manual',
   apple_saude: 'Apple Saúde',
   apple_watch: 'Apple Watch',
   health_connect: 'Health Connect',
+  health_connect_watch: 'Relógio',
   exemplo: 'Dados de exemplo',
 };
 // Se há mais de uma origem no mesmo dia, vale a de maior prioridade (aparelho > manual > exemplo): evita contar duas vezes.
-export const SOURCE_PRIORITY = { apple_watch: 4, apple_saude: 3, health_connect: 3, manual: 2, exemplo: 1 };
+export const SOURCE_PRIORITY = { apple_watch: 4, health_connect_watch: 4, apple_saude: 3, health_connect: 3, manual: 2, exemplo: 1 };
 
 // agg: como juntar as amostras do MESMO dia numa só: soma, média, última ou horário do relógio (média circular).
 // tol: variação mínima para uma tendência deixar de ser "estável".

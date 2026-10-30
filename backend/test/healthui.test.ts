@@ -130,7 +130,7 @@ describe('conectar dispositivos: desligado, com consentimento e opção de apaga
     expect(src).toContain('{!integrationEnabled && (');
     expect(src).toContain('testID="connect-soon"');
     expect(src).toMatch(/const enabled = integrationEnabled && !!target && !minor/);
-    expect(src).toMatch(/const canConnect = enabled && picks\.length > 0 && !busy/);
+    expect(src).toMatch(/const canConnect = enabled && hcReady && picks\.length > 0 && !busy/);
     expect(src).toContain('disabled={!canConnect}');
     expect(C.CONNECT_COPY.soonTitle).toBe('Em breve');
   });

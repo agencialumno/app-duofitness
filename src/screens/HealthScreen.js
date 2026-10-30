@@ -10,6 +10,7 @@ import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, W
 import InfoButton from '../components/InfoButton';
 import { SCORE_DISCLAIMER } from '../utils/health';
 import { splitViews } from '../utils/healthView';
+import { ANDROID_COPY } from '../data/healthConnectContent';
 import { updatedAtLabel } from '../utils/healthSync';
 import { HEALTH_PRIVACY_LINES } from '../data/healthInfoContent';
 
@@ -20,7 +21,7 @@ const { space, type } = HEALTH_UI;
 // (g) avisos pequenos. Detalhes, explicação ("i") e histórico ficam na tela de detalhe. Tudo no aparelho; não é aconselhamento médico.
 export default function HealthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { loading, result, score, notes, views, coach, minor, addGlass, sync, syncing, canSync, lastSyncAt } = useHealth();
+  const { loading, result, score, notes, views, coach, minor, addGlass, sync, syncing, canSync, lastSyncAt, provider } = useHealth();
   const scrollRef = useRef(null);
   const ys = useRef({ cats: 0, nodata: 0 });
   const [noDataOpen, setNoDataOpen] = useState(false);
@@ -66,6 +67,7 @@ export default function HealthScreen({ navigation }) {
           <Text style={styles.title} accessibilityRole="header">Saúde</Text>
           <Text style={styles.subtitle}>Seus hábitos da semana</Text>
           {canSync && lastSyncAt ? <Text style={styles.updated} testID="health-updated" accessibilityLiveRegion="polite">{updatedAtLabel(lastSyncAt)}</Text> : null}
+          {canSync && provider && provider.source === 'healthconnect' ? <Text style={styles.updated} testID="health-watch-hint">{ANDROID_COPY.syncHintShort}</Text> : null}
         </View>
         <InfoButton tema="saude" />
       </View>

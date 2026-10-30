@@ -4,7 +4,7 @@
 // Os dados de saúde ficam SÓ no aparelho: este módulo nunca usa rede, nunca grava em log e nada daqui vai para o
 // marketplace, o backend ou a conta.
 import { DEFAULT_WATER_GOAL, HEALTH_KEY, normalizeHealth } from './health';
-import { APPLE_SOURCES, CATEGORIES, METRICS, deviceTz, makeSample, normalizeSamples } from './healthModel';
+import { APPLE_SOURCES, CATEGORIES, HEALTH_CONNECT_SOURCES, METRICS, deviceTz, makeSample, normalizeSamples, sourcesOfProvider } from './healthModel';
 import { readJsonKey, sanitizeObject } from './safeStorage';
 
 export const HEALTH_V2_KEY = '@duo_health_v2';
@@ -84,7 +84,8 @@ export function removeSample(health, { metric, date, source }) {
 // "apple_saude" remove também "apple_watch" (os dois vêm do HealthKit).
 export function removeBySource(health, source) {
   const h = normalizeHealthV2(health);
-  const gone = source === 'apple_saude' || source === 'apple_watch' ? APPLE_SOURCES : [source];
+  const gone = source === 'apple_saude' || source === 'apple_watch' ? APPLE_SOURCES
+    : source === 'health_connect' || source === 'health_connect_watch' ? HEALTH_CONNECT_SOURCES : [source];
   return { ...h, samples: h.samples.filter((s) => !gone.includes(s.source)) };
 }
 
@@ -94,10 +95,12 @@ export function removeBySource(health, source) {
 //    registro MANUAL no mesmo dia com valor próximo (dentro da tolerância da métrica), a amostra do HealthKit é descartada (é o mesmo
 //    registro); valor diferente no mesmo dia entra, e a agregação do dia usa a origem de maior prioridade (aparelho > manual).
 //    Para somas (passos, minutos, energia, água) o aparelho tem prioridade sobre o manual do mesmo dia: não soma duas vezes.
-export function mergeImported(health, incoming, { from, metrics } = {}) {
+// `provider` ('apple_saude' padrão | 'health_connect') diz de quem são as amostras substituídas: nunca as do outro aparelho de saúde nem as manuais.
+export function mergeImported(health, incoming, { from, metrics, provider = 'apple_saude' } = {}) {
   const h = normalizeHealthV2(health);
+  const own = sourcesOfProvider(provider);
   // `metrics` (opcional) limita a troca às métricas lidas agora: uma categoria que falhou não perde o que já tinha
-  const keep = h.samples.filter((s) => !(APPLE_SOURCES.includes(s.source) && (!from || s.date >= from) && (!metrics || metrics.includes(s.metric))));
+  const keep = h.samples.filter((s) => !(own.includes(s.source) && (!from || s.date >= from) && (!metrics || metrics.includes(s.metric))));
   const manual = keep.filter((s) => s.source === 'manual');
   const fresh = (Array.isArray(incoming) ? incoming : []).filter((s) => {
     const m = METRICS[s && s.metric];
