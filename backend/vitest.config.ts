@@ -5,14 +5,14 @@ import { defineConfig } from 'vitest/config';
 const stub = (f: string) => fileURLToPath(new URL(`./test/stubs/${f}`, import.meta.url));
 
 export default defineConfig({
-  // Componentes do app (src/components/*.js) têm JSX em arquivos .js: este plugin os transforma (classic, com
+  // Componentes do app (src/components/*.js e src/components/<pasta>/*.js) têm JSX em arquivos .js: este plugin os transforma (classic, com
   // React.createElement) antes da análise de imports, só nos testes de componentes.
   plugins: [
     {
       name: 'jsx-em-js-do-app',
       enforce: 'pre',
       async transform(code: string, id: string) {
-        if (!/[\/]src[\/]components[\/][^\/]+\.js$/.test(id)) return null;
+        if (!/[\/]src[\/]components[\/](?:[^\/]+[\/])?[^\/]+\.js$/.test(id)) return null;
         const r = await transformWithOxc(code, id.replace(/\.js$/, '.jsx'), {
           jsx: { runtime: 'classic', pragma: 'React.createElement', pragmaFrag: 'React.Fragment' },
         });

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, LayoutAnimation, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, LayoutAnimation, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import CategoryCard from '../components/health/CategoryCard';
 import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, WeeklyReport } from '../components/health/HealthParts';
 import InfoButton from '../components/InfoButton';
 import { SCORE_DISCLAIMER } from '../utils/health';
-import { splitViews } from '../utils/healthView';
+import { connectButtonState, splitViews } from '../utils/healthView';
 import { ANDROID_COPY } from '../data/healthConnectContent';
 import { updatedAtLabel } from '../utils/healthSync';
 import { HEALTH_PRIVACY_LINES } from '../data/healthInfoContent';
@@ -21,7 +21,7 @@ const { space, type } = HEALTH_UI;
 // (g) avisos pequenos. Detalhes, explicação ("i") e histórico ficam na tela de detalhe. Tudo no aparelho; não é aconselhamento médico.
 export default function HealthScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { loading, result, score, notes, views, coach, minor, addGlass, sync, syncing, canSync, lastSyncAt, provider } = useHealth();
+  const { loading, result, score, notes, views, coach, minor, addGlass, sync, syncing, canSync, lastSyncAt, provider, integrationEnabled, connection } = useHealth();
   const scrollRef = useRef(null);
   const ys = useRef({ cats: 0, nodata: 0 });
   const [noDataOpen, setNoDataOpen] = useState(false);
@@ -91,6 +91,7 @@ export default function HealthScreen({ navigation }) {
             onRegister={() => navigation.navigate('SaudeDetalhe', { category: minor ? 'sleep' : 'body', register: true })}
             onWater={() => addGlass(1)}
             onConnect={() => navigation.navigate('SaudeConectar')}
+            connect={connectButtonState({ integrationEnabled, platform: Platform.OS, connection })}
           />
         </View>
 

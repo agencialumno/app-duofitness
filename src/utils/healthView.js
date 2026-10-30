@@ -294,3 +294,21 @@ export function parseForm(fields, texts) {
   }
   return { entries, errors };
 }
+
+// Botão "Conectar" das ações rápidas da Saúde. Puro (testável). Três estados, e o rótulo de acessibilidade sempre diz o mesmo que o texto visível:
+//  - 'soon'      integração desligada (sem a flag) ou plataforma sem suporte (web): "Em breve" e "indisponível", sem destaque;
+//  - 'available' integração ligada e plataforma suportada, ainda sem conexão: "Conectar" + o nome do provedor; abre a tela Conectar (o ÚNICO fluxo
+//                de permissão: consentimento por categoria e pedido ao sistema);
+//  - 'connected' já conectado a ESTE provedor (com pelo menos uma categoria): "Conectado"; abre a mesma tela (estado, "Atualizado às" e Desconectar).
+export function connectButtonState({ integrationEnabled = false, platform, connection } = {}) {
+  const name = platform === 'ios' ? 'Apple Saúde' : platform === 'android' ? 'Health Connect' : null;
+  if (!integrationEnabled || !name) {
+    return { state: 'soon', label: 'Conectar', sub: 'Em breve', muted: true, accessibilityLabel: 'Conectar dispositivos: em breve. Abre a tela de conexão, hoje indisponível.' };
+  }
+  const own = platform === 'ios' ? 'apple_saude' : 'health_connect';
+  const connected = !!connection && connection.provider === own && Object.keys(connection.categories || {}).length > 0;
+  if (connected) {
+    return { state: 'connected', label: 'Conectado', sub: name, muted: false, accessibilityLabel: `Conectado ao ${name}. Abre a tela de conexão.` };
+  }
+  return { state: 'available', label: 'Conectar', sub: name, muted: false, accessibilityLabel: `Conectar ao ${name}. Abre a tela de conexão para escolher o que o app pode ler.` };
+}

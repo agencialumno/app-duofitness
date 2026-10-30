@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, HEALTH_UI } from '../../utils/theme';
 import { scoreBand } from '../../utils/health';
-import { scorePhrase } from '../../utils/healthView';
+import { connectButtonState, scorePhrase } from '../../utils/healthView';
 import { COACH_TEXTS } from '../../data/healthCoachTexts';
 import InfoButton from '../InfoButton';
 
@@ -42,8 +42,11 @@ export function ScoreHero({ loading, result, score, minor }) {
   );
 }
 
+const DEFAULT_CONNECT = connectButtonState({ integrationEnabled: false });
+
 // ---- (b) Ações rápidas (alvos de pelo menos 44 pt; quebram em duas linhas com texto grande) ----
-export function QuickActions({ minor, onRegister, onWater, waterText, onConnect }) {
+// `connect` vem de connectButtonState (healthView.js); sem ele, o botão fica no estado desligado ("Em breve").
+export function QuickActions({ minor, onRegister, onWater, waterText, onConnect, connect = DEFAULT_CONNECT }) {
   return (
     <View style={styles.quickRow} testID="health-quick">
       <QuickButton testID="quick-register" icon="create-outline" label={minor ? 'Registrar sono' : 'Registrar peso'} onPress={onRegister} />
@@ -56,7 +59,7 @@ export function QuickActions({ minor, onRegister, onWater, waterText, onConnect 
         accessibilityLabel={`Adicionar um copo de água.${waterText ? ` ${waterText}.` : ''}`}
       />
       {!minor ? (
-        <QuickButton testID="health-connect-card" icon="link-outline" label="Conectar" sub="Em breve" onPress={onConnect} muted accessibilityLabel="Conectar dispositivos: em breve. Abre a tela de conexão, hoje indisponível." />
+        <QuickButton testID="health-connect-card" icon={connect.state === 'connected' ? 'checkmark-circle-outline' : 'link-outline'} label={connect.label} sub={connect.sub} onPress={onConnect} muted={connect.muted} accessibilityLabel={connect.accessibilityLabel} />
       ) : null}
     </View>
   );

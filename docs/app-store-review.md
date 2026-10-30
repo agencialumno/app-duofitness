@@ -43,11 +43,11 @@ The marketplace is a showcase of partner listings with example items; the app do
 | Confirmação do responsável (13 a 17) | Na mesma tela, ao informar de 13 a 17: caixa "Confirmo que tenho autorização do meu responsável legal para usar o app" + link da Política de Privacidade. Sem marcar, não avança. |
 | Excluir conta | Perfil > rolar até o fim > link discreto "Excluir minha conta" (pede confirmação; e-mail e senha pedem a senha de novo; Apple revoga o token). |
 | Sair da conta | Perfil > fim > "Sair da conta" (os dados ficam guardados no aparelho para essa conta). |
-| Conectar saúde (HealthKit) | Aba Início > cartão Saúde > botão "Conectar" > tela "Conectar dispositivos": explica o que é lido, consentimento por categoria (nada vem marcado) e "Conectar ao Apple Saúde". Só aparece com a integração ligada no build. |
+| Conectar saúde (HealthKit) | Aba Início > cartão Saúde > na tela Saúde, botão "Conectar" (Apple Saúde) > tela "Conectar dispositivos": explica o que é lido, consentimento por categoria (nada vem marcado) e "Conectar ao Apple Saúde". Só aparece com a integração ligada no build. |
 | Desconectar saúde | Mesma tela > "Desconectar e apagar o que foi importado". |
 | Termos e Privacidade | Criar conta (links) e etapa de idade. Precisam das URLs publicadas (`EXPO_PUBLIC_TERMS_URL`, `EXPO_PUBLIC_PRIVACY_URL`). |
 
-**Conferir antes de enviar:** o botão "Conectar" da Saúde mostra o texto fixo "Em breve" e o rótulo "indisponível" mesmo com a integração ligada (`HealthParts.js`). O revisor pode achar que o recurso não existe. Vale ajustar o texto do botão quando a integração estiver ligada, ou avisar nas notas de revisão onde tocar. (Não alterado neste commit, que é só documentação.)
+**Botão "Conectar" (resolvido):** o botão das ações rápidas da tela Saúde agora reflete a integração ativa: com `HEALTH_INTEGRATION_ENABLED=true` no iPhone mostra "Conectar" + "Apple Saúde" e abre a tela "Conectar dispositivos" (o único fluxo de permissão); depois de conectado mostra "Conectado" e abre a mesma tela (estado, "Atualizado às" e Desconectar). Só sem a variável (ou na web) fica "Em breve". O rótulo de acessibilidade sempre diz o mesmo que o texto visível. Conferir no iPhone do build de revisão que o botão aparece como "Conectar".
 
 ## d) Questionário de classificação etária (App Store Connect)
 
