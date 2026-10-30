@@ -113,12 +113,25 @@ describe('estados de carregando e de erro', () => {
     t = R.onCatch(t, new Error('x'), 2000 + R.REPEAT_WINDOW_MS + 1); // passou da janela
     expect(R.offerReset(t)).toBe(false);
   });
-  // BUG B1 (baixa gravidade, registrado em docs/relatorio-testes.md): describeError devolve a mensagem da exceção como veio e o ErrorBoundary a manda
-  // para console.error (src/utils/errorRecovery.js:28-31, src/components/ErrorBoundary.js:41). Se uma exceção carregar um valor de saúde na mensagem, ele vai
-  // ao log local. O teste descreve o comportamento esperado e está marcado com it.fails até a correção.
-  it.fails('a descrição do erro não vaza o texto da exceção (pode conter dado de saúde)', () => {
+  // B1 (corrigido): describeError devolve só o NOME do erro e o CÓDIGO, nunca a mensagem. Antes a mensagem inteira ia para console.error.
+  it('a descrição do erro não vaza o texto da exceção (pode conter dado de saúde)', () => {
     const d = R.describeError(new Error('peso 71,3 kg do Victor'));
     expect(JSON.stringify(d)).not.toMatch(/71,3|Victor/);
+    expect(d).toBe('Error');
+    expect(R.describeError(Object.assign(new Error('batimentos 142 bpm'), { code: 'auth/network-request-failed' }))).toBe('Error (auth/network-request-failed)');
+    expect(R.describeError(new TypeError('peso 71,3'))).toBe('TypeError');
+  });
+  it('nome ou código com formato estranho (pode carregar um valor) é descartado', () => {
+    const e = Object.assign(new Error('x'), { name: 'peso 71,3 kg', code: 'frequência 142 bpm' });
+    expect(R.describeError(e)).toBe('Error');
+    expect(R.describeError(Object.assign(new Error('x'), { code: 7 }))).toBe('Error'); // código só numérico é descartado (poderia ser um valor)
+    expect(R.describeError(Object.assign(new Error('x'), { code: 'a'.repeat(200) }))).toBe('Error');
+  });
+  it('o ErrorBoundary registra o erro com console.error SEM o texto da mensagem (nem de erro de limpeza)', async () => {
+    const src = readFileSync(path.join(REPO, 'src/components/ErrorBoundary.js'), 'utf8');
+    expect(src).toMatch(/console\.error\('\[ErrorBoundary\] Erro de render capturado:', describeError\(error\)/);
+    expect(src).not.toMatch(/console\.error\([^)]*\.message/);
+    expect(src).not.toMatch(/console\.error\([^)]*String\(error\)/);
   });
   it('"Recomeçar do zero" apaga só as chaves @duo_ e não toca nos snapshots de conta nem em chaves de outros', async () => {
     const st = memory({ '@duo_user': '{}', '@duo_xp': '1', '@duoacct:u1:snapshot': '{}', 'outra': 'x' });

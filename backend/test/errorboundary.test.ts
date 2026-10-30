@@ -62,6 +62,13 @@ describe('ErrorBoundary (classe real)', () => {
     expect(v.children).toEqual(['APP']);
   });
 
+  it('um valor de saúde dentro da mensagem do erro NÃO aparece em nenhum console.error', () => {
+    const { crash } = makeBoundary({});
+    crash(Object.assign(new Error('peso 71,3 kg, batimentos 142 bpm, Victor Barros'), { code: 'health/read-failed' }));
+    const logged = JSON.stringify(errSpy.mock.calls.map((c: unknown[]) => c.map((x) => String(x))));
+    expect(logged).not.toMatch(/71,3|142|Victor|batimentos/);
+    expect(logged).toContain('Error (health/read-failed)');
+  });
   it('captura o erro, mostra "Algo deu errado" e registra com console.error (sem enviar a lugar nenhum)', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
@@ -75,7 +82,8 @@ describe('ErrorBoundary (classe real)', () => {
     expect(button(view(), 'Recomeçar do zero')).toBeUndefined(); // só se o erro se repetir
     expect(errSpy).toHaveBeenCalled();
     expect(String(errSpy.mock.calls[0]![0])).toContain('[ErrorBoundary]');
-    expect(String(errSpy.mock.calls[0]![1])).toContain('boom no render');
+    expect(String(errSpy.mock.calls[0]![1])).toBe('Error'); // só o nome do erro: a mensagem ("boom no render") não vai para o log
+    expect(JSON.stringify(errSpy.mock.calls)).not.toContain('boom no render');
     expect(onError).toHaveBeenCalledTimes(1);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -209,8 +217,9 @@ describe('recuperação (estado)', () => {
   });
   it('erro sem mensagem ou nulo não quebra o boundary', () => {
     expect(R.describeError(null)).toBe('erro desconhecido');
-    expect(R.describeError({})).toBe('[object Object]');
-    expect(R.describeError(new TypeError('x'))).toBe('TypeError: x');
+    expect(R.describeError({})).toBe('Error');
+    expect(R.describeError('texto solto com peso 71,3')).toBe('erro (valor que não é um Error)');
+    expect(R.describeError(new TypeError('x'))).toBe('TypeError'); // só o nome, nunca a mensagem
     expect(R.onCatch(R.initialState(), undefined).error).toBeInstanceOf(Error);
   });
   it('resetAppData apaga só as @duo_*', async () => {

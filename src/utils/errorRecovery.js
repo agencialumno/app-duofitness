@@ -24,11 +24,17 @@ export function offerReset(state) {
   return !!state.error && state.repeated;
 }
 
-// Texto do erro para o log (nunca enviado a lugar nenhum).
+// Texto do erro para o log (nunca enviado a lugar nenhum). SÓ o NOME do erro e o CÓDIGO, nunca a mensagem crua: uma exceção pode carregar
+// um valor de saúde (peso, batimentos) ou dado da conta na mensagem, e o app não grava isso em log. Nome e código só entram se tiverem o formato
+// de um identificador ("TypeError", "auth/network-request-failed"); qualquer outra coisa é descartada.
+const SAFE_ID = /^[A-Za-z][\w.:/-]{0,59}$/;
 export function describeError(error) {
   if (!error) return 'erro desconhecido';
-  const msg = error.message || String(error);
-  return error.name && error.name !== 'Error' ? `${error.name}: ${msg}` : msg;
+  if (typeof error !== 'object') return 'erro (valor que não é um Error)';
+  const name = typeof error.name === 'string' && SAFE_ID.test(error.name) ? error.name : 'Error';
+  const rawCode = error.code;
+  const code = (typeof rawCode === 'string' || typeof rawCode === 'number') && SAFE_ID.test(String(rawCode)) ? String(rawCode) : '';
+  return code ? `${name} (${code})` : name;
 }
 
 // "Recomeçar do zero": apaga TODAS as chaves @duo_* (e só elas). Devolve as chaves removidas.
