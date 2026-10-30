@@ -11,7 +11,7 @@ import { AuthField, AuthScreen, CheckRow, LinkButton, Notice, PrimaryButton } fr
 // do onboarding. A idade fica só no aparelho. Abaixo de MIN_ACCOUNT_AGE: mensagem clara, a conta recém-criada é excluída e a pessoa
 // volta às boas-vindas (nada é guardado). De MIN_ACCOUNT_AGE a 17: exige a autorização do responsável. 18 ou mais: segue.
 export default function AgeGateScreen() {
-  const { saveAge, rejectUnderage } = useApp();
+  const { saveAge, rejectUnderage, signOutAccount } = useApp();
   const [text, setText] = useState('');
   const [touched, setTouched] = useState(false);
   const [guardian, setGuardian] = useState(false);
@@ -37,6 +37,13 @@ export default function AgeGateScreen() {
     if (!canGo) return;
     setBusy(true);
     try { await saveAge(buildAgeInfo(result, guardian)); } finally { setBusy(false); }
+  };
+
+  // Sessão antiga que ficou aberta sem a idade (o app foi fechado na etapa de idade): dá para sair e entrar com outra conta.
+  const useOtherAccount = async () => {
+    if (busy) return;
+    setBusy(true);
+    try { await signOutAccount(); } catch { setNote('Não foi possível sair agora. Tente de novo.'); setBusy(false); }
   };
 
   const invalid = text.trim().length > 0 && result.status === 'invalid';
@@ -79,6 +86,7 @@ export default function AgeGateScreen() {
         loading={busy}
         onPress={submit}
       />
+      <LinkButton testID="age-other-account" label="Usar outra conta" onPress={useOtherAccount} />
       {!blocked && !canGo ? (
         <View accessibilityLiveRegion="polite">
           <Text style={styles.why}>{result.status === 'guardian' ? 'Marque a autorização do responsável para continuar.' : 'Informe a sua idade para continuar.'}</Text>
