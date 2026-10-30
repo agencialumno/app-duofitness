@@ -278,6 +278,32 @@ jobs:
             exit 1
           fi
 
+      # ASSINATURA MANUAL (preferida): só roda se os 3 secrets existirem. Importa o certificado de distribuição FIXO e o perfil
+      # num keychain temporário (apagado no fim, mesmo com falha). Com ela o archive sai assinado com os entitlements corretos e
+      # nada é criado na conta Apple. Sem os secrets, vale o comportamento anterior (archive sem assinatura; sign_archive=true = automática).
+      - name: Assinatura manual - importar certificado de distribuição e perfil (só com os 3 secrets)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_DIST_CERT_P12_B64: ${{ secrets.IOS_DIST_CERT_P12_B64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_B64 }}
+        run: |
+          set -uo pipefail
+          PRESENT=0
+          for v in IOS_DIST_CERT_P12_B64 IOS_DIST_CERT_PASSWORD IOS_PROVISIONING_PROFILE_B64; do
+            if [ -n "${!v:-}" ]; then PRESENT=$((PRESENT + 1)); fi
+          done
+          if [ "$PRESENT" -eq 0 ]; then
+            echo "::notice::Assinatura fixa NÃO configurada (faltam os secrets IOS_DIST_CERT_P12_B64, IOS_DIST_CERT_PASSWORD e IOS_PROVISIONING_PROFILE_B64). Segue o comportamento anterior; veja docs/testflight.md para configurar."
+            echo "- assinatura fixa **não configurada**: archive sem assinatura (ou automática com sign_archive=true)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$PRESENT" -ne 3 ]; then
+            echo "::error::Assinatura fixa incompleta: defina os TRÊS secrets (IOS_DIST_CERT_P12_B64, IOS_DIST_CERT_PASSWORD, IOS_PROVISIONING_PROFILE_B64) ou nenhum. Veja docs/testflight.md."
+            exit 1
+          fi
+          bash scripts/ios-signing-import.sh
+
       # PADRÃO: archive SEM assinatura (CODE_SIGNING_ALLOWED=NO, sem -allowProvisioningUpdates e sem a chave da API): nada é
       # criado na conta Apple. A assinatura de DISTRIBUIÇÃO (cloud signing, certificado gerenciado) acontece só no export.
       # O archive assinado automático (input sign_archive=true) cria um certificado de DESENVOLVIMENTO ("Created via API")
@@ -324,10 +350,26 @@ jobs:
               MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
               CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=
           }
+          # ASSINATURA MANUAL (certificado fixo + perfil importados): sem -allowProvisioningUpdates e sem a chave da API.
+          # O ruby grava a assinatura manual SÓ no target do app; os Pods não são tocados.
+          archive_manual() {
+            if ! ruby -e "require 'xcodeproj'" 2> /dev/null; then
+              export GEM_PATH="$(brew --prefix cocoapods 2> /dev/null)/libexec:${GEM_PATH:-}"
+            fi
+            ruby scripts/ios-set-manual-signing.rb "ios/$SCHEME.xcodeproj" "$SCHEME" "$APPLE_TEAM_ID" "$SIGN_PROFILE_NAME" "Apple Distribution" || return 1
+            xcodebuild archive \
+              -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+              -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
+              MARKETING_VERSION="$APP_VERSION_NAME" CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER"
+          }
           show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
 
           HINT_LOG="$LOG_DIR/archive.log"
-          if [ "${SIGN_ARCHIVE:-false}" = "true" ]; then
+          if [ "${MANUAL_SIGNING:-}" = "true" ]; then
+            echo "XC_ARCHIVE_MODE=manual" >> "$GITHUB_ENV"
+            archive_manual 2>&1 | tee "$LOG_DIR/archive.log" | show
+            RC=${PIPESTATUS[0]}
+          elif [ "${SIGN_ARCHIVE:-false}" = "true" ]; then
             # Caminho ANTIGO (opt-in): archive assinado automático; cria um certificado de desenvolvimento por execução.
             echo "XC_ARCHIVE_MODE=signed" >> "$GITHUB_ENV"
             archive_signed 2>&1 | tee "$LOG_DIR/archive.log" | show
@@ -363,7 +405,9 @@ jobs:
             echo "::error::O xcodebuild terminou sem erro, mas o archive não existe em $ARCHIVE."
             exit 1
           fi
-          if [ "${SIGN_ARCHIVE:-false}" != "true" ]; then
+          if [ "${MANUAL_SIGNING:-}" = "true" ]; then
+            echo "- archive **assinado manualmente** (certificado de distribuição fixo; nada criado na conta Apple)" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${SIGN_ARCHIVE:-false}" != "true" ]; then
             echo "- archive **sem assinatura** (padrão): nenhum certificado de desenvolvimento é criado; a assinatura de distribuição acontece só no export. Para o caminho antigo, rode com sign_archive=true." >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -404,6 +448,28 @@ jobs:
           EXPORT_DIR="$RUNNER_TEMP/ipa-export"
           rm -rf "$EXPORT_DIR"
           OPTS="$RUNNER_TEMP/ExportOptions-export.plist"
+          if [ "${MANUAL_SIGNING:-}" = "true" ]; then
+          # Assinatura MANUAL: certificado e perfil já estão no runner; sem chave da API e sem -allowProvisioningUpdates.
+          cat > "$OPTS" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${BUNDLE_ID}</key><string>${SIGN_PROFILE_NAME}</string>
+            </dict>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          else
           cat > "$OPTS" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -418,17 +484,27 @@ jobs:
           </dict>
           </plist>
           PLIST
+          fi
           show() { if command -v xcbeautify > /dev/null; then xcbeautify --renderer github-actions; else cat; fi; }
-          xcodebuild -exportArchive \
-            -archivePath "$XC_ARCHIVE" -exportPath "$EXPORT_DIR" -exportOptionsPlist "$OPTS" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$APPSTORE_KEY_PATH" \
-            -authenticationKeyID "$APPSTORE_KEY_ID" \
-            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
-            2>&1 | tee "$XC_LOG_DIR/export.log" | show
+          if [ "${MANUAL_SIGNING:-}" = "true" ]; then
+            xcodebuild -exportArchive \
+              -archivePath "$XC_ARCHIVE" -exportPath "$EXPORT_DIR" -exportOptionsPlist "$OPTS" \
+              2>&1 | tee "$XC_LOG_DIR/export.log" | show
+          else
+            xcodebuild -exportArchive \
+              -archivePath "$XC_ARCHIVE" -exportPath "$EXPORT_DIR" -exportOptionsPlist "$OPTS" \
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "$APPSTORE_KEY_PATH" \
+              -authenticationKeyID "$APPSTORE_KEY_ID" \
+              -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID" \
+              2>&1 | tee "$XC_LOG_DIR/export.log" | show
+          fi
           RC=${PIPESTATUS[0]}
           if [ "$RC" -ne 0 ]; then
-            if [ "${XC_ARCHIVE_MODE:-}" = "unsigned" ]; then
+            if [ "${MANUAL_SIGNING:-}" = "true" ]; then
+              echo "::error::O export com assinatura MANUAL falhou. Veja a causa provável abaixo e docs/testflight.md."
+              node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" --stage export || true
+            elif [ "${XC_ARCHIVE_MODE:-}" = "unsigned" ]; then
               echo "::error::O export falhou depois do archive SEM assinatura (padrão). Se o erro disser que o export não aceita este archive, NÃO improvise: registre o erro e veja docs/testflight.md (opção de importar um certificado .p12 fixo a partir de secrets) ou rode com sign_archive=true (caminho antigo; cria um certificado de desenvolvimento por execução)."
               node scripts/ios-log-hints.mjs "$XC_LOG_DIR/export.log" --stage export || true
             elif [ "${XC_ARCHIVE_UNSIGNED:-}" = "true" ]; then
@@ -500,7 +576,7 @@ jobs:
           fi
           if [ "${HEALTH_INTEGRATION_ENABLED:-}" = "true" ]; then
             ARGS+=(--require-healthkit)
-            if [ "${SIGN_ARCHIVE:-}" != "true" ]; then
+            if [ "${MANUAL_SIGNING:-}" != "true" ] && [ "${SIGN_ARCHIVE:-}" != "true" ]; then
               echo "::notice::HealthKit ligado com o archive SEM assinatura: ele pode perder o entitlement com.apple.developer.healthkit. Se a conferência falhar, rode de novo com sign_archive=true (docs/testflight.md)."
             fi
           fi
@@ -562,6 +638,19 @@ jobs:
           rm -f "$RUNNER_TEMP"/altool-private-keys/AuthKey_*.p8 "$HOME"/.appstoreconnect/private_keys/AuthKey_*.p8
           rm -rf "$RUNNER_TEMP/ipa-export" "$RUNNER_TEMP/ipa-unzipped"
           rm -f "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP"/ExportOptions-*.plist
+
+      # Apaga o keychain temporário, o certificado e o perfil da assinatura manual, mesmo se algum passo falhar.
+      - name: Assinatura manual - apagar keychain, certificado e perfil
+        if: always()
+        run: |
+          if [ -n "${SIGN_KEYCHAIN:-}" ]; then
+            security delete-keychain "$SIGN_KEYCHAIN" > /dev/null 2>&1 || true
+            security default-keychain -d user -s "$HOME/Library/Keychains/login.keychain-db" > /dev/null 2>&1 || true
+          fi
+          rm -f "$RUNNER_TEMP"/dist-cert.p12 "$RUNNER_TEMP"/dist-profile.mobileprovision "$RUNNER_TEMP"/dist-profile.plist "$RUNNER_TEMP"/duo-signing.keychain-db
+          if [ -n "${SIGN_PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$SIGN_PROFILE_UUID.mobileprovision"
+          fi
 
       # Apaga a configuração do Firebase gravada a partir dos secrets (e as cópias geradas pelo prebuild), mesmo se algo falhar.
       - name: Firebase (opcional) - apagar os arquivos de configuração
