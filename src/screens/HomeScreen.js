@@ -110,7 +110,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       ) : (
         /* CTA para preencher dados físicos */
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.imcCTA}
           onPress={() => navigation.navigate('Profile')}
         >
@@ -136,7 +136,7 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* IA Banner — sempre visível */}
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={styles.aiBanner}
         onPress={() => navigation.navigate('Workouts', { screen: 'AIPersonalTrainer' })}
         activeOpacity={0.85}
@@ -156,14 +156,14 @@ export default function HomeScreen({ navigation }) {
       {/* Quick Actions */}
       <Text style={styles.sectionTitle}>AÇÃO RÁPIDA</Text>
       <View style={styles.quickActions}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.qActionSecondary}
           onPress={() => navigation.navigate('Workouts', { screen: 'SmartPlan' })}
         >
           <Ionicons name="options-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Gerador rápido</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.qActionSecondary}
           onPress={() => navigation.navigate('Workouts', { screen: 'CreateWorkout' })}
         >
@@ -252,7 +252,7 @@ export default function HomeScreen({ navigation }) {
       {lastWorkout && (
         <>
           <Text style={styles.sectionTitle}>ÚLTIMO TREINO</Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.workoutCard}
             onPress={() => navigation.navigate('Workouts', {
               screen: 'WorkoutDetail',

@@ -199,7 +199,7 @@ export default function SmartPlanScreen({ navigation }) {
           </Text>
         </View>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.btn}
           onPress={() => navigation.navigate('WorkoutsList')}
         >
@@ -247,7 +247,7 @@ export default function SmartPlanScreen({ navigation }) {
 
         <View style={styles.options}>
           {q.options.map((opt) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: isSelected(opt.value) }}
               key={String(opt.value)}
               style={[styles.option, isSelected(opt.value) && styles.optionActive]}
               onPress={() => select(opt.value)}
@@ -273,7 +273,7 @@ export default function SmartPlanScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canNext }}
           style={[styles.btn, !canNext && styles.btnDisabled]}
           onPress={next}
           activeOpacity={canNext ? 0.85 : 1}

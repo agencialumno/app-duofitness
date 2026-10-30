@@ -66,7 +66,7 @@ export default function ExercisesScreen({ navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.catList}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: activeCategory === item }}
               style={[styles.catChip, activeCategory === item && styles.catChipActive]}
               onPress={() => setActiveCategory(item)}
             >
@@ -94,7 +94,7 @@ export default function ExercisesScreen({ navigation }) {
           const diff = diffStyle(item.difficulty);
           const iconName = CATEGORY_ICONS[item.category] || 'fitness-outline';
           return (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.card}
               onPress={() => navigation.navigate('ExerciseDetail', { exercise: item })}
               activeOpacity={0.8}

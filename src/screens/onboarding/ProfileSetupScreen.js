@@ -81,7 +81,7 @@ export default function ProfileSetupScreen({ navigation }) {
             {GOALS.map(g => {
               const selected = goals.includes(g.id);
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: selected }}
                   key={g.id}
                   style={[styles.goalCard, selected && styles.goalCardActive]}
                   onPress={() => toggleGoal(g.id)}
@@ -102,7 +102,7 @@ export default function ProfileSetupScreen({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canContinue }}
           style={[styles.btn, !canContinue && styles.btnDisabled]}
           onPress={() => canContinue && navigation.navigate('BodyData', { name, goals })}
           activeOpacity={canContinue ? 0.85 : 1}

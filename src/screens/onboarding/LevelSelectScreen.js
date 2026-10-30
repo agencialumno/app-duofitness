@@ -46,7 +46,7 @@ export default function LevelSelectScreen({ navigation, route }) {
 
       <View style={styles.levels}>
         {LEVELS.map(l => (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: level === l.id }}
             key={l.id}
             style={[styles.card, level === l.id && styles.cardActive]}
             onPress={() => setLevel(l.id)}
@@ -74,7 +74,7 @@ export default function LevelSelectScreen({ navigation, route }) {
         ))}
       </View>
 
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !level }}
         style={[styles.btn, !level && styles.btnDisabled]}
         onPress={finish}
         activeOpacity={level ? 0.85 : 1}

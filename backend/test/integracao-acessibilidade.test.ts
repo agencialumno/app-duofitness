@@ -89,45 +89,7 @@ const smallTarget = (t: Touch) => {
 //  - "catraca": nenhuma violação NOVA além do baseline (impede piorar), e o baseline não pode ficar com linhas que já foram corrigidas.
 // Se o código do app mudar de linha, atualize as listas (o teste da catraca diz quais entraram e quais saíram).
 const BASELINE_SEM_NOME: string[] = []; // B3 corrigido: nenhum toque sem nome acessível
-const CONHECIDOS_SEM_PAPEL: string[] = [
-  'src/screens/ActiveWorkoutScreen.js:95',
-  'src/screens/ActiveWorkoutScreen.js:147',
-  'src/screens/ActiveWorkoutScreen.js:154',
-  'src/screens/AIPersonalTrainerScreen.js:531',
-  'src/screens/AIPersonalTrainerScreen.js:546',
-  'src/screens/AIPersonalTrainerScreen.js:609',
-  'src/screens/CreateWorkoutScreen.js:43',
-  'src/screens/CreateWorkoutScreen.js:62',
-  'src/screens/CreateWorkoutScreen.js:81',
-  'src/screens/CreateWorkoutScreen.js:96',
-  'src/screens/EditBodyDataScreen.js:67',
-  'src/screens/EditBodyDataScreen.js:137',
-  'src/screens/ExercisesScreen.js:69',
-  'src/screens/ExercisesScreen.js:97',
-  'src/screens/HomeScreen.js:113',
-  'src/screens/HomeScreen.js:139',
-  'src/screens/HomeScreen.js:159',
-  'src/screens/HomeScreen.js:166',
-  'src/screens/HomeScreen.js:255',
-  'src/screens/onboarding/BodyDataScreen.js:61',
-  'src/screens/onboarding/BodyDataScreen.js:135',
-  'src/screens/onboarding/LevelSelectScreen.js:49',
-  'src/screens/onboarding/LevelSelectScreen.js:77',
-  'src/screens/onboarding/ProfileSetupScreen.js:84',
-  'src/screens/onboarding/ProfileSetupScreen.js:105',
-  'src/screens/ProfileScreen.js:86',
-  'src/screens/ProfileScreen.js:127',
-  'src/screens/SmartPlanScreen.js:202',
-  'src/screens/SmartPlanScreen.js:250',
-  'src/screens/SmartPlanScreen.js:276',
-  'src/screens/WorkoutDetailScreen.js:44',
-  'src/screens/WorkoutDetailScreen.js:52',
-  'src/screens/WorkoutsScreen.js:32',
-  'src/screens/WorkoutsScreen.js:40',
-  'src/screens/WorkoutsScreen.js:48',
-  'src/screens/WorkoutsScreen.js:62',
-  'src/screens/WorkoutsScreen.js:80',
-];
+const CONHECIDOS_SEM_PAPEL: string[] = []; // B4 corrigido: todo toque declara o papel
 const CONHECIDOS_ALVO_PEQUENO: string[] = []; // B5 corrigido: hitSlop leva os 2 alvos a 44 pt
 
 describe('acessibilidade estática dos toques', () => {
@@ -155,7 +117,7 @@ describe('acessibilidade estática dos toques', () => {
     const bad = TOUCHES.filter((t) => /accessibilityLabel=""|accessibilityLabel=\{''\}|accessibilityLabel=\{""\}/.test(t.attrs)).map(where);
     expect(bad).toEqual([]);
   });
-  it.fails('REGRA COMPLETA: todo toque declara o papel (button, link, checkbox, tab...)', () => {
+  it('REGRA COMPLETA: todo toque declara o papel (button, link, checkbox, tab...)', () => {
     const bad = TOUCHES.filter((t) => !hasRole(t)).map(where);
     expect(bad, `toques sem accessibilityRole:\n${bad.join('\n')}`).toEqual([]);
   });

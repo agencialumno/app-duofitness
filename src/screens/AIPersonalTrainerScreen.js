@@ -528,7 +528,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
                 </View>
               ))}
               {!planSaved ? (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: saving }}
                   style={styles.saveBtn}
                   onPress={savePlan}
                   disabled={saving}
@@ -543,7 +543,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
                   )}
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.goBtn}
                   onPress={() => navigation.navigate('WorkoutsList')}
                 >
@@ -606,7 +606,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
             {currentStep.chips.map(opt => {
               const active = currentStep.multi ? chipSelection.includes(opt.id) : false;
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: active }}
                   key={opt.id}
                   style={[styles.chip, active && styles.chipActive]}
                   onPress={() => (currentStep.multi ? toggleChip(opt.id) : tapSingleChip(opt))}

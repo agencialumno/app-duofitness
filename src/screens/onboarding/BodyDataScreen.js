@@ -58,7 +58,7 @@ export default function BodyDataScreen({ navigation, route }) {
           <Text style={styles.label}>SEXO BIOLÓGICO</Text>
           <View style={styles.genderRow}>
             {GENDERS.map(g => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: gender === g.id }}
                 key={g.id}
                 style={[styles.genderCard, gender === g.id && styles.genderCardActive]}
                 onPress={() => setGender(g.id)}
@@ -132,7 +132,7 @@ export default function BodyDataScreen({ navigation, route }) {
           </View>
         )}
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canContinue }}
           style={[styles.btn, !canContinue && styles.btnDisabled]}
           onPress={() => canContinue && navigation.navigate('LevelSelect', {
             name, goals, gender, ageGroup,
