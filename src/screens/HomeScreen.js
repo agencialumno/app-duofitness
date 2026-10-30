@@ -207,7 +207,7 @@ export default function HomeScreen({ navigation }) {
             accessibilityLabel={`${item.titulo}. ${item.descricaoCurta}`}
             accessibilityHint="Abre os detalhes do item"
           >
-            <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={32} />
+            <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={32} exemplo={!!item.exemplo} />
             <View style={styles.forYouBody}>
               <Text style={styles.forYouTitle} numberOfLines={2}>{item.titulo}</Text>
               <Text style={styles.forYouDesc} numberOfLines={2}>{item.descricaoCurta}</Text>

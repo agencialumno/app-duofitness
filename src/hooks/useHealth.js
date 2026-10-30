@@ -13,8 +13,9 @@ import {
   saveConnection, saveHealthV2, setWaterGoalV2,
 } from '../utils/healthStore';
 import { isIntegrationEnabled, selectProvider } from '../utils/healthProviders';
-import { MIN_AUTO_SYNC_MS, canSync as canSyncHealthKit, syncHealthKit } from '../utils/healthSync';
+import { MIN_AUTO_SYNC_MS, canSync as canSyncHealthKit, syncHealth } from '../utils/healthSync';
 import loadHealthKitLib from '../utils/healthKitLib';
+import loadHealthConnectLib from '../utils/healthConnectLib';
 import { buildCategoryViews } from '../utils/healthView';
 
 // Saúde v2: amostras por categoria (@duo_health_v2), Duo Score V2, cartões, coach e conexão. Tudo local: nenhuma chamada de rede
@@ -99,9 +100,9 @@ export default function useHealth() {
     () => (state ? buildCoachSuggestions({ samples: health.samples, sessions: completedSessions, goals, ageGroup, waterGoal: health.waterGoal }) : null),
     [state, health, completedSessions, goals, ageGroup],
   );
-  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, minor, loadLib: loadHealthKitLib }), [minor]);
+  const provider = useMemo(() => selectProvider({ flag: HEALTH_CONFIG.integrationFlag, platform: Platform.OS, minor, loadLib: loadHealthKitLib, loadHealthConnectLib }), [minor]);
 
-  // Sincroniza com o Apple Saúde (só leitura, só conexão "apple_saude", nunca menor de 18). Chamada ao abrir a Saúde (no mínimo 30 s entre
+  // Sincroniza com o Apple Saúde (iOS) ou o Health Connect (Android): só leitura, só a conexão do próprio provedor, nunca menor de 18. Chamada ao abrir a Saúde (no mínimo 30 s entre
   // chamadas automáticas) e no puxar para atualizar (force). Não bloqueia a interface e não roda em paralelo.
   const sync = useCallback(async ({ force = false } = {}) => {
     if (inflight.current) return inflight.current;
@@ -110,7 +111,7 @@ export default function useHealth() {
     const run = (async () => {
       setSyncing(true);
       try {
-        const r = await syncHealthKit({ provider, health: ref.current, connection: connRef.current, minor });
+        const r = await syncHealth({ provider, health: ref.current, connection: connRef.current, minor });
         lastRun.current = Date.now();
         if (r.changed) { await persist(r.health); await changeConnection(r.connection); }
         setLastReport(r.report);

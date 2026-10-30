@@ -45,14 +45,17 @@ export const ML_PER_GLASS = 250;
 // ---- origem ----
 // entrada: { name, productType, deviceName } (qualquer parte pode faltar). Só decide o rótulo.
 export function isWatch(info) {
+  if (info?.watch === true) return true; // o Health Connect já informa "relógio" pelo tipo do dispositivo (nada de nome)
   const t = `${info?.name || ''} ${info?.deviceName || ''}`.toLowerCase();
   return /watch/.test(t) || /^watch\d/i.test(String(info?.productType || ''));
 }
-export function originFor(infos) {
-  return (infos || []).some(isWatch) ? 'apple_watch' : 'apple_saude';
+// `origins` troca os rótulos de origem (o Health Connect usa { watch: 'health_connect_watch', plain: 'health_connect' }); o padrão é o do HealthKit.
+export const APPLE_ORIGINS = { watch: 'apple_watch', plain: 'apple_saude' };
+export function originFor(infos, origins = APPLE_ORIGINS) {
+  return (infos || []).some(isWatch) ? origins.watch : origins.plain;
 }
 // Extrai só o necessário de um sample (device/sourceRevision): nada disso é guardado depois.
-const infoOf = (s) => ({ name: s?.sourceRevision?.source?.name, productType: s?.sourceRevision?.productType, deviceName: s?.device?.name });
+const infoOf = (s) => ({ name: s?.sourceRevision?.source?.name, productType: s?.sourceRevision?.productType, deviceName: s?.device?.name, watch: s?.watch === true });
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const dateOf = (d) => { const x = d instanceof Date ? d : new Date(d); return Number.isFinite(x.getTime()) ? x : null; };
@@ -64,13 +67,13 @@ function push(out, metric, value, day, tz, source) {
 
 // ---- estatísticas por dia (passos, energia, FC, FC em repouso, HRV, água) ----
 // stats: [{ startDate, sumQuantity|averageQuantity: { quantity }, sources: [{ name }] }] (um item por dia local)
-export function mapDailyStats(metric, stats, { pick = 'sum', convert = (v) => v, tz = deviceTz() } = {}) {
+export function mapDailyStats(metric, stats, { pick = 'sum', convert = (v) => v, tz = deviceTz(), origins = APPLE_ORIGINS } = {}) {
   const out = [];
   for (const st of Array.isArray(stats) ? stats : []) {
     const start = dateOf(st?.startDate);
     const q = num(pick === 'avg' ? st?.averageQuantity?.quantity : st?.sumQuantity?.quantity);
     if (!start || q === null || q <= 0) continue; // dia sem dado nunca vira zero
-    push(out, metric, convert(q), dayKey(start), tz, originFor((st.sources || []).map((x) => ({ name: x?.name }))));
+    push(out, metric, convert(q), dayKey(start), tz, originFor((st.sources || []).map((x) => ({ name: x?.name, watch: x?.watch === true })), origins));
   }
   return out;
 }
@@ -80,7 +83,7 @@ export const convertSteps = (n) => Math.round(n);
 export const convertEnergy = (kcal) => Math.round(kcal);
 
 // ---- amostras avulsas, último valor do dia (peso, % de gordura, VO2 máx.) ----
-export function mapLastPerDay(metric, samples, { convert = (v) => v, tz = deviceTz() } = {}) {
+export function mapLastPerDay(metric, samples, { convert = (v) => v, tz = deviceTz(), origins = APPLE_ORIGINS } = {}) {
   const byDay = new Map();
   for (const s of Array.isArray(samples) ? samples : []) {
     const end = dateOf(s?.endDate) || dateOf(s?.startDate);
@@ -91,7 +94,7 @@ export function mapLastPerDay(metric, samples, { convert = (v) => v, tz = device
     if (!prev || end.getTime() >= prev.at) byDay.set(day, { at: end.getTime(), q, info: infoOf(s) });
   }
   const out = [];
-  for (const [day, v] of byDay) push(out, metric, convert(v.q), day, tz, originFor([v.info]));
+  for (const [day, v] of byDay) push(out, metric, convert(v.q), day, tz, originFor([v.info], origins));
   return out;
 }
 // O HealthKit entrega percentual como fração (0,185 = 18,5%); aceita também o valor já em % (18,5).
@@ -106,7 +109,7 @@ export function durationMinutes(q) {
   if (u === 'hr' || u === 'h') return v * 60;
   return v / 60; // segundos (padrão do HealthKit)
 }
-export function mapWorkouts(workouts, { tz = deviceTz() } = {}) {
+export function mapWorkouts(workouts, { tz = deviceTz(), origins = APPLE_ORIGINS } = {}) {
   const byDay = new Map();
   for (const w of Array.isArray(workouts) ? workouts : []) {
     const start = dateOf(w?.startDate);
@@ -119,7 +122,7 @@ export function mapWorkouts(workouts, { tz = deviceTz() } = {}) {
     byDay.set(day, cur);
   }
   const out = [];
-  for (const [day, v] of byDay) push(out, 'exercise_minutes', Math.round(v.minutes), day, tz, originFor(v.infos));
+  for (const [day, v] of byDay) push(out, 'exercise_minutes', Math.round(v.minutes), day, tz, originFor(v.infos, origins));
   return out;
 }
 
@@ -149,7 +152,7 @@ function minuteOfDay(ms) {
 }
 
 // samples: [{ startDate, endDate, value, sourceRevision?, device? }]. Devolve sono (minutos), hora de dormir e de acordar por noite.
-export function mapSleep(samples, { tz = deviceTz() } = {}) {
+export function mapSleep(samples, { tz = deviceTz(), origins = APPLE_ORIGINS } = {}) {
   const items = [];
   for (const s of Array.isArray(samples) ? samples : []) {
     const a = dateOf(s?.startDate);
@@ -184,7 +187,7 @@ export function mapSleep(samples, { tz = deviceTz() } = {}) {
   }
   const out = [];
   for (const [day, n] of nights) {
-    const source = n.watch ? 'apple_watch' : 'apple_saude';
+    const source = n.watch ? origins.watch : origins.plain;
     push(out, 'sleep_duration', Math.round(n.total), day, tz, source);
     push(out, 'bedtime', minuteOfDay(n.main.start), day, tz, source);
     push(out, 'wake_time', minuteOfDay(n.main.end), day, tz, source);

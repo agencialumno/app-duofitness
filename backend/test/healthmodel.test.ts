@@ -17,9 +17,11 @@ describe('amostras', () => {
   });
 
   it('as origens (com Apple Watch) têm rótulo em português', () => {
-    expect(M.SOURCES).toEqual(['manual', 'apple_saude', 'apple_watch', 'health_connect', 'exemplo']);
+    expect(M.SOURCES).toEqual(['manual', 'apple_saude', 'apple_watch', 'health_connect', 'health_connect_watch', 'exemplo']);
     expect(M.SOURCE_LABELS.apple_watch).toBe('Apple Watch');
     expect(M.APPLE_SOURCES).toEqual(['apple_saude', 'apple_watch']);
+    expect(M.SOURCE_LABELS.health_connect_watch).toBe('Relógio');
+    expect(M.HEALTH_CONNECT_SOURCES).toEqual(['health_connect', 'health_connect_watch']);
     expect(M.SOURCE_LABELS.exemplo).toBe('Dados de exemplo');
     expect(M.SOURCE_LABELS.apple_saude).toBe('Apple Saúde');
   });

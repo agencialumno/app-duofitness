@@ -15,6 +15,7 @@
 // Os stubs nativos NÃO pedem permissão nem leem nada: continuam desligados.
 import { CATEGORIES } from './healthModel';
 import { createHealthKitProvider as createRealHealthKitProvider } from './healthKitProvider';
+import { createHealthConnectProvider as createRealHealthConnectProvider } from './healthConnectProvider';
 
 const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
 const statusFor = (status, categories = CATEGORY_IDS) => Object.fromEntries(categories.map((id) => [id, status]));
@@ -59,10 +60,10 @@ export function createHealthKitProvider({ loadLib, now } = {}) {
   return createStub('healthkit', 'apple_saude', 'Apple Saúde');
 }
 
-// STUB (Android). Para implementar: Health Connect (módulo nativo, prebuild), permissões
-// android.permission.health.READ_* no manifesto, declaração de uso na Play Console, consentimento e
-// política de privacidade. Enquanto isso: indisponível, sem dados.
-export function createHealthConnectProvider() {
+// Android. Com `loadLib` (a biblioteca do Health Connect, injetada) é o provedor real, SÓ LEITURA (healthConnectProvider.js). Sem `loadLib` é o
+// stub: indisponível, sem dados e sem pedir nada ao sistema (é o que acontece quando o módulo nativo não está no build).
+export function createHealthConnectProvider({ loadLib, now } = {}) {
+  if (typeof loadLib === 'function') return createRealHealthConnectProvider({ loadLib, now });
   return createStub('healthconnect', 'health_connect', 'Health Connect');
 }
 
@@ -71,19 +72,20 @@ export function isIntegrationEnabled(flag) {
   return v === 'true' || v === '1';
 }
 
-// Manual por padrão. Com a flag ligada (e só para maiores de 18), escolhe o stub da plataforma (que ainda não devolve dados).
+// Manual por padrão. Com a flag ligada (e só para maiores de 18), escolhe o provedor da plataforma: HealthKit (iOS) ou Health Connect (Android);
+// sem a biblioteca no build, o stub (que não devolve dados).
 // Menor de 18 anos: SEMPRE o manual, com ou sem a flag (a conexão com Apple Saúde/Health Connect fica indisponível para `under18`).
 // Plataforma desconhecida volta para o manual.
-export function selectHealthProvider({ flag, platform, minor = false, loadLib } = {}) {
+export function selectHealthProvider({ flag, platform, minor = false, loadLib, loadHealthConnectLib } = {}) {
   if (minor || !isIntegrationEnabled(flag)) return createManualProvider();
   if (platform === 'ios') return createHealthKitProvider({ loadLib });
-  if (platform === 'android') return createHealthConnectProvider();
+  if (platform === 'android') return createHealthConnectProvider({ loadLib: loadHealthConnectLib });
   return createManualProvider();
 }
 
 // O que o app usa (mesma regra de selectHealthProvider).
-export function selectProvider({ flag, platform, minor = false, loadLib } = {}) {
-  return selectHealthProvider({ flag, platform, minor, loadLib });
+export function selectProvider({ flag, platform, minor = false, loadLib, loadHealthConnectLib } = {}) {
+  return selectHealthProvider({ flag, platform, minor, loadLib, loadHealthConnectLib });
 }
 
 // Texto do cartão desabilitado. A conexão ainda não existe, com ou sem a flag.

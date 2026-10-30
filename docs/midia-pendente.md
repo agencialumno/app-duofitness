@@ -1,6 +1,6 @@
 # Mídia pendente do marketplace
 
-Toda a mídia do marketplace hoje é de **EXEMPLO**. Cada item e cada banner traz o selo "Exemplo" no app. Antes de publicar nas lojas,
+Toda a mídia do marketplace hoje é de **EXEMPLO**. Cada item traz o selo "Exemplo" no app (os 3 banners são peças da Duo Fitness e não têm o selo). Antes de publicar nas lojas,
 cada arte abaixo precisa ser **trocada pelo material real do parceiro** (ou removida) e ter o **direito de uso confirmado**. O repositório é público.
 
 ## Regra de substituição
@@ -31,17 +31,17 @@ nome genérico). As outras 7 são artes enviadas pelo dono do projeto como exemp
 de cada uma (pessoas e textos) e trocar por arte própria antes de publicar se não houver confirmação. As artes que traziam nome de marca desenhado
 foram substituídas antes do primeiro push, para a marca não entrar no histórico do repositório público.
 
-## Banners do carrossel (2:1, 1080x540, JPEG, até 200 KB)
+## Banners do carrossel (3:2, 1200x800, JPEG, até 200 KB)
 
-| Arquivo | Banner (id) | Arte |
+| Arquivo | Banner (id) | Texto desenhado na imagem |
 |---|---|---|
-| `banner-vitrine.jpg` | `banner-vitrine` | sacola amarela em círculo, listras |
-| `banner-treino.jpg` | `banner-treino` | halter amarelo em círculo, listras |
-| `banner-anuncie.jpg` | `banner-anuncie` | megafone amarelo com ondas |
+| `banner-vitrine.jpg` | `banner-vitrine` | "Entre em contato e solicite seu espaço para anunciar" |
+| `banner-treino.jpg` | `banner-treino` | "Anuncie seu produto e comece a vender" |
+| `banner-anuncie.jpg` | `banner-anuncie` | "Seja um parceiro Duo Fitness" (dois braços se cumprimentando) |
 
-Artes **originais** geradas para o projeto: preto `#000000` e amarelo `#fed205`, formas geométricas, **sem texto desenhado**, sem logos, marcas,
-rostos nem fotos de terceiros. Os textos (título e subtítulo) ficam em `src/data/marketplaceBanners.js`. O banner toca e abre
+Artes enviadas pelo dono do projeto, com o logotipo e o texto da Duo Fitness **desenhados na imagem** (por isso o texto também está em `titulo`, para o leitor de tela). Origem e licença: confirmar (docs/pendencias-usuario.md, seção 16). O banner toca e abre
 "Anunciar em nosso marketplace" (`AnunciarMarketplace`). O carrossel não gira sozinho (respeita "Reduzir movimento"). Sem nenhuma imagem, a área some.
+Para regravar as imagens: `python scripts/optimize-marketplace-images.py` (docs/marketplace.md).
 
 ## Onde mexer
 

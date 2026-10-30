@@ -1,4 +1,4 @@
-// Sincronização do HealthKit (puro: o provedor e os dados entram por parâmetro). Só leitura; nada sai do aparelho; sem log.
+// Sincronização do HealthKit (iOS) e do Health Connect (Android), a MESMA lógica (puro: o provedor e os dados entram por parâmetro). Só leitura; nada sai do aparelho; sem log.
 //  - só roda com a conexão "apple_saude" e categorias consentidas, e nunca para menores de 18 (quem chama já filtra, e aqui se confere de novo);
 //  - cada categoria é substituída SÓ se a leitura dela deu certo (falhar numa categoria mantém o que já havia);
 //  - leitura vazia NÃO apaga nada e NÃO é erro: pode ser "sem dados" ou permissão negada (o iOS não diz); vira "Sem dados ainda";
@@ -10,13 +10,16 @@ export const MIN_AUTO_SYNC_MS = 30000; // sincronizações automáticas (abrir a
 
 const metricsOf = (categoryId) => (CATEGORIES.find((c) => c.id === categoryId) || { metrics: [] }).metrics;
 
+// Provedor do app -> conexão guardada. Cada um só sincroniza com a SUA conexão (nunca o HealthKit com uma conexão do Health Connect).
+export const CONNECTION_OF = { healthkit: 'apple_saude', healthconnect: 'health_connect' };
+
 export function canSync({ connection, provider, minor }) {
-  return !minor && !!connection && connection.provider === 'apple_saude' && !!provider && provider.source === 'healthkit' && typeof provider.readDetailed === 'function'
+  return !minor && !!connection && !!provider && CONNECTION_OF[provider.source] === connection.provider && typeof provider.readDetailed === 'function'
     && Object.keys(connection.categories || {}).length > 0;
 }
 
 // Devolve { health, connection, report, changed }. Nunca lança: erro inesperado vira { skipped: 'erro' } e nada muda.
-export async function syncHealthKit({ provider, health, connection, minor = false, now = new Date() }) {
+export async function syncHealth({ provider, health, connection, minor = false, now = new Date() }) {
   if (!canSync({ connection, provider, minor })) return { health, connection, report: {}, changed: false, skipped: 'indisponivel' };
   const categories = Object.keys(connection.categories).filter((id) => connection.categories[id]);
   let res;
@@ -29,12 +32,14 @@ export async function syncHealthKit({ provider, health, connection, minor = fals
     if (!r.ok) continue; // categoria que falhou: mantém o que já estava
     const metrics = metricsOf(id);
     const incoming = (res.samples || []).filter((s) => metrics.includes(s.metric));
-    if (res.window && incoming.length > 0) next = mergeImported(next, incoming, { from: res.window.from, metrics });
+    if (res.window && incoming.length > 0) next = mergeImported(next, incoming, { from: res.window.from, metrics, provider: connection.provider });
   }
   const anyOk = categories.some((id) => report[id].ok);
   const nextConn = anyOk ? { ...connection, importedAt: new Date(now).toISOString() } : connection;
   return { health: next, connection: nextConn, report, changed: anyOk };
 }
+
+export const syncHealthKit = syncHealth; // nome antigo (iOS)
 
 // "Atualizado às 14:05" (hora local do aparelho).
 export function updatedAtLabel(iso) {

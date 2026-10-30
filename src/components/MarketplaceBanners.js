@@ -7,6 +7,7 @@ import { getBannerImage } from '../data/marketplaceBannerImages';
 // Carrossel de banners do topo do marketplace: ScrollView horizontal paginado (sem módulo nativo).
 // Não gira sozinho (respeita "Reduzir movimento" por construção): só muda de página quando a pessoa desliza
 // ou toca nos pontos. Sem nenhuma imagem disponível, a área inteira some.
+// As imagens são 3:2 com o TEXTO DESENHADO nelas: a caixa é 3:2 e a imagem usa resizeMode "contain", então nada é cortado (nem no topo, nem nas laterais).
 // `banners` e `onOpen` são injetáveis para os testes.
 export default function MarketplaceBanners({ banners = MARKETPLACE_BANNERS, onOpen }) {
   const visible = useMemo(() => getVisibleBanners(banners, getBannerImage), [banners]);
@@ -55,22 +56,24 @@ export default function MarketplaceBanners({ banners = MARKETPLACE_BANNERS, onOp
               onPress={() => onOpen && onOpen(b)}
               testID={`marketplace-banner-${b.id}`}
               accessibilityRole="button"
-              accessibilityLabel={`${b.titulo}${b.subtitulo ? `. ${b.subtitulo}` : ''}. ${b.exemplo ? 'Banner de exemplo. ' : ''}Banner ${i + 1} de ${visible.length}. ${b.alt || ''}`.trim()}
+              accessibilityLabel={`${b.titulo}. ${b.exemplo ? 'Banner de exemplo. ' : ''}Banner ${i + 1} de ${visible.length}.`}
               accessibilityHint="Abre o formulário para anunciar no marketplace"
             >
               <View style={styles.card}>
                 <View style={styles.imageBox}>
-                  <Image source={getBannerImage(b.imagem)} style={styles.image} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  <Image source={getBannerImage(b.imagem)} style={styles.image} resizeMode="contain" accessibilityIgnoresInvertColors />
                   {b.exemplo && (
                     <View style={styles.badge}>
                       <Text style={styles.badgeText}>Exemplo</Text>
                     </View>
                   )}
                 </View>
-                <View style={styles.caption}>
-                  <Text style={styles.title}>{b.titulo}</Text>
-                  {!!b.subtitulo && <Text style={styles.subtitle}>{b.subtitulo}</Text>}
-                </View>
+                {!b.textoNaImagem && (
+                  <View style={styles.caption}>
+                    <Text style={styles.title}>{b.titulo}</Text>
+                    {!!b.subtitulo && <Text style={styles.subtitle}>{b.subtitulo}</Text>}
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           ))}
@@ -101,7 +104,7 @@ export default function MarketplaceBanners({ banners = MARKETPLACE_BANNERS, onOp
 const styles = StyleSheet.create({
   wrap: { width: '100%' },
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
-  imageBox: { width: '100%', aspectRatio: 2, backgroundColor: COLORS.black },
+  imageBox: { width: '100%', aspectRatio: 3 / 2, backgroundColor: COLORS.black },
   image: { width: '100%', height: '100%' },
   badge: { position: 'absolute', top: SPACING.sm, left: SPACING.sm, backgroundColor: COLORS.black, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.primary },

@@ -1,0 +1,7 @@
+{
+  "_comentario": "Módulo nativo do Health Connect (Android). NÃO está no package.json do repositório: scripts/install-healthconnect-deps.mjs o grava no package.json do WORKSPACE do CI só quando HEALTH_INTEGRATION_ENABLED=true (o autolinking só enxerga dependencies da raiz). Sem a flag o Android fica idêntico ao de antes. react-native-health-connect 4.1.3: a integração com o Expo vem dentro do pacote (módulo Expo que registra o delegate de permissões; sem mexer no MainActivity), usa androidx.health.connect:connect-client 1.1.0 (estável), é TurboModule (nova arquitetura) e exige minSdk 26 (o plugin withHealthConnectOptional.js sobe o minSdk para 26 só com a flag). NÃO usamos o plugin do pacote (app.plugin.js): o nosso declara só READ_*. Escolha e motivos em docs/saude.md.",
+  "expo": [],
+  "pinned": {
+    "react-native-health-connect": "4.1.3"
+  }
+}

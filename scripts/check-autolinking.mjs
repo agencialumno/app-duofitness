@@ -39,6 +39,9 @@ const FIREBASE_ROOT_PACKAGES = [...FIREBASE_RN_MODULES, 'expo-apple-authenticati
 // os exige no iOS (o Android não muda). O core precisa estar na raiz para o autolinking ver o pod dele.
 const HEALTHKIT_FLAG = String(process.env.HEALTH_INTEGRATION_ENABLED || '').trim().toLowerCase() === 'true';
 const HEALTHKIT_RN_MODULES = ['@kingstinct/react-native-healthkit', '@react-native-healthkit/core', 'react-native-nitro-modules'];
+// Health Connect (Android): instalado por scripts/install-healthconnect-deps.mjs só com HEALTH_INTEGRATION_ENABLED=true; nesse caso esta checagem o exige
+// no Android (o iOS não muda).
+const HEALTHCONNECT_RN_MODULES = ['react-native-health-connect'];
 const ORDER = 'npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking';
 
 const BASE_REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'];
@@ -57,6 +60,8 @@ if (!['android', 'ios'].includes(platform)) {
 }
 const HEALTHKIT_ON = HEALTHKIT_FLAG && platform === 'ios';
 if (HEALTHKIT_ON) RESOLVABLE_FROM_ROOT.push(...HEALTHKIT_RN_MODULES);
+const HEALTHCONNECT_ON = HEALTHKIT_FLAG && platform === 'android';
+if (HEALTHCONNECT_ON) RESOLVABLE_FROM_ROOT.push(...HEALTHCONNECT_RN_MODULES);
 const REQUIRED = [...BASE_REQUIRED, ...(FIREBASE_ON ? FIREBASE_EXPO_MODULES[platform] : [])];
 const PLATFORM_LABEL = platform === 'ios' ? 'iOS' : 'Android';
 const onGithub = process.env.GITHUB_ACTIONS === 'true';
@@ -151,8 +156,13 @@ if (FIREBASE_ON) {
   console.log(`Módulos do React Native CLI presentes (${PLATFORM_LABEL}): ${FIREBASE_RN_MODULES.join(', ')}`);
 }
 
-// Com HealthKit (iOS): a biblioteca, o core e o nitro precisam estar ligados no autolinking do React Native CLI.
-if (HEALTHKIT_ON) {
+// Com HealthKit (iOS) ou Health Connect (Android): os módulos precisam estar ligados no autolinking do React Native CLI.
+const NATIVE_CHECKS = [
+  { on: HEALTHKIT_ON, name: 'HealthKit', modules: HEALTHKIT_RN_MODULES, script: 'install-healthkit-deps.mjs' },
+  { on: HEALTHCONNECT_ON, name: 'Health Connect', modules: HEALTHCONNECT_RN_MODULES, script: 'install-healthconnect-deps.mjs' },
+];
+for (const chk of NATIVE_CHECKS) {
+  if (!chk.on) continue;
   let rnDeps;
   try {
     const file = arg('--rn-config-json');
@@ -171,12 +181,12 @@ if (HEALTHKIT_ON) {
     error(`não consegui obter o autolinking do React Native CLI (${platform}): ${String(e.message).split('\n')[0]}`);
     process.exit(1);
   }
-  const hkMissing = HEALTHKIT_RN_MODULES.filter((name) => !rnDeps[name]?.platforms?.[platform]);
+  const hkMissing = chk.modules.filter((name) => !rnDeps[name]?.platforms?.[platform]);
   if (hkMissing.length > 0) {
-    for (const name of hkMissing) error(`${name} não está no autolinking do React Native CLI (${platform}). Rode node scripts/install-healthkit-deps.mjs ANTES do prebuild e desta checagem (o autolinking só enxerga o package.json da raiz).`);
+    for (const name of hkMissing) error(`${name} não está no autolinking do React Native CLI (${platform}). Rode node scripts/${chk.script} ANTES do prebuild e desta checagem (o autolinking só enxerga o package.json da raiz).`);
     process.exit(1);
   }
-  console.log(`Módulos do HealthKit presentes (${PLATFORM_LABEL}): ${HEALTHKIT_RN_MODULES.join(', ')}`);
+  console.log(`Módulos do ${chk.name} presentes (${PLATFORM_LABEL}): ${chk.modules.join(', ')}`);
 }
 
 // Pacotes resolvíveis a partir da raiz (não aninhados).

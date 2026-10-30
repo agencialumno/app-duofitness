@@ -246,7 +246,7 @@ const METRIC_TITLE = {
   weight: 'peso', body_fat: '% de gordura', lean_mass: 'massa magra', steps: 'passos', distance: 'distância', exercise_minutes: 'minutos de exercício',
   sleep_duration: 'duração do sono', bedtime: 'hora de dormir', wake_time: 'hora de acordar', resting_hr: 'FC em repouso', hrv: 'variabilidade da FC', water: 'água',
 };
-const SOURCE_NAME = { manual: 'Manual', apple_saude: 'Apple Saúde', apple_watch: 'Apple Watch', health_connect: 'Health Connect', exemplo: 'Exemplo' };
+const SOURCE_NAME = { manual: 'Manual', apple_saude: 'Apple Saúde', apple_watch: 'Apple Watch', health_connect: 'Health Connect', health_connect_watch: 'Relógio', exemplo: 'Exemplo' };
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

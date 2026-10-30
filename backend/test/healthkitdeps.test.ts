@@ -73,8 +73,11 @@ describe('check-autolinking.mjs com HEALTH_INTEGRATION_ENABLED', () => {
     expect(r.out).toContain('@react-native-healthkit/core não está no autolinking');
     expect(r.out).toContain('install-healthkit-deps.mjs');
   });
-  it('Android não muda (nada de HealthKit exigido), e sem a flag o iOS também não exige', () => {
-    expect(run('android', [], 'true').code).toBe(0);
+  it('Android não exige HealthKit (agora exige o Health Connect com a flag: veja healthconnect.test.ts), e sem a flag o iOS também não exige', () => {
+    const android = run('android', [], 'true');
+    expect(android.out).not.toContain('HealthKit');
+    expect(android.out).toContain('install-healthconnect-deps.mjs');
+    expect(run('android', [], '').code).toBe(0);
     const r = run('ios', [], '');
     expect(r.code, r.out).toBe(0);
     expect(r.out).not.toContain('HealthKit');
