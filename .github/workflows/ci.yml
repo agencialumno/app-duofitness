@@ -186,6 +186,64 @@ jobs:
         if: always()
         run: node scripts/firebase-prepare.mjs cleanup
 
+  # Gera o projeto Android COM o Health Connect (só leitura) em Linux, com o google-services.json FALSO, e confere o manifest: só permissões
+  # READ_*, o intent filter e o alias da tela de justificativa, nenhuma WRITE_* nem permissão de segundo plano. Antes, gera o projeto SEM a flag
+  # (baseline) e confere que o Android de hoje não ganha nada do Health Connect; o projeto com a flag precisa ser igual ao baseline fora das
+  # adições do Health Connect. Não compila (isso é o android.yml).
+  android-prebuild-healthconnect:
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Configuração FALSA do Firebase (só o google-services.json)
+        run: |
+          set -euo pipefail
+          mkdir -p .firebase-config
+          cat > .firebase-config/google-services.json <<'JSON'
+          {"project_info":{"project_number":"000000000000","project_id":"ci-project"},
+           "client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.duofitness.app"}},
+                      "api_key":[{"current_key":"CI-NOT-A-REAL-KEY"}]}],
+           "configuration_version":"1"}
+          JSON
+          echo "FIREBASE_ENABLED=true" >> "$GITHUB_ENV"
+          echo "FIREBASE_ANDROID_CONFIG=$PWD/.firebase-config/google-services.json" >> "$GITHUB_ENV"
+      - name: Instalar os módulos de conta (grava no package.json do runner)
+        run: node scripts/install-firebase-deps.mjs
+      - name: Gerar projeto Android SEM a flag (baseline) e conferir que não há Health Connect
+        run: |
+          set -euo pipefail
+          env -u HEALTH_INTEGRATION_ENABLED npx expo prebuild --platform android --no-install
+          env -u HEALTH_INTEGRATION_ENABLED node scripts/check-android-project.mjs --expect off
+          rm -rf "$RUNNER_TEMP/android-base"
+          mkdir -p "$RUNNER_TEMP/android-base"
+          cp -r android "$RUNNER_TEMP/android-base/android"
+      - name: Instalar o módulo do Health Connect (grava no package.json do runner)
+        env:
+          HEALTH_INTEGRATION_ENABLED: 'true'
+        run: node scripts/install-healthconnect-deps.mjs
+      - name: Conferir autolinking do Android com o Health Connect
+        env:
+          HEALTH_INTEGRATION_ENABLED: 'true'
+        run: node scripts/check-autolinking.mjs --platform android
+      - name: Gerar projeto Android COM a flag (expo prebuild)
+        env:
+          HEALTH_INTEGRATION_ENABLED: 'true'
+        run: npx expo prebuild --platform android --no-install --clean
+      - name: Conferir o projeto Android gerado (só READ_*, filtro e alias; igual ao baseline fora do Health Connect)
+        env:
+          HEALTH_INTEGRATION_ENABLED: 'true'
+        run: node scripts/check-android-project.mjs --expect on --baseline "$RUNNER_TEMP/android-base"
+      - name: Apagar a configuração falsa
+        if: always()
+        run: node scripts/firebase-prepare.mjs cleanup
+
   backend:
     runs-on: ubuntu-latest
     defaults:

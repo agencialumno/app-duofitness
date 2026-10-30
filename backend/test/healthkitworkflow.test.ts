@@ -35,9 +35,10 @@ describe('ios.yml', () => {
 });
 
 describe('Android e CI', () => {
-  it('o android.yml NÃO recebe a flag do HealthKit (Android não muda nesta fase)', () => {
+  it('o android.yml recebe a flag só para o Health Connect: nada de HealthKit nele (veja healthconnect.test.ts)', () => {
     const t = readFileSync(path.join(REPO, '.github/workflows/android.yml'), 'utf8');
-    expect(t).not.toMatch(/HEALTH_INTEGRATION|healthkit/i);
+    expect(t).not.toMatch(/healthkit/i);
+    expect(t).toContain('install-healthconnect-deps.mjs');
   });
   it('docs/testflight.md diz que o build com HealthKit usa sign_archive=true', () => {
     const d = readFileSync(path.join(REPO, 'docs/testflight.md'), 'utf8');
