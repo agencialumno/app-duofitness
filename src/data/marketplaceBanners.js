@@ -1,39 +1,41 @@
 // Banners do topo do marketplace (carrossel). Dados puros, sem React nem imagens, para os testes rodarem em Node.
 // As imagens ficam em marketplaceBannerImages.js (BANNER_IMAGES, cada require explícito) e o arquivo vive em assets/marketplace/.
 //
-// ⚠️ TODOS OS BANNERS SÃO ARTES DE EXEMPLO (exemplo: true): formas geométricas originais, sem texto desenhado,
-// sem logos, marcas, rostos nem fotos de terceiros. Troque pelo material do parceiro quando existir
-// (docs/midia-pendente.md). Os textos ficam no app (não na imagem), para leitor de tela e tradução.
+// As artes são PEÇAS DA DUO FITNESS COM O TEXTO DESENHADO NA IMAGEM (3:2, 1200x800 JPEG). Por isso o texto da imagem precisa estar
+// em `titulo` (é o que o leitor de tela lê) e a legenda sob a imagem não aparece (`textoNaImagem: true`), para não repetir o texto.
+// Troque pelo material do parceiro quando existir (docs/midia-pendente.md).
 //
-// Campos: id, imagem (chave em BANNER_IMAGES; 2:1, 1080x540 JPEG), titulo, subtitulo (opcional),
-//   alt (descrição da arte para o leitor de tela), destino ({ rota, params? } do React Navigation), exemplo.
+// Campos: id, imagem (chave em BANNER_IMAGES), titulo (EXATAMENTE o texto da imagem), alt (descrição da arte), textoNaImagem,
+//   destino ({ rota, params? } do React Navigation), exemplo (true mostra o selo "Exemplo"; as peças de chamada para anunciantes são
+//   da própria Duo Fitness, então false).
+// Atenção: o NOME do arquivo não combina com o texto de dois deles (veja docs/marketplace.md); o texto abaixo é o que está na imagem.
 export const MARKETPLACE_BANNERS = [
   {
     id: 'banner-vitrine',
     imagem: 'banner-vitrine',
-    titulo: 'Vitrine de parceiros',
-    subtitulo: 'Itens e serviços para o seu treino',
-    alt: 'Arte de exemplo: sacola amarela dentro de um círculo, sobre fundo preto com listras amarelas.',
+    titulo: 'Entre em contato e solicite seu espaço para anunciar',
+    alt: 'Arte da Duo Fitness: logotipo e o texto "Entre em contato e solicite seu espaço para anunciar", em branco e amarelo sobre fundo escuro com listras amarelas.',
+    textoNaImagem: true,
     destino: { rota: 'AnunciarMarketplace' },
-    exemplo: true,
+    exemplo: false,
   },
   {
     id: 'banner-treino',
     imagem: 'banner-treino',
-    titulo: 'Acessórios para treinar',
-    subtitulo: 'Anuncie o seu produto aqui',
-    alt: 'Arte de exemplo: halter amarelo dentro de um círculo, sobre fundo preto com listras amarelas.',
+    titulo: 'Anuncie seu produto e comece a vender',
+    alt: 'Arte da Duo Fitness: logotipo e o texto "Anuncie seu produto e comece a vender", em branco e amarelo sobre fundo escuro.',
+    textoNaImagem: true,
     destino: { rota: 'AnunciarMarketplace' },
-    exemplo: true,
+    exemplo: false,
   },
   {
     id: 'banner-anuncie',
     imagem: 'banner-anuncie',
-    titulo: 'Anuncie em nosso marketplace',
-    subtitulo: 'Peça o seu espaço de parceiro',
-    alt: 'Arte de exemplo: megafone amarelo emitindo ondas, sobre fundo preto.',
+    titulo: 'Seja um parceiro Duo Fitness',
+    alt: 'Arte da Duo Fitness: logotipo, o texto "Seja um parceiro Duo Fitness" e dois braços se cumprimentando em uma academia escura.',
+    textoNaImagem: true,
     destino: { rota: 'AnunciarMarketplace' },
-    exemplo: true,
+    exemplo: false,
   },
 ];
 

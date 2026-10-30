@@ -29,13 +29,14 @@ function jpegSize(buf: Buffer): [number, number] {
 }
 
 describe('banners do marketplace', () => {
-  it('há 3 banners de exemplo com id único, título, texto alternativo e destino no formulário de anúncio', () => {
+  it('há 3 banners com id único, título (o texto da imagem), texto alternativo e destino no formulário de anúncio; sem o selo Exemplo (peças da Duo Fitness)', () => {
     expect(BANNERS).toHaveLength(3);
     expect(new Set(BANNERS.map((b) => b.id)).size).toBe(3);
     for (const b of BANNERS) {
       expect(b.titulo.length, b.id).toBeGreaterThan(0);
       expect(b.alt.length, b.id).toBeGreaterThan(20);
-      expect(b.exemplo, b.id).toBe(true);
+      expect(b.exemplo, b.id).toBe(false);
+      expect((b as any).textoNaImagem, b.id).toBe(true);
       expect(b.destino.rota, b.id).toBe('AnunciarMarketplace');
     }
   });
@@ -47,16 +48,37 @@ describe('banners do marketplace', () => {
     for (const k of keys) expect(used.has(k), `imagem sobrando: ${k}`).toBe(true);
   });
 
-  it('cada arquivo é JPEG de verdade (.jpg), 1080x540 (2:1) e tem no máximo 200 KB', () => {
+  it('cada arquivo é JPEG de verdade (.jpg), 1200x800 (3:2) e tem no máximo 200 KB (teto 300 KB)', () => {
     expect(entries).toHaveLength(3);
     for (const e of entries) {
       expect(e.file).toMatch(/\.jpg$/);
       expect(existsSync(e.file), e.file).toBe(true);
       const buf = readFileSync(e.file);
-      expect(buf.subarray(0, 3).toString('hex')).toBe('ffd8ff');
-      expect(buf.length, e.file).toBeLessThanOrEqual(200 * 1024);
-      expect(jpegSize(buf)).toEqual([1080, 540]);
+      expect(buf.subarray(0, 3).toString('hex'), `${e.file}: conteúdo precisa ser JPEG (os originais eram PNG com extensão .jpg)`).toBe('ffd8ff');
+      expect(buf.length, e.file).toBeLessThanOrEqual(300 * 1024);
+      expect(buf.length, `${e.file} acima do alvo de 200 KB (aceito até 300 KB; registre em docs/marketplace.md)`).toBeLessThanOrEqual(200 * 1024);
+      expect(jpegSize(buf)).toEqual([1200, 800]);
     }
+  });
+
+  it('o texto do banner (titulo) é o que está desenhado na imagem e é lido pelo leitor de tela; a legenda repetida não aparece', () => {
+    expect(BANNERS.map((b) => [b.id, b.titulo])).toEqual([
+      ['banner-vitrine', 'Entre em contato e solicite seu espaço para anunciar'],
+      ['banner-treino', 'Anuncie seu produto e comece a vender'],
+      ['banner-anuncie', 'Seja um parceiro Duo Fitness'],
+    ]);
+    const c = read('src/components/MarketplaceBanners.js');
+    expect(c).toMatch(/accessibilityLabel=\{`\$\{b\.titulo\}\./);
+    expect(c).toContain('!b.textoNaImagem');
+    expect(c).toContain("accessibilityHint=\"Abre o formulário para anunciar no marketplace\"");
+  });
+
+  it('a caixa do banner é 3:2 e a imagem usa resizeMode "contain": o texto desenhado na imagem nunca é cortado', () => {
+    const c = read('src/components/MarketplaceBanners.js');
+    expect(c).toMatch(/imageBox: \{[^}]*aspectRatio: 3 \/ 2/);
+    expect(c).toContain('resizeMode="contain"');
+    expect(c).not.toMatch(/resizeMode="cover"/);
+    expect(c).not.toMatch(/aspectRatio: 2,/);
   });
 
   it('getVisibleBanners: só entram banners com imagem resolvida', () => {

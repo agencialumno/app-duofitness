@@ -179,12 +179,12 @@ describe('imagens', () => {
     for (const i of items.filter((x) => x.imagem)) expect(keys.has(i.imagem!), `${i.id} -> ${i.imagem}`).toBe(true);
   });
 
-  it('cada arquivo mapeado existe, é JPEG de verdade (.jpg) e tem no máximo ~200 KB', () => {
+  it('cada arquivo mapeado existe, é JPEG de verdade (.jpg) e tem no máximo ~200 KB (teto 300 KB)', () => {
     expect(entries.length).toBeGreaterThan(0);
     for (const e of entries) {
       expect(e.file, e.file).toMatch(/\.jpg$/);
       expect(existsSync(e.file), e.file).toBe(true);
-      expect(statSync(e.file).size, e.file).toBeLessThanOrEqual(200 * 1024);
+      expect(statSync(e.file).size, e.file).toBeLessThanOrEqual(300 * 1024);
       expect(readFileSync(e.file).subarray(0, 3).toString('hex')).toBe('ffd8ff');
     }
   });
@@ -239,5 +239,26 @@ describe('acesso ao marketplace pela Home', () => {
   it('o botão "Anunciar em nosso marketplace" continua dentro da tela do marketplace', () => {
     const store = readFileSync(path.join(REPO, 'src/screens/StoreScreen.js'), 'utf8');
     expect(store).toContain('Anunciar em nosso marketplace');
+  });
+});
+
+describe('fotos de exemplo de produto: proporção e selo "Exemplo"', () => {
+  const c = (f: string) => readFileSync(path.join(__dirname, '../..', f), 'utf8');
+  it('whey, proteina e suplemento são JPEG 1200x800 (3:2), a mesma proporção da caixa (nada é cortado)', () => {
+    for (const k of ['whey', 'proteina', 'suplemento']) {
+      const buf = readFileSync(path.join(__dirname, '../../assets/marketplace', `${k}.jpg`));
+      expect(buf.subarray(0, 3).toString('hex')).toBe('ffd8ff');
+      let off = 2; let size: number[] = [];
+      while (off < buf.length) { if (buf[off] !== 0xff) { off++; continue; } const m = buf[off + 1] as number; if (m >= 0xc0 && m <= 0xc2) { size = [buf.readUInt16BE(off + 7), buf.readUInt16BE(off + 5)]; break; } off += 2 + buf.readUInt16BE(off + 2); }
+      expect(size, k).toEqual([1200, 800]);
+    }
+    expect(c('src/components/MarketplaceImage.js')).toMatch(/aspectRatio: 3 \/ 2/);
+  });
+  it('os itens de exemplo seguem com o selo visível "Exemplo" na lista, no detalhe e (sobre a foto) na Home', () => {
+    expect(c('src/screens/StoreScreen.js')).toContain('Exemplo');
+    expect(c('src/screens/StoreDetailScreen.js')).toContain('Item de exemplo');
+    expect(c('src/screens/HomeScreen.js')).toContain('exemplo={!!item.exemplo}');
+    expect(c('src/components/MarketplaceImage.js')).toContain('marketplace-image-exemplo');
+    for (const i of items.filter((x: any) => ['whey-po', 'whey-vegetal', 'supl-generico'].includes(x.id))) expect((i as any).exemplo, i.id).toBe(true);
   });
 });

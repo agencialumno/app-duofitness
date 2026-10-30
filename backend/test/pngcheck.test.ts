@@ -208,6 +208,23 @@ describe('check-pngs.mjs', () => {
     expect(r.out).toContain('::error file=assets/cortado.jpg::arquivo truncado');
   });
 
+  it('JPEG em assets/marketplace/: acima de 200 KB avisa, acima de 300 KB falha; fora dessa pasta não há limite', () => {
+    const base = [0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 3, 0x20, 4, 0xb0, 1, 1, 0x11, 0];
+    const jpg = (kb: number) => Buffer.concat([Buffer.from(base), Buffer.alloc(kb * 1024), Buffer.from([0xff, 0xd9])]);
+    put('src/m.js', "require('../assets/marketplace/leve.jpg'); require('../assets/marketplace/medio.jpg'); require('../assets/marketplace/pesado.jpg'); require('../assets/outra/grande.jpg');");
+    put('assets/marketplace/leve.jpg', jpg(150));
+    put('assets/marketplace/medio.jpg', jpg(250));
+    put('assets/marketplace/pesado.jpg', jpg(350));
+    put('assets/outra/grande.jpg', jpg(350));
+    const r = run();
+    expect(r.out).toContain('assets/marketplace/leve.jpg');
+    expect(r.out).not.toMatch(/::(error|warning) file=assets\/marketplace\/leve\.jpg/);
+    expect(r.out).toMatch(/::warning file=assets\/marketplace\/medio\.jpg::2\d\d KB: acima do alvo de 200 KB/);
+    expect(r.out).toMatch(/::error file=assets\/marketplace\/pesado\.jpg::3\d\d KB: acima do teto de 300 KB/);
+    expect(r.out).not.toMatch(/file=assets\/outra\/grande\.jpg/);
+    expect(r.code).toBe(1);
+  });
+
   it('require de .jpg em src/: confere o arquivo e a existência', () => {
     put('src/img.js', "const a = require('../assets/foto.jpg');\nconst b = require('../assets/sumiu.jpg');\n");
     put('assets/foto.jpg', Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 9, 0, 9, 1, 1, 0x11, 0, 0xff, 0xd9]));

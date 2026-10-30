@@ -11,6 +11,7 @@
 //
 // JPEG (.jpg/.jpeg): o conteúdo precisa ser JPEG de verdade (SOI FFD8FF, quadro SOF legível, EOI no fim);
 // um PNG com extensão .jpg também é erro. Mesmo critério de "referenciado e ausente".
+// JPEG em assets/marketplace/: acima de 200 KB é aviso e acima de 300 KB é erro (otimize com scripts/optimize-marketplace-images.py).
 //
 // Uso:  node scripts/check-pngs.mjs [--root <pasta do app>]
 // Só usa módulos do Node: sem dependências.
@@ -246,6 +247,8 @@ function discover(root) {
 // ---- saída ------------------------------------------------------------------
 
 const onGithub = process.env.GITHUB_ACTIONS === 'true';
+const JPEG_TARGET = 200 * 1024;
+const JPEG_CEILING = 300 * 1024;
 
 function report(level, file, message) {
   if (onGithub) console.log(`::${level} file=${file}::${message}`);
@@ -275,6 +278,12 @@ function main() {
     }
     const buf = readFileSync(abs);
     const { errors, warnings, info } = /\.jpe?g$/i.test(abs) ? inspectJpeg(buf) : inspectPng(buf);
+    // JPEG de assets/marketplace: peso para o app (fotos e banners vêm de arquivos de 1 a 2 MB e precisam ser otimizados:
+    // python scripts/optimize-marketplace-images.py). Alvo ~200 KB; acima do teto de 300 KB é erro, entre os dois é aviso.
+    if (/\.jpe?g$/i.test(abs) && name.startsWith('assets/marketplace/')) {
+      if (buf.length > JPEG_CEILING) errors.push(`${Math.round(buf.length / 1024)} KB: acima do teto de ${JPEG_CEILING / 1024} KB do marketplace (rode scripts/optimize-marketplace-images.py)`);
+      else if (buf.length > JPEG_TARGET) warnings.push(`${Math.round(buf.length / 1024)} KB: acima do alvo de ${JPEG_TARGET / 1024} KB (aceito até ${JPEG_CEILING / 1024} KB)`);
+    }
     for (const e of errors) report('error', name, e);
     for (const w of warnings) report('warning', name, w);
     if (errors.length > 0) failed++;
