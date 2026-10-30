@@ -566,7 +566,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
         keyboardVerticalOffset={0}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
@@ -616,7 +616,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
               );
             })}
             {currentStep.multi && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Confirmar seleção" accessibilityState={{ disabled: chipSelection.length === 0 }}
                 style={[styles.chipConfirm, chipSelection.length === 0 && styles.chipConfirmDisabled]}
                 onPress={confirmChips}
                 disabled={chipSelection.length === 0}
@@ -639,7 +639,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
             editable={!finalPlan}
             onSubmitEditing={sendMessage}
           />
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Enviar mensagem" accessibilityState={{ disabled: !input.trim() || loading || !!finalPlan }}
             style={[styles.sendBtn, (!input.trim() || loading || finalPlan) && styles.sendBtnDisabled]}
             onPress={sendMessage}
             disabled={!input.trim() || loading || !!finalPlan}

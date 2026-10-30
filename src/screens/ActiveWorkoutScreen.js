@@ -102,7 +102,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => Alert.alert('Sair do treino', 'Seu progresso será perdido.', [
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Sair do treino" onPress={() => Alert.alert('Sair do treino', 'Seu progresso será perdido.', [
           { text: 'Continuar', style: 'cancel' },
           { text: 'Sair', style: 'destructive', onPress: () => navigation.goBack() },
         ])}>

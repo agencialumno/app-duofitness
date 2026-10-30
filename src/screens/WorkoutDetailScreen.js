@@ -21,10 +21,10 @@ export default function WorkoutDetailScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Excluir treino" onPress={handleDelete}>
           <Ionicons name="trash-outline" size={22} color={COLORS.error} />
         </TouchableOpacity>
       </View>

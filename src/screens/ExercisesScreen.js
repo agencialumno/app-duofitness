@@ -53,7 +53,7 @@ export default function ExercisesScreen({ navigation }) {
             placeholderTextColor={COLORS.textMuted}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Limpar busca" onPress={() => setSearch('')}>
               <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}

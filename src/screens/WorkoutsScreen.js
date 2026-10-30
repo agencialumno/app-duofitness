@@ -14,7 +14,7 @@ export default function WorkoutsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <Text style={styles.title}>Meus Treinos</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Criar treino" style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
           <Ionicons name="add" size={22} color={COLORS.black} />
         </TouchableOpacity>
       </View>

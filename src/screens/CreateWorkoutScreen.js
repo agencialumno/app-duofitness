@@ -36,7 +36,7 @@ export default function CreateWorkoutScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={() => navigation.goBack()} style={styles.closeBtn}>
           <Ionicons name="close" size={24} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Novo Treino</Text>

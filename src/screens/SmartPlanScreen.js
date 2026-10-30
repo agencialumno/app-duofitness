@@ -214,7 +214,7 @@ export default function SmartPlanScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar"
           onPress={() => step > 0 ? setStep(s => s - 1) : navigation.goBack()}
           style={styles.backBtn}
         >
