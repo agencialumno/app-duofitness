@@ -84,10 +84,8 @@ const smallTarget = (t: Touch) => {
   return tooSmallH || tooSmallW;
 };
 
-// BASELINE de achados (bugs B3, B4 e B5 do docs/relatorio-testes.md), por arquivo:linha. Dois tipos de teste:
-//  - "it.fails": a regra COMPLETA (nenhuma violação); está marcado como falha esperada até o app ser corrigido (não corrigimos código de produção aqui);
-//  - "catraca": nenhuma violação NOVA além do baseline (impede piorar), e o baseline não pode ficar com linhas que já foram corrigidas.
-// Se o código do app mudar de linha, atualize as listas (o teste da catraca diz quais entraram e quais saíram).
+// Catracas: os baselines estão em ZERO (bugs B3, B4 e B5 corrigidos; docs/relatorio-testes.md). Qualquer violação nova faz o teste falhar e o baseline
+// não pode ter linhas já corrigidas. Se o código do app mudar de linha, o teste diz quais entraram e quais saíram.
 const BASELINE_SEM_NOME: string[] = []; // B3 corrigido: nenhum toque sem nome acessível
 const CONHECIDOS_SEM_PAPEL: string[] = []; // B4 corrigido: todo toque declara o papel
 const CONHECIDOS_ALVO_PEQUENO: string[] = []; // B5 corrigido: hitSlop leva os 2 alvos a 44 pt

@@ -46,7 +46,7 @@ Todos os cinco bugs abaixo foram **corrigidos**, um commit por bug. Os `it.fails
 | **B1** (mensagem de erro em `console.error`) | ✅ corrigido | `7fe9b20` | `describeError` devolve só o **nome** do erro e o **código** (`Error (auth/network-request-failed)`), nunca a mensagem; nome/código com formato estranho (ou só numérico) são descartados. Teste: um valor de saúde dentro da mensagem não aparece em nenhum `console.error` do ErrorBoundary. |
 | **B3** (14 botões só com ícone) | ✅ corrigido | `21d3a30` | `accessibilityRole="button"` e rótulo curto em português: "Criar treino", "Limpar busca", "Fechar", "Voltar" (8x), "Sair do treino", "Excluir treino", "Confirmar seleção" e "Enviar mensagem" (estes dois com estado desativado). |
 | **B5** (alvos menores que 44 pt) | ✅ corrigido | `e1ce57c` | `hitSlop` de 3 pt no "+" de Treinos (38 → 44 pt) e de 6 pt no confirmar chips do Personal Trainer (32 → 44 pt). O desenho continua 38x38 e 32x32; o teste soma estilo + `hitSlop`. |
-| **B4** (toques sem papel) | ✅ corrigido | `fea1423` | 37 toques ganharam `accessibilityRole` (eram 52 no relatório original; 14 já tinham sido tratados no B3 e 1 era contagem em duplicidade do levantamento). |
+| **B4** (toques sem papel) | ✅ corrigido | `fea1423` | 37 toques ganharam `accessibilityRole` (o relatório original dizia 52; depois do B3 o analisador achou 37, e a diferença de 1 em relação a 52 − 14 não foi investigada; o teste cobre todos os toques que o analisador encontra). |
 
 ### B4: decisões e dúvidas (conferir com VoiceOver/TalkBack)
 - **`button`**: todos os toques que navegam ou executam uma ação (Concluir, Pular descanso, próxima série, Salvar, Ver meus treinos, cartões da Home, Iniciar treino, linhas de exercício, etc.).
