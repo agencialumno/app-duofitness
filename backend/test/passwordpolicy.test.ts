@@ -90,11 +90,11 @@ describe('política de senha', () => {
       for (const c of ['Password', 'P@ssw0rd', 'SENHA123', 'Qwerty', 'Flamengo', 'Musculação']) expect(P.isCommonPassword(c), c).toBe(true);
       expect(P.isCommonPassword('Treino#Forte2026')).toBe(false);
     });
-    it('uma senha comum que cumpre as regras continua sinalizada como comum, mas o nível segue os requisitos (máximo)', () => {
+    it('uma senha comum que cumpre as regras continua aceita (allOk) e sinalizada como comum, mas o nível é no máximo "Razoável"', () => {
       const comum = ok('Password#2026');
       expect(comum.allOk).toBe(true);
-      expect(comum.common).toBe(true); // o aviso de senha comum continua disponível
-      expect(comum.strength.level).toBe(4);
+      expect(comum.common).toBe(true);
+      expect(comum.strength).toEqual({ level: 2, label: 'Razoável' });
     });
   });
 
@@ -142,7 +142,7 @@ describe('nível da barra de força: definido pelos requisitos atendidos', () =>
     expect(P.strengthFromRules(mk(7))).toEqual({ level: 4, label: 'Muito forte' });
   });
   it('REGRESSÃO: senha com todos os requisitos mostra "Muito forte", mesmo curta (10) e com poucas classes', () => {
-    for (const s of ['Treino#2026a', 'Kdmqpw1!ts', 'Abcdefg1!x', 'Corvo#Lilas#2026']) {
+    for (const s of ['Treino#2026a', 'Kdmqpw1!ts', 'Qzmxnb7!ty', 'Corvo#Lilas#2026']) {
       const r = P.checkPassword(s);
       expect(r.allOk, s).toBe(true);
       expect(r.strength, s).toEqual({ level: 4, label: 'Muito forte' });
@@ -163,5 +163,54 @@ describe('nível da barra de força: definido pelos requisitos atendidos', () =>
   });
   it('contém o e-mail/nome: não é máximo', () => {
     expect(lv('Victor#2026abc', { name: 'Victor Barros' }).level).toBe(3);
+  });
+});
+
+describe('senha comum limita o nível de força (não bloqueia)', () => {
+  const lv = (pwd: string, ctx = {}) => P.checkPassword(pwd, ctx);
+  it('lista local pequena (50 a 100 itens) com os exemplos óbvios', () => {
+    expect(P.COMMON_PASSWORDS.length).toBeGreaterThanOrEqual(50);
+    expect(P.COMMON_PASSWORDS.length).toBeLessThanOrEqual(100);
+    for (const c of ['123456', '12345678', 'senha123', 'qwerty123', 'password', 'duofitness']) expect(P.COMMON_PASSWORDS, c).toContain(c);
+  });
+  it.each(['123456', '12345678', 'senha123', 'qwerty123', 'password', 'duofitness', 'PASSWORD', 'DuoFitness', 'QwErTy123'])('senha comum "%s": nível Fraca ou Razoável, nunca Boa', (s) => {
+    const r = lv(s);
+    expect(r.common, s).toBe(true);
+    expect(r.strength.level, s).toBeLessThanOrEqual(2);
+    expect(['Fraca', 'Razoável']).toContain(r.strength.label);
+  });
+  it.each(['password1', 'Password#2026', 'senha2026!', 'Senha!2026', 'duofitness2026', 'DuoFitness#1', 'qwerty123456', 'academia@2026'])('senha comum com sufixo (número ou símbolo no fim) "%s" também fica limitada', (s) => {
+    const r = lv(s);
+    expect(r.common, s).toBe(true);
+    expect(r.strength.level, s).toBeLessThanOrEqual(2);
+  });
+  it('mesmo cumprindo TODOS os requisitos, a senha comum não passa de "Razoável", e continua aceita', () => {
+    const r = lv('Duofitness#2026');
+    expect(r.allOk).toBe(true);
+    expect(r.strength).toEqual({ level: 2, label: 'Razoável' });
+  });
+  it('senha forte normal continua "Boa" ou mais (todos os requisitos = "Muito forte")', () => {
+    for (const s of ['Corvo#Lilas2026', 'Treino#Forte2026', 'Kdmqpw1!ts']) {
+      const r = lv(s);
+      expect(r.common, s).toBe(false);
+      expect(r.strength.level, s).toBeGreaterThanOrEqual(3);
+    }
+    expect(lv('Corvo#Lilas2026').strength).toEqual({ level: 4, label: 'Muito forte' });
+    expect(lv('Treino#Forte').strength.level).toBe(3); // falta um requisito: Boa
+  });
+  it('senha vazia: sem barra e não é comum', () => {
+    const r = lv('');
+    expect(r.strength).toEqual({ level: 0, label: '' });
+    expect(r.common).toBe(false);
+    expect(r.allOk).toBe(false);
+  });
+  it('só limita o NÍVEL: os requisitos e a aceitação da senha não mudam', () => {
+    expect(lv('Password#2026').allOk).toBe(true);
+    expect(lv('password').allOk).toBe(false); // continua faltando maiúscula, número, símbolo e tamanho
+    expect(P.MIN_LENGTH).toBe(10);
+  });
+  it('isCommonPassword: sem diferenciar maiúscula/minúscula nem acento, e sem número/símbolo final', () => {
+    for (const c of ['SENHA', 'Senha1', 'senha!!', 'Mudar123', '  password 2026 ', 'Musculação2026!']) expect(P.isCommonPassword(c), c).toBe(true);
+    for (const c of ['', 'Corvo#Lilas2026', 'xK9!pQ2mZz']) expect(P.isCommonPassword(c), c).toBe(false);
   });
 });

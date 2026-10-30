@@ -5,14 +5,17 @@
 // `rules` é a checklist (mesma ordem na tela); `score` vai de 0 a 100 (força, só informativa).
 
 export const MIN_LENGTH = 10;
+export const COMMON_MAX_LEVEL = 2; // 'Razoável'
 
-// Lista pequena de senhas comuns (já normalizadas: minúsculas, sem acento). Só penaliza a força.
+// Lista pequena de senhas comuns (já normalizadas: minúsculas, sem acento). Só limita o NÍVEL de força exibido (no máximo "Razoável"); não bloqueia o cadastro.
 export const COMMON_PASSWORDS = [
   'password', 'senha', 'senha123', 'senhasenha', 'qwerty', 'qwertyuiop', 'abc123', 'abcd1234', 'admin', 'letmein',
   'welcome', 'iloveyou', 'monkey', 'dragon', 'master', 'login', 'passw0rd', 'trustno1', 'football', 'futebol',
   'flamengo', 'corinthians', 'palmeiras', 'brasil', 'brasil123', 'mudar123', 'mudar@123', 'academia',
   'musculacao', 'duofitness', 'duo123', '123456', '1234567', '12345678', '123456789', '1234567890', '0123456789',
   '111111', '000000', 'abcdef', 'asdfgh', 'zxcvbn', 'amorzinho', 'meuamor', 'deusefiel', 'teamo', 'gabriel',
+  'qwerty123', 'password1', 'password123', 'senha1234', 'senha@123', 'abc12345', '123123', '123321', '654321', '1q2w3e4r', 'q1w2e3r4', 'iloveyou1',
+  'minhasenha', 'senha12345', 'academia123', 'treino123', 'abcd@1234', 'meusegredo', 'saude123', 'mudar@123456', 'admin123', 'user123',
 ];
 
 const LEET = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', '@': 'a', $: 's', '!': 'i' };
@@ -38,10 +41,14 @@ export function containsPersonal(password, { email, name } = {}) {
   return personalParts(email, name).some((p) => f.includes(p) || raw.includes(p));
 }
 
+// Tira número(s), símbolo(s) e espaços do FINAL ("senha2026!" -> "senha"): variação óbvia de uma senha comum.
+const stripTail = (text) => text.replace(/[\p{N}\p{P}\p{S}\s]+$/u, '');
+
 export function isCommonPassword(password) {
   const f = fold(password);
   const leet = Array.from(f).map((c) => LEET[c] ?? c).join('');
-  return COMMON_PASSWORDS.some((c) => f === c || leet === c || (c.length >= 6 && (f.includes(c) || leet.includes(c))));
+  const bases = [f, leet, stripTail(f), stripTail(leet)].filter((b) => b.length > 0);
+  return COMMON_PASSWORDS.some((c) => bases.includes(c) || (c.length >= 6 && (f.includes(c) || leet.includes(c))));
 }
 
 export function checkPassword(password, { email, name } = {}) {
@@ -73,7 +80,11 @@ export function checkPassword(password, { email, name } = {}) {
     if (!rules[5].ok) score = Math.min(score, 50);
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
-  return { rules, allOk, score, strength: strengthFromRules(rules, pwd.length === 0), common };
+  // Senha comum (ou variação óbvia dela) nunca passa de "Razoável", mesmo cumprindo todos os requisitos. Só limita o nível exibido:
+  // a senha continua aceita se atender ao mínimo.
+  let strength = strengthFromRules(rules, pwd.length === 0);
+  if (common && strength.level > COMMON_MAX_LEVEL) strength = { level: COMMON_MAX_LEVEL, label: 'Razoável' };
+  return { rules, allOk, score, strength, common };
 }
 
 // NÍVEL EXPLÍCITO pela checklist (os mesmos 7 requisitos obrigatórios que a senha precisa cumprir para ser aceita):
