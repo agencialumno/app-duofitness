@@ -170,3 +170,10 @@ O que fazer:
 - **Política de Privacidade:** `EXPO_PUBLIC_PRIVACY_URL` continua pendente (a URL ainda não foi informada). Quando existir, crie a variável do mesmo jeito; os dois links passam a aparecer.
 - Para testar localmente, copie o `.env.example` para `.env` e rode o Metro com `--clear`.
 - **Tarefa futura:** validação do cadastro por **código de condomínio** (hoje qualquer pessoa com 13 anos ou mais cria conta). Não implementada.
+
+## 18. Procedência das fotos de referência dos exercícios
+
+- As fotos da "animação" do detalhe do exercício (34 exercícios, 2 poses cada) vêm do free-exercise-db (Unlicense) e **ficam fora do git** (`assets/exercicios-ref/`, preparadas por `scripts/preparar-fotos-exercicios.mjs` com a variável `FREE_EXERCISE_DB_DIR`). A **origem original das imagens não foi verificada**.
+- **Confirme a procedência** (autoria e direito de uso das imagens, ou troque por fotos próprias), registre em `docs/procedencia-midia.md` e **só então mude o campo `CONFIRMADO: não` para `CONFIRMADO: sim`**.
+- **Portão de loja:** crie a variável `RELEASE_BUILD` (GitHub > Settings > Secrets and variables > Actions > Variables) com o valor `true` nos builds de loja. Com ela ligada, `scripts/check-media-provenance.mjs` **falha o build** se houver fotos em `assets/exercicios-ref/` e o campo ainda for "não". Sem a variável, o passo não roda (nada muda). Builds de CI não têm as fotos, então o portão só pesa em build local com as fotos.
+- Para um build local de loja **sem** essas fotos: `node scripts/preparar-fotos-exercicios.mjs --limpar` (apaga as fotos e o arquivo gerado; o app cai no visual de hoje).

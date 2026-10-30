@@ -6,14 +6,18 @@ import { getExerciseMedia } from '../data/exerciseVideos';
 import { useReduceMotionState } from '../hooks/useReduceMotion';
 import { getTestVideoSource } from '../utils/mediaTestFlag';
 import ExerciseVideoPlayer from './ExerciseVideoPlayer';
+import ExerciseStills from './ExerciseStills';
+import { getExerciseStills } from '../data/exerciseStillsLoader';
 
-// Área "Como fazer" do exercício: quadrada (1:1, proporção fixa).
-//   - Com vídeo no mapa gerado (src/data/exerciseVideos.js): player (ExerciseVideoPlayer, expo-video).
-//   - Sem vídeo: a capa se existir, senão um placeholder escuro com ícone amarelo e o selo "Vídeo em breve".
+// Área "Como fazer" do exercício. Prioridade da mídia:
+//   1) vídeo próprio no mapa gerado (src/data/exerciseVideos.js): quadrada (1:1), player (ExerciseVideoPlayer, expo-video);
+//   2) as duas fotos de referência (src/data/exerciseStills*.js, só se existirem neste build): ExerciseStills, 3:2, fade cruzado;
+//   3) o visual atual: a capa se existir, senão um placeholder escuro com ícone amarelo e o selo "Vídeo em breve".
 //   - Vídeo que falha ao carregar: volta à capa/placeholder, sem mensagem de erro.
 // `renderVideo` (opcional) substitui o player: recebe { media, exercise, autoplay, onFail } e devolve o elemento
 // (usado nos testes). Formato e como adicionar arquivos: docs/videos-exercicios.md.
-export default function ExerciseMedia({ exercise, renderVideo }) {
+// `stillImages` (opcional) injeta o par de fotos nos testes; sem ele vale o arquivo gerado (ausente = nada de fotos).
+export default function ExerciseMedia({ exercise, renderVideo, stillImages }) {
   const name = exercise?.name || 'exercício';
   const { reduce: reduceMotion, known: motionKnown } = useReduceMotionState();
   const [failed, setFailed] = useState(false);
@@ -38,7 +42,11 @@ export default function ExerciseMedia({ exercise, renderVideo }) {
     );
   }
 
-  // Capa ou placeholder. Se havia vídeo e ele falhou, não há selo "em breve" (o arquivo existe).
+  // 2) fotos de referência (também quando o vídeo existia e falhou)
+  const stills = getExerciseStills(exercise?.id, stillImages);
+  if (stills) return <ExerciseStills exercise={exercise} images={stills} />;
+
+  // 3) Capa ou placeholder. Se havia vídeo e ele falhou, não há selo "em breve" (o arquivo existe).
   const base = media?.alt || `Vídeo de demonstração de ${name}`;
   const label = failed ? `${base} indisponível no momento` : `${base} em breve`;
 
