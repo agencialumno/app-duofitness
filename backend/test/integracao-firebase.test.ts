@@ -137,9 +137,11 @@ describe('regras de referência e segredos', () => {
     const pkg = JSON.parse(read('package.json'));
     expect(JSON.stringify({ ...pkg.dependencies, ...pkg.devDependencies })).not.toMatch(/@react-native-firebase|react-native-health-connect|react-native-healthkit/);
   });
-  // BUG B2 (baixa gravidade, documentação): o comentário das regras de referência ainda diz "nada de dados de menores (a conta é 18+)", mas a idade
-  // mínima agora é 13 anos com autorização do responsável (src/config/account.js). As regras não estão publicadas; o texto está desatualizado.
-  it.fails('o comentário das regras de referência reflete a idade mínima atual (13 anos), não "18+"', () => {
-    expect(read('firebase/firestore.rules')).not.toMatch(/a conta é 18\+/);
+  // B2 (corrigido): o cabeçalho das regras de referência dizia "a conta é 18+"; a idade mínima é 13 (src/config/account.js). Só o comentário mudou.
+  it('o comentário das regras de referência reflete a idade mínima atual (13 anos), não "18+", e a regra em si não checa idade', () => {
+    const rules = read('firebase/firestore.rules');
+    expect(rules).not.toMatch(/a conta é 18\+/);
+    expect(rules).toContain('a conta é 13+');
+    expect(rules.replace(/^\s*\/\/.*$/gm, '')).not.toMatch(/18|age|idade/i); // nenhuma regra executável olha idade
   });
 });

@@ -2,7 +2,7 @@
 // para quando houver sincronização, e devem ser revisadas e testadas com o Emulator antes de qualquer publicação.
 //
 // Princípios: nada é público; só quem está logado, com e-mail verificado, lê e grava o PRÓPRIO documento; o servidor
-// valida tipos e tamanhos; coleções desconhecidas ficam fechadas (negar por padrão); nada de dados de menores (a conta é 18+).
+// valida tipos e tamanhos; coleções desconhecidas ficam fechadas (negar por padrão); nada de dados de menores (a conta é 13+, com autorização do responsável entre 13 e 17; esses dados ficam só no aparelho).
 rules_version = '2';
 
 service cloud.firestore {
