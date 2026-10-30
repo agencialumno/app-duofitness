@@ -105,6 +105,27 @@ const RULES = [
     re: /no devices from which to generate a provisioning profile|Your team has no devices/i,
     msg: 'O time Apple não tem dispositivos registrados, e o Xcode exige um para gerar o perfil de desenvolvimento do archive. O workflow repete o archive sem assinar e deixa a assinatura de distribuição para o export. Para evitar esse caminho, REGISTRE UM iPhone no portal da Apple: developer.apple.com > Certificates, Identifiers & Profiles > Devices > + (plataforma iOS, um nome e o UDID do aparelho; o UDID aparece no Finder ao selecionar o iPhone no Mac, ou em Ajustes > Geral > Sobre).',
   },
+  // --- assinatura MANUAL (certificado e perfil fixos dos secrets IOS_DIST_CERT_*/IOS_PROVISIONING_PROFILE_B64)
+  {
+    id: 'assin-sem-identidade',
+    re: /No signing certificate .*found|Code Signing Error:? .*(no|No) .*(identity|certificate)|no identity found|Unable to find a certificate|0 valid identities found|CSSMERR_TP_CERT_(REVOKED|EXPIRED)/i,
+    msg: 'CAUSA (assinatura manual): o xcodebuild não achou uma identidade de distribuição válida no keychain (certificado ausente, sem chave privada, expirado ou revogado). AÇÃO: exporte de novo o certificado Apple Distribution do Keychain Access COM a chave privada (.p12), confira IOS_DIST_CERT_PASSWORD e atualize IOS_DIST_CERT_P12_B64; se o certificado expirou, crie outro, gere um perfil novo com ele e atualize os dois secrets. Veja docs/testflight.md.',
+  },
+  {
+    id: 'assin-perfil-nao-bate',
+    re: /doesn't match the (signing )?(identity|certificate)|provisioning profile .* (doesn't|does not) (match|include the signing certificate)|No profile for team .* matching|Provisioning profile ".*" (doesn't|does not) match|is not a valid provisioning profile|no provisioning profile (matching|named)|Provisioning profile .* not found/i,
+    msg: 'CAUSA (assinatura manual): o perfil de provisionamento não bate com o app ou com o certificado (outro App ID, outro time, nome diferente, ou o perfil foi criado com OUTRO certificado). AÇÃO: crie um perfil App Store para com.duofitness.app escolhendo o MESMO certificado de distribuição do .p12, baixe e atualize IOS_PROVISIONING_PROFILE_B64. O nome do perfil é lido do próprio arquivo; não precisa configurar nada além dos 3 secrets. Veja docs/testflight.md.',
+  },
+  {
+    id: 'assin-perfil-expirado',
+    re: /provisioning profile .*(has )?expired|profile .*is expired|expired provisioning profile|The provisioning profile .* expired/i,
+    msg: 'CAUSA (assinatura manual): o perfil de provisionamento (ou o certificado) expirou. Eles valem 1 ano. AÇÃO: renove no portal da Apple (Certificates, Identifiers & Profiles), baixe o perfil novo e atualize IOS_PROVISIONING_PROFILE_B64 (e IOS_DIST_CERT_P12_B64 + IOS_DIST_CERT_PASSWORD se o certificado também venceu). Veja a seção de renovação em docs/testflight.md.',
+  },
+  {
+    id: 'assin-entitlement',
+    re: /Provisioning profile .* (doesn't|does not) (support|include) the .* (capability|entitlement)|doesn't include the (com\.apple\.[A-Za-z.\-]+) entitlement|Entitlement .* not (found|allowed)|entitlements? .*(not permitted|is not allowed|not allowed)|has entitlements that require signing with a development certificate/i,
+    msg: 'CAUSA (assinatura manual): o app usa um entitlement (HealthKit ou Sign in with Apple) que não está no perfil. Um perfil só tem as capabilities que o App ID tinha QUANDO ele foi criado. AÇÃO: em developer.apple.com > Identifiers > com.duofitness.app ligue as capabilities (Sign in with Apple e, com HEALTH_INTEGRATION_ENABLED=true, HealthKit; NÃO ligue Clinical Health Records), RECRIE o perfil, baixe e atualize IOS_PROVISIONING_PROFILE_B64. Veja docs/testflight.md.',
+  },
   {
     re: /No Account for Team|Unable to authenticate|invalidPEMDocument|Invalid authentication key|authentication key credential|App Store Connect.*(credentials|authentication)/i,
     msg: 'O xcodebuild não conseguiu autenticar com a chave da API. Confira APPSTORE_KEY_ID, APPSTORE_ISSUER_ID e APPSTORE_PRIVATE_KEY (os três da MESMA chave) e se APPLE_TEAM_ID é o Team ID da organização. Chaves de conta Enterprise não funcionam para isso.',
@@ -112,7 +133,7 @@ const RULES = [
   {
     id: 'perfil',
     // consequência comum de "sem dispositivos": se essa causa já foi explicada, não repete esta
-    suppressedBy: ['sem-dispositivos', 'limite-certificados'],
+    suppressedBy: ['sem-dispositivos', 'limite-certificados', 'assin-sem-identidade', 'assin-perfil-nao-bate', 'assin-perfil-expirado', 'assin-entitlement'],
     re: /No profiles for '.*' were found|requires a provisioning profile|Provisioning profile .* doesn't (match|include)/i,
     msg: 'Não foi possível obter o perfil de provisionamento de com.duofitness.app. Confira em developer.apple.com > Certificates, Identifiers & Profiles > Identifiers se o App ID existe (o app do App Store Connect cria o registro) Se a chave da API JÁ tem papel Admin, não troque o papel: leia as outras dicas deste log (por exemplo, o limite de certificados). Só use uma chave com papel Admin no primeiro build se ela ainda não for Admin.',
   },

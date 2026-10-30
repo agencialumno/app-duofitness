@@ -173,7 +173,7 @@ describe('ios.yml: estrutura', () => {
 
   it('o CI NUNCA cria, revoga nem lista certificados, e nunca imprime nomes de certificados', () => {
     const y = readFileSync(IOS_YML, 'utf8');
-    for (const proibido of ['/v1/certificates', 'api.appstoreconnect.apple.com', 'curl ', 'find-identity', 'security delete', 'DELETE ', 'revoke-cert']) expect(y, proibido).not.toContain(proibido);
+    for (const proibido of ['/v1/certificates', 'api.appstoreconnect.apple.com', 'curl ', 'find-identity', 'security delete-certificate', 'security delete-identity', 'DELETE ', 'revoke-cert']) expect(y, proibido).not.toContain(proibido);
     expect(y).not.toMatch(/echo[^\n]*\$\{?AUTHORITY/);
     expect(y).not.toMatch(/echo[^\n]*\$\{?SIGN_INFO/);
     expect(y).not.toContain('Assinado por:');
