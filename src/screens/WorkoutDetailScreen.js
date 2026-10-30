@@ -21,10 +21,10 @@ export default function WorkoutDetailScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Excluir treino" onPress={handleDelete}>
           <Ionicons name="trash-outline" size={22} color={COLORS.error} />
         </TouchableOpacity>
       </View>
@@ -41,7 +41,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
           {sessionCount > 0 && <><Text style={styles.metaDot}>·</Text><Text style={styles.metaText}>{sessionCount}x realizado</Text></>}
         </View>
 
-        <TouchableOpacity style={styles.startBtn} onPress={() => navigation.navigate('ActiveWorkout', { workout })}>
+        <TouchableOpacity accessibilityRole="button" style={styles.startBtn} onPress={() => navigation.navigate('ActiveWorkout', { workout })}>
           <Ionicons name="play-circle-outline" size={22} color={COLORS.black} />
           <Text style={styles.startBtnText}>Iniciar treino</Text>
         </TouchableOpacity>
@@ -49,7 +49,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
         <Text style={styles.sectionTitle}>Exercícios</Text>
         <View style={styles.exercises}>
           {workout.exercises?.map((ex, i) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={ex.id || i}
               style={styles.exRow}
               onPress={() => navigation.navigate('Exercises', { screen: 'ExerciseDetail', params: { exercise: ex } })}

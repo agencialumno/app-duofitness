@@ -92,7 +92,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
             </View>
           ))}
         </View>
-        <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.popToTop()}>
+        <TouchableOpacity accessibilityRole="button" style={styles.doneBtn} onPress={() => navigation.popToTop()}>
           <Text style={styles.doneBtnText}>Concluir</Text>
         </TouchableOpacity>
       </View>
@@ -102,7 +102,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => Alert.alert('Sair do treino', 'Seu progresso será perdido.', [
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Sair do treino" onPress={() => Alert.alert('Sair do treino', 'Seu progresso será perdido.', [
           { text: 'Continuar', style: 'cancel' },
           { text: 'Sair', style: 'destructive', onPress: () => navigation.goBack() },
         ])}>
@@ -144,14 +144,14 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
           <View style={styles.restCard}>
             <Text style={styles.restTitle}>Descansando</Text>
             <Text style={styles.restTimer}>{restSeconds}s</Text>
-            <TouchableOpacity onPress={() => { clearInterval(restTimer.current); setResting(false); }}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => { clearInterval(restTimer.current); setResting(false); }}>
               <Text style={styles.skipRest}>Pular descanso</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {!resting && (
-          <TouchableOpacity style={styles.nextBtn} onPress={nextSet}>
+          <TouchableOpacity accessibilityRole="button" style={styles.nextBtn} onPress={nextSet}>
             <Ionicons name={currentIdx === exercises.length - 1 && currentSet === currentEx?.sets ? 'trophy-outline' : 'checkmark'} size={20} color={COLORS.black} />
             <Text style={styles.nextBtnText}>
               {currentIdx === exercises.length - 1 && currentSet === currentEx?.sets ? 'Finalizar treino' : 'Série concluída'}

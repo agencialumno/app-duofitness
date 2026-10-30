@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "gen:media": "node scripts/gen-exercise-media.mjs",
-    "check:videos": "node scripts/check-videos.mjs"
+    "check:videos": "node scripts/check-videos.mjs",
+    "test:all": "npm --prefix backend test && npm --prefix backend run typecheck && node scripts/check-no-secrets.mjs && node scripts/check-pngs.mjs && npx expo-doctor"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

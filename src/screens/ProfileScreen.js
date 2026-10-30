@@ -83,7 +83,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>DADOS FÍSICOS</Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.editBtn}
             onPress={() => navigation.navigate('EditBodyData')}
           >
@@ -124,7 +124,7 @@ export default function ProfileScreen({ navigation }) {
             )}
           </View>
         ) : (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.bodyEmpty}
             onPress={() => navigation.navigate('EditBodyData')}
           >

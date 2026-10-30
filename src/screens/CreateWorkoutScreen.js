@@ -36,11 +36,11 @@ export default function CreateWorkoutScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={() => navigation.goBack()} style={styles.closeBtn}>
           <Ionicons name="close" size={24} color={COLORS.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Novo Treino</Text>
-        <TouchableOpacity onPress={save}>
+        <TouchableOpacity accessibilityRole="button" onPress={save}>
           <Text style={styles.saveBtn}>Salvar</Text>
         </TouchableOpacity>
       </View>
@@ -59,7 +59,7 @@ export default function CreateWorkoutScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.chipRow}>
             {[...CATEGORIES, 'Full Body'].map(c => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: category === c }}
                 key={c}
                 style={[styles.chip, category === c && styles.chipActive]}
                 onPress={() => setCategory(c)}
@@ -78,7 +78,7 @@ export default function CreateWorkoutScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.chipRow}>
             {allCats.map(c => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: filterCat === c }}
                 key={c}
                 style={[styles.filterChip, filterCat === c && styles.filterChipActive]}
                 onPress={() => setFilterCat(c)}
@@ -93,7 +93,7 @@ export default function CreateWorkoutScreen({ navigation }) {
           {filtered.map(ex => {
             const sel = isSelected(ex.id);
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: !!sel }}
                 key={ex.id}
                 style={[styles.exCard, sel && styles.exCardActive]}
                 onPress={() => toggleExercise(ex)}

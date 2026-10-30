@@ -14,7 +14,7 @@ export default function WorkoutsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <Text style={styles.title}>Meus Treinos</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Criar treino" hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
           <Ionicons name="add" size={22} color={COLORS.black} />
         </TouchableOpacity>
       </View>
@@ -29,7 +29,7 @@ export default function WorkoutsScreen({ navigation }) {
             Use o Personal Trainer IA para criar séries A, B e C personalizadas para você.
           </Text>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.aiBtn}
             onPress={() => navigation.navigate('AIPersonalTrainer')}
           >
@@ -37,7 +37,7 @@ export default function WorkoutsScreen({ navigation }) {
             <Text style={styles.aiBtnText}>Personal Trainer IA</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.smartBtn}
             onPress={() => navigation.navigate('SmartPlan')}
           >
@@ -45,7 +45,7 @@ export default function WorkoutsScreen({ navigation }) {
             <Text style={styles.smartBtnText}>Gerador rápido</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.manualBtn}
             onPress={() => navigation.navigate('CreateWorkout')}
           >
@@ -59,7 +59,7 @@ export default function WorkoutsScreen({ navigation }) {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.banners}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.aiBanner}
                 onPress={() => navigation.navigate('AIPersonalTrainer')}
               >
@@ -77,7 +77,7 @@ export default function WorkoutsScreen({ navigation }) {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.card}
               onPress={() => navigation.navigate('WorkoutDetail', { workout: item })}
               activeOpacity={0.8}

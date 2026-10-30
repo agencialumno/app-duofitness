@@ -60,11 +60,11 @@ export default function EditBodyDataScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Dados Físicos</Text>
-          <TouchableOpacity onPress={save} disabled={!canSave}>
+          <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canSave }} onPress={save} disabled={!canSave}>
             <Text style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}>Salvar</Text>
           </TouchableOpacity>
         </View>
@@ -134,7 +134,7 @@ export default function EditBodyDataScreen({ navigation }) {
             <Text style={styles.label}>SEXO BIOLÓGICO</Text>
             <View style={styles.genderRow}>
               {GENDERS.map(g => (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: gender === g.id }}
                   key={g.id}
                   style={[styles.genderCard, gender === g.id && styles.genderCardActive]}
                   onPress={() => setGender(g.id)}
