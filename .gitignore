@@ -35,3 +35,7 @@ firebase-debug.*.log
 *serviceAccount*.json
 *-adminsdk-*.json
 *firebase-adminsdk*.json
+
+# Fotos de referência dos exercícios (free-exercise-db): procedência NÃO confirmada, nunca vão para o git (docs/procedencia-midia.md)
+assets/exercicios-ref/
+src/data/exerciseStillsImages.generated.js
