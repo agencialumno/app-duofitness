@@ -4,6 +4,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import EditNameRow from '../components/EditNameRow';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
@@ -31,7 +32,7 @@ function formatGoals(goals) {
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, achievements, completedSessions, workouts, getLevel } = useApp();
+  const { user, xp, achievements, completedSessions, workouts, getLevel, renameUser } = useApp();
   const { refreshUser } = useAuth();
   // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.avatar}>
           <Image source={require('../../assets/logo.png')} style={styles.avatarLogo} resizeMode="contain" />
         </View>
-        <Text style={styles.userName}>{user?.name}</Text>
+        <EditNameRow name={user?.name} onSave={renameUser} />
         <Text style={styles.userLevel}>Nível {levelInfo.level} · {levelInfo.title}</Text>
         <View style={styles.goalBadge}>
           <Ionicons name="flag-outline" size={12} color={COLORS.primary} />

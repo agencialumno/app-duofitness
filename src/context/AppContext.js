@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readAppData, readJsonKey } from '../utils/safeStorage';
 import { evaluateAchievements } from '../utils/achievements';
 import { sanitizeAgeInfo } from '../utils/accountAge';
 import { bindAccount } from '../utils/accountSnapshot';
 import { decideGate, deleteAccountFlow, rejectUnderageFlow, signOutFlow } from '../utils/accountFlow';
+import { adoptAccountName, readAccountName } from '../utils/accountNameStore';
+import { cleanName } from '../utils/accountName';
 import { useAuth } from '../auth/AuthContext';
 
 const AppContext = createContext({});
@@ -26,6 +28,9 @@ export const AppProvider = ({ children }) => {
   const { ready: authReady, user: authUser, provider } = useAuth();
   const authUid = authUser ? authUser.uid : null;
   const [bound, setBound] = useState({ uid: undefined, status: 'binding' });
+  // Nome da conta (cadastro por e-mail ou displayName do Google/Apple), só no aparelho (@duo_account_name). '' = desconhecido.
+  const [accountName, setAccountName] = useState('');
+  const pendingNameRef = useRef(''); // nome digitado no cadastro: o Firebase só devolve o displayName depois, então ele fica aqui até o vínculo
 
   useEffect(() => {
     if (!authReady) return undefined;
@@ -33,7 +38,11 @@ export const AppProvider = ({ children }) => {
     (async () => {
       setBound({ uid: authUid, status: 'binding' });
       try {
-        if (authUid) await bindAccount(AsyncStorage, authUid);
+        if (authUid) {
+          await bindAccount(AsyncStorage, authUid);
+          await adoptAccountName(AsyncStorage, { displayName: authUser ? authUser.displayName : '', pending: pendingNameRef.current });
+          pendingNameRef.current = '';
+        }
       } catch (e) {
         console.log('Erro ao vincular a conta aos dados do aparelho:', e);
       }
@@ -57,6 +66,7 @@ export const AppProvider = ({ children }) => {
       setStreak(d.streak !== undefined ? d.streak : 0);
       setAchievements(d.achievements !== undefined ? d.achievements : []);
       setAgeInfo(age !== undefined ? age : null);
+      setAccountName(await readAccountName(AsyncStorage));
       setDataEpoch((n) => n + 1);
     } catch (e) {
       console.log('Erro ao carregar dados:', e);
@@ -145,7 +155,21 @@ export const AppProvider = ({ children }) => {
     setStreak(0);
     setAchievements([]);
     setAgeInfo(null);
+    setAccountName('');
     setDataEpoch((n) => n + 1);
+  };
+
+  // O cadastro por e-mail avisa o nome digitado ANTES de criar a conta (o vínculo da conta o guarda no aparelho).
+  const rememberSignupName = (name) => { pendingNameRef.current = cleanName(name); };
+
+  // Nome editado no Perfil: vale para o perfil (@duo_user, que entra no snapshot da conta). Devolve o nome gravado.
+  const renameUser = async (name) => {
+    const clean = cleanName(name);
+    if (!clean || !user) return '';
+    const next = { ...user, name: clean };
+    setUser(next);
+    await AsyncStorage.setItem('@duo_user', JSON.stringify(next));
+    return clean;
   };
 
   // Etapa de idade concluída: grava só no aparelho (entra no snapshot da conta). Se já existe perfil (dados de antes das contas),
@@ -210,6 +234,7 @@ export const AppProvider = ({ children }) => {
             xp, streak, achievements,
       getLevel,
       refreshData: loadData,
+      accountName, rememberSignupName, renameUser,
       ageInfo, saveAge, signOutAccount, deleteAccountAndData, rejectUnderage, dataEpoch,
       gate,
     }}>

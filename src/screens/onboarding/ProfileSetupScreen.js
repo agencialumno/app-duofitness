@@ -6,6 +6,8 @@ import {
 import { COLORS, FONTS, SPACING, RADIUS } from '../../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useApp } from '../../context/AppContext';
+import { MAX_NAME_LENGTH, isUsableName, cleanName } from '../../utils/accountName';
 
 const GOALS = [
   { id: 'lose_weight', label: 'Emagrecer', sub: 'Mais cardio e descansos curtos na série', icon: 'trending-down-outline' },
@@ -16,14 +18,19 @@ const GOALS = [
 
 export default function ProfileSetupScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [name, setName] = useState('');
+  const { accountName } = useApp();
+  // Nome já conhecido (cadastro ou Google/Apple): a pergunta é pulada. Desconhecido: pergunta UMA vez, com o campo vazio.
+  const nameKnown = isUsableName(accountName);
+  const [typed, setTyped] = useState('');
+  const name = nameKnown ? cleanName(accountName) : typed;
+  const setName = setTyped;
   const [goals, setGoals] = useState([]);
 
   const toggleGoal = (id) => {
     setGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
-  const canContinue = name.trim().length > 1 && goals.length > 0;
+  const canContinue = isUsableName(name) && goals.length > 0;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -43,8 +50,11 @@ export default function ProfileSetupScreen({ navigation }) {
         </View>
 
         <Text style={styles.title}>Vamos começar</Text>
-        <Text style={styles.sub}>Como você se chama e qual é o seu objetivo?</Text>
+        <Text style={styles.sub}>{nameKnown ? 'Qual é o seu objetivo?' : 'Como você se chama e qual é o seu objetivo?'}</Text>
 
+        {nameKnown ? (
+          <Text style={styles.greetName} accessibilityRole="header" testID="ob-name-known">{`Olá, ${name.split(' ')[0]}!`}</Text>
+        ) : (
         <View style={styles.field}>
           <Text style={styles.label}>SEU NOME</Text>
           <TextInput
@@ -54,9 +64,15 @@ export default function ProfileSetupScreen({ navigation }) {
             placeholder="Como posso te chamar?"
             placeholderTextColor={COLORS.textMuted}
             autoCapitalize="words"
-            maxLength={30}
+            maxLength={MAX_NAME_LENGTH}
+            testID="ob-name"
+            accessibilityLabel="Seu nome"
+            textContentType="name"
+            autoComplete="name"
+            returnKeyType="done"
           />
         </View>
+        )}
 
         <View style={styles.field}>
           <Text style={styles.label}>OBJETIVOS</Text>
@@ -112,6 +128,7 @@ const styles = StyleSheet.create({
   field: { marginBottom: SPACING.xl },
   label: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginBottom: SPACING.sm, fontWeight: '600', letterSpacing: 1.5 },
   multiHint: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginTop: -SPACING.xs, marginBottom: SPACING.sm },
+  greetName: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.primary, marginBottom: SPACING.lg },
   input: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, color: COLORS.white, fontSize: FONTS.sizes.md },
   goals: { gap: SPACING.sm },
   goalCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md },

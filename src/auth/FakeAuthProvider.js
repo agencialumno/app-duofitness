@@ -63,6 +63,12 @@ export default class FakeAuthProvider {
     return this._publish(u);
   }
 
+  // Nome que o provedor social devolve: `nextSocialName.<google|apple>` (null/'' = o provedor não envia nome, como a Apple com "ocultar e-mail").
+  _socialName(key, fallback) {
+    const n = this.nextSocialName || {};
+    return Object.prototype.hasOwnProperty.call(n, key) ? (n[key] || null) : fallback;
+  }
+
   async _social(provider, email, name) {
     const existing = this.users.get(email);
     if (existing && !existing.providers.includes(provider)) {
@@ -74,11 +80,11 @@ export default class FakeAuthProvider {
   }
   async signInWithGoogle() {
     this._maybeFail('signInWithGoogle');
-    return this._social('google.com', this.nextSocialEmail.google || 'pessoa.google@exemplo.com', 'Pessoa Google');
+    return this._social('google.com', this.nextSocialEmail.google || 'pessoa.google@exemplo.com', this._socialName('google', 'Pessoa Google'));
   }
   async signInWithApple() {
     this._maybeFail('signInWithApple');
-    return this._social('apple.com', this.nextSocialEmail.apple || 'pessoa.apple@privaterelay.exemplo.com', 'Pessoa Apple');
+    return this._social('apple.com', this.nextSocialEmail.apple || 'pessoa.apple@privaterelay.exemplo.com', this._socialName('apple', 'Pessoa Apple'));
   }
 
   async sendPasswordReset(email) {

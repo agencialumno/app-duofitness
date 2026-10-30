@@ -1,12 +1,14 @@
 // Lógica pura do fluxo de conta (sem React): validação do cadastro e destino depois de entrar.
 import { checkPassword } from '../utils/passwordPolicy';
 import { validateEmail } from './authErrors';
+import { validateFullName } from '../utils/accountName';
 
 // Campos do cadastro -> { errors: { campo: texto }, canSubmit }. Os erros só aparecem para campos já "tocados".
 export function validateSignUp({ name, email, password, confirm, accepted }, touched = {}) {
   const errors = {};
   const pwd = checkPassword(password, { email, name });
-  if (!String(name || '').trim()) errors.name = 'Informe o seu nome.';
+  const nameErr = validateFullName(name); // só vazio/só espaços e o limite de tamanho; sobrenome não é exigido
+  if (nameErr) errors.name = nameErr;
   const emailErr = validateEmail(email);
   if (emailErr) errors.email = emailErr;
   if (!pwd.allOk) errors.password = 'A senha ainda não cumpre todos os requisitos.';

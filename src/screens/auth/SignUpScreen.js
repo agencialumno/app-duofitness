@@ -9,9 +9,12 @@ import {
   AuthField, AuthScreen, CheckRow, Divider, LinkButton, Notice, PasswordChecklist, PrimaryButton, StrengthBar,
 } from '../../components/auth/AuthParts';
 import SocialButtons from './SocialButtons';
+import { useApp } from '../../context/AppContext';
+import { MAX_NAME_LENGTH, NAME_HINT } from '../../utils/accountName';
 
 export default function SignUpScreen({ navigation }) {
   const { provider } = useAuth();
+  const { rememberSignupName } = useApp();
   const [f, setF] = useState({ name: '', email: '', password: '', confirm: '' });
   const [touched, setTouched] = useState({});
   const [accepted, setAccepted] = useState(false);
@@ -33,6 +36,7 @@ export default function SignUpScreen({ navigation }) {
     setBusy(true);
     setError('');
     try {
+      rememberSignupName(f.name); // o vínculo da conta guarda o nome no aparelho (o Firebase só devolve o displayName depois)
       await provider.signUpWithEmail({ email: f.email.trim(), password: f.password, name: f.name.trim() });
       provider.sendEmailVerification().catch(() => {}); // o reenvio e a conferência ficam no Perfil
       // o portão do app leva à etapa de idade sozinho (sem navigation.reset)
@@ -45,7 +49,8 @@ export default function SignUpScreen({ navigation }) {
 
   return (
     <AuthScreen title="Criar conta" subtitle="Sua conta guarda o acesso ao app. Os seus treinos ficam neste aparelho." onBack={() => navigation.goBack()}>
-      <AuthField label="Nome" value={f.name} onChangeText={set('name')} onBlur={touch('name')} error={v.errors.name} testID="su-name"
+      <AuthField label="Nome completo" value={f.name} onChangeText={set('name')} onBlur={touch('name')} error={v.errors.name} testID="su-name"
+        hint={NAME_HINT} placeholder="Nome completo" accessibilityLabel="Nome completo" maxLength={MAX_NAME_LENGTH + 20}
         textContentType="name" autoComplete="name" autoCapitalize="words" returnKeyType="next" />
       <AuthField label="E-mail" value={f.email} onChangeText={set('email')} onBlur={touch('email')} error={v.errors.email} testID="su-email"
         keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" autoComplete="email" returnKeyType="next" />
