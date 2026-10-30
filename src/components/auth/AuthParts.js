@@ -231,7 +231,7 @@ const STRENGTH_COLORS = ['#555555', COLORS.error, COLORS.warning, COLORS.primary
 export function StrengthBar({ strength }) {
   if (!strength || strength.level === 0) return null;
   return (
-    <View style={styles.strengthWrap} accessible accessibilityLabel={`Força da senha: ${strength.label}`} testID="strength-bar">
+    <View style={styles.strengthWrap} accessible accessibilityLabel={`Força da senha: ${strength.label}, nível ${strength.level} de 4`} testID="strength-bar">
       <View style={styles.strengthBars}>
         {[1, 2, 3, 4].map((i) => (
           <View key={i} style={[styles.strengthSeg, { backgroundColor: i <= strength.level ? STRENGTH_COLORS[strength.level] : COLORS.border }]} />

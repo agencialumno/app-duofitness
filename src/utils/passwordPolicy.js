@@ -73,10 +73,23 @@ export function checkPassword(password, { email, name } = {}) {
     if (!rules[5].ok) score = Math.min(score, 50);
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
-  return { rules, allOk, score, strength: strengthOf(score, pwd.length === 0), common };
+  return { rules, allOk, score, strength: strengthFromRules(rules, pwd.length === 0), common };
 }
 
-// { level: 0..4, label } para a barra de força.
+// NÍVEL EXPLÍCITO pela checklist (os mesmos 7 requisitos obrigatórios que a senha precisa cumprir para ser aceita):
+//   0 a 2 atendidos = Fraca (1) | 3 a 5 = Razoável (2) | 6 = Boa (3) | todos (7) = Muito forte (4, barra cheia).
+// O nível máximo existe SÓ com todos os requisitos atendidos, então "allOk" e "Muito forte" sempre andam juntos.
+export function strengthFromRules(rules, empty = false) {
+  if (empty) return { level: 0, label: '' };
+  const total = rules.length;
+  const met = rules.filter((r) => r.ok).length;
+  if (met === total) return { level: 4, label: 'Muito forte' };
+  if (met === total - 1) return { level: 3, label: 'Boa' };
+  if (met >= 3) return { level: 2, label: 'Razoável' };
+  return { level: 1, label: 'Fraca' };
+}
+
+// Pontuação informativa antiga (0 a 100) -> { level, label }. Não decide mais o nível mostrado na tela.
 export function strengthOf(score, empty = false) {
   if (empty) return { level: 0, label: '' };
   if (score < 35) return { level: 1, label: 'Fraca' };

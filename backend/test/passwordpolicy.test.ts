@@ -90,12 +90,11 @@ describe('política de senha', () => {
       for (const c of ['Password', 'P@ssw0rd', 'SENHA123', 'Qwerty', 'Flamengo', 'Musculação']) expect(P.isCommonPassword(c), c).toBe(true);
       expect(P.isCommonPassword('Treino#Forte2026')).toBe(false);
     });
-    it('uma senha comum que cumpre as regras tem força fraca', () => {
+    it('uma senha comum que cumpre as regras continua sinalizada como comum, mas o nível segue os requisitos (máximo)', () => {
       const comum = ok('Password#2026');
       expect(comum.allOk).toBe(true);
-      expect(comum.common).toBe(true);
-      expect(comum.strength.level).toBe(1);
-      expect(ok('Corvo#Lilas#2026').strength.level).toBeGreaterThan(comum.strength.level);
+      expect(comum.common).toBe(true); // o aviso de senha comum continua disponível
+      expect(comum.strength.level).toBe(4);
     });
   });
 
@@ -117,5 +116,52 @@ describe('política de senha', () => {
 
   it('nunca lança com entradas estranhas', () => {
     for (const v of [undefined, null, 123, {}, [], '\u0000', '😀'.repeat(50)]) expect(() => P.checkPassword(v as never, { email: undefined, name: null as never })).not.toThrow();
+  });
+});
+
+describe('nível da barra de força: definido pelos requisitos atendidos', () => {
+  const lv = (pwd: string, ctx = {}) => P.checkPassword(pwd, ctx).strength;
+  it('vazio = sem barra', () => expect(lv('')).toEqual({ level: 0, label: '' }));
+  it('nenhum requisito crítico atendido = Fraca (nível 1)', () => {
+    const r = P.checkPassword('   ');
+    expect(P.metCount(r.rules)).toBeLessThanOrEqual(2);
+    expect(r.strength).toEqual({ level: 1, label: 'Fraca' });
+  });
+  it('percorre 1, 2, ... todos os requisitos: o máximo só aparece com TODOS atendidos', () => {
+    const casos = ['a', 'aB', 'aB1', 'aB1!', 'aB1!aB1!aB1!', 'aB1!aB1! aB1!', 'Kdmqpw1!ts'];
+    for (const c of casos) {
+      const r = P.checkPassword(c);
+      expect(r.strength.level === 4, c).toBe(r.allOk);
+    }
+  });
+  it('níveis explícitos: 0-2 Fraca, 3-5 Razoável, 6 Boa, 7 Muito forte', () => {
+    const mk = (n: number) => Array.from({ length: 7 }, (_, i) => ({ id: String(i), label: '', ok: i < n }));
+    expect([0, 1, 2].map((n) => P.strengthFromRules(mk(n)).label)).toEqual(['Fraca', 'Fraca', 'Fraca']);
+    expect([3, 4, 5].map((n) => P.strengthFromRules(mk(n)).label)).toEqual(['Razoável', 'Razoável', 'Razoável']);
+    expect(P.strengthFromRules(mk(6))).toEqual({ level: 3, label: 'Boa' });
+    expect(P.strengthFromRules(mk(7))).toEqual({ level: 4, label: 'Muito forte' });
+  });
+  it('REGRESSÃO: senha com todos os requisitos mostra "Muito forte", mesmo curta (10) e com poucas classes', () => {
+    for (const s of ['Treino#2026a', 'Kdmqpw1!ts', 'Abcdefg1!x', 'Corvo#Lilas#2026']) {
+      const r = P.checkPassword(s);
+      expect(r.allOk, s).toBe(true);
+      expect(r.strength, s).toEqual({ level: 4, label: 'Muito forte' });
+    }
+  });
+  it('um requisito faltando nunca chega ao máximo (Boa)', () => {
+    expect(lv('Treino#Forte')).toEqual({ level: 3, label: 'Boa' }); // sem número
+    expect(lv('treino#forte1')).toEqual({ level: 3, label: 'Boa' }); // sem maiúscula
+    expect(lv('Treino 2026#ab').level).toBe(3); // com espaço
+  });
+  it('acento e emoji contam como letra/símbolo; espaço invalida; a política não afrouxou', () => {
+    expect(lv('Ação#Forte2026').level).toBe(4); // acento
+    expect(lv('Treino😀Forte2026').level).toBe(4); // emoji vale como símbolo
+    expect(lv('Treino 😀Forte2026').level).toBe(3); // espaço
+    expect(P.MIN_LENGTH).toBe(10);
+    expect(P.checkPassword('Aa1!aaaaa').allOk).toBe(false); // 9 caracteres
+    expect(P.checkPassword('Aa1!aaaaa').strength.level).toBe(3);
+  });
+  it('contém o e-mail/nome: não é máximo', () => {
+    expect(lv('Victor#2026abc', { name: 'Victor Barros' }).level).toBe(3);
   });
 });
