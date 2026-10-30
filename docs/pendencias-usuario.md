@@ -128,3 +128,11 @@ O que fazer:
 - O erro `Missing purpose string ... NSHealthUpdateUsageDescription (90683)` foi corrigido no código: o plugin agora escreve a chave com o texto "O Duo Fitness não grava dados no app Saúde. Ele apenas lê os dados que você autorizar. Esta permissão não é usada." (com `HEALTH_INTEGRATION_ENABLED=true`). Rode o `ios.yml` de novo (`sign_archive=true`).
 - **No envio à App Store (não só ao TestFlight)**, nas **notas de revisão** (App Store Connect > o app > a versão > "Informações de revisão" > Notas), escreva: *"O Duo Fitness usa o HealthKit somente para leitura (atividade, sono, frequência cardíaca, peso e água) para mostrar a evolução do usuário no próprio aparelho. O app não grava dados no app Saúde: a chave NSHealthUpdateUsageDescription existe apenas porque a biblioteca de leitura referencia essas APIs, e ela não é usada."* Sem isso o revisor pode estranhar a chave de escrita.
 - Se o altool falhar de novo, o resumo do job agora diz a causa (ITMS-90683 com o nome da chave, build repetido, ícone, entitlement fora do perfil ou permissão da chave de API). Os logs completos do altool estão em `ipa-validate.log` e `ipa-upload.log` no artifact `xcodebuild-logs-<execução>`.
+
+## 14. Assinatura manual do iOS (certificado de distribuição fixo)
+
+- Para parar de criar certificados de desenvolvimento a cada execução (e estourar o limite da conta), crie os 3 secrets: `IOS_DIST_CERT_P12_B64`, `IOS_DIST_CERT_PASSWORD` e `IOS_PROVISIONING_PROFILE_B64`. Passo a passo (certificado Apple Distribution, exportar o `.p12` com a chave privada, perfil App Store com o MESMO certificado e as capabilities ligadas, `base64 -i ... | pbcopy`) em `docs/testflight.md`, seção "Assinatura MANUAL".
+- Com os secrets, `sign_archive` deixa de ser necessário. Sem eles, tudo segue como antes (aviso "Assinatura fixa NÃO configurada").
+- **Anote a data de validade**: certificado e perfil valem 1 ano; renove e atualize os secrets antes (o resumo do job mostra "expira em").
+- Se ligar HealthKit ou Sign in with Apple depois de criar o perfil, **recrie o perfil** e atualize `IOS_PROVISIONING_PROFILE_B64`.
+- Não foi possível testar o keychain nem a assinatura fora do macOS do GitHub: a primeira execução com `upload=false` é a validação.

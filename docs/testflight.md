@@ -88,11 +88,48 @@ Observações:
 
 **Por que esta opção e não a outra (cloud-managed no archive):** o cloud signing da Apple (WWDC21, "Distribute apps in Xcode with cloud signing") acontece na **distribuição**, com a chave da API; um archive assinado precisa de um certificado de desenvolvimento com chave privada no runner, e é isso que o Xcode cria a cada execução. Não encontrei documentação de assinar o archive com o certificado "Distribution Managed" (que não tem chave privada no runner). A combinação `CODE_SIGNING_ALLOWED=NO` + `exportArchive` com a chave da API **não está documentada** pela Apple; o que a sustenta é este repositório já ter o caminho de repetição sem assinatura e um build de TestFlight exportado com certificado Apple Distribution.
 
-**Se o export recusar o archive sem assinatura:** o passo registra o erro ("O export falhou depois do archive SEM assinatura (padrão)") e **não tenta outra coisa**. As saídas são: (1) rodar com `sign_archive=true` (cria um certificado de desenvolvimento por execução; revogue os acumulados de vez em quando), ou (2) **importar um certificado fixo**, descrito abaixo (não implementado).
+**Se o export recusar o archive sem assinatura:** o passo registra o erro ("O export falhou depois do archive SEM assinatura (padrão)") e **não tenta outra coisa**. As saídas são: (1) rodar com `sign_archive=true` (cria um certificado de desenvolvimento por execução; revogue os acumulados de vez em quando), ou (2) **configurar o certificado fixo**, descrito na próxima seção (recomendado).
 
-### Opção não implementada: certificado fixo (.p12) importado de secrets
+(O certificado fixo agora está implementado: veja a seção abaixo.)
 
-Em vez de depender da Apple para criar certificados, o runner importaria sempre o **mesmo** certificado. Exige: um certificado Apple Distribution (ou Development) exportado do Mac como `.p12` com senha; os secrets `IOS_CERT_P12_BASE64` e `IOS_CERT_P12_PASSWORD`; um passo que cria um keychain temporário (`security create-keychain`, `security import`, `security set-key-partition-list`) e o apaga no fim; e o export com `signingStyle manual` e um perfil de App Store baixado do portal (secret `IOS_PROVISIONING_PROFILE_BASE64`), ou automático com a identidade já no keychain. Contras: o `.p12` é um segredo de longa vida (rotação anual) e o perfil manual vence. Nada disso foi implementado, e o CI continua sem criar nem revogar certificados.
+## Assinatura MANUAL com certificado de distribuição fixo (recomendado)
+
+**Por quê:** a assinatura automática (`sign_archive=true`) cria um certificado de desenvolvimento novo ("Created via API") a cada execução e esgota o limite da conta. Com a assinatura manual o runner importa SEMPRE o mesmo certificado de distribuição e o mesmo perfil, guardados em secrets. Nada é criado na conta Apple e o archive já sai assinado, com os entitlements certos (HealthKit e Sign in with Apple). Com os secrets, `sign_archive` não é necessário e o `check-ipa-entitlements` passa sem ele.
+
+**Como o workflow decide:**
+- Os três secrets existem: o passo "Assinatura manual - importar" roda `scripts/ios-signing-import.sh`; o archive usa assinatura manual só no target do app (`scripts/ios-set-manual-signing.rb`; os Pods não são tocados), **sem** `-allowProvisioningUpdates` e **sem** a chave da API; o export usa `signingStyle manual` com `provisioningProfiles` (`com.duofitness.app` -> nome do perfil lido do próprio arquivo). O envio ao TestFlight continua pelo `altool`.
+- Nenhum dos três: o workflow avisa "Assinatura fixa NÃO configurada" e segue como antes (archive sem assinatura; `sign_archive=true` = automática).
+- Só um ou dois: o job falha dizendo que faltam secrets.
+- No fim (`if: always()`) o keychain temporário, o `.p12` e o perfil são apagados, mesmo se um passo falhar.
+
+### Passos do Victor (no Mac)
+
+1. **Certificado.** developer.apple.com > Certificates, Identifiers & Profiles > Certificates > **+** > **Apple Distribution**. Siga o assistente (pede um CSR criado no Keychain Access > Assistente de Certificado > Solicitar um certificado de uma autoridade). Baixe o `.cer` e dê duplo clique para instalar.
+2. **Exportar o .p12.** Keychain Access > Meus Certificados > ache "Apple Distribution: ..." > clique com o botão direito > **Exportar** > formato `.p12`, com uma **senha forte**. O `.p12` precisa incluir a **chave privada** (a seta ao lado do certificado deve abrir e mostrar a chave).
+3. **App ID.** Identifiers > `com.duofitness.app`: confira as capabilities **Sign in with Apple** e, se for usar a Saúde, **HealthKit** (NÃO ligue Clinical Health Records). Ligue ANTES de criar o perfil.
+4. **Perfil.** Profiles > **+** > **App Store Connect** (distribuição) > App ID `com.duofitness.app` > escolha **o certificado do passo 1** > dê um nome (ex.: `Duo Fitness App Store`) > baixe o `.mobileprovision`.
+5. **Codificar em base64** (no Terminal do Mac; copia direto para a área de transferência):
+   - `base64 -i certificado.p12 | pbcopy` e cole no secret `IOS_DIST_CERT_P12_B64`;
+   - `base64 -i perfil.mobileprovision | pbcopy` e cole no secret `IOS_PROVISIONING_PROFILE_B64`;
+   - a senha do passo 2 vai no secret `IOS_DIST_CERT_PASSWORD`.
+6. GitHub > Settings > Secrets and variables > Actions > **New repository secret** (os três nomes exatos acima). Rode o `ios.yml` (`upload=false` primeiro). Depois apague o `.p12` e o `.mobileprovision` das pastas de download; guarde o `.p12` e a senha num cofre de senhas (se perder, crie outro certificado).
+
+### O que o passo de importação confere (e a mensagem de erro de cada falha)
+
+O `.p12` abre com a senha; o perfil não expirou; é do Team ID e do App ID `com.duofitness.app`; é de **distribuição** (sem `get-task-allow` e sem lista de dispositivos); o certificado do `.p12` está **dentro do perfil** (compara o hash SHA-1, nada é impresso); o perfil tem **HealthKit** quando `HEALTH_INTEGRATION_ENABLED=true` e **Sign in with Apple** quando contas e Firebase estão ligados. Cada falha diz a causa e a ação (ex.: "O perfil não contém HealthKit: habilite a capability HealthKit no App ID, recrie o perfil, baixe e atualize IOS_PROVISIONING_PROFILE_B64"). Erros do `xcodebuild` (sem identidade, perfil que não bate, expirado, entitlement fora do perfil) são classificados pelo `ios-log-hints`.
+
+**Privacidade do log:** os secrets são mascarados (`::add-mask::`); o log mostra só o nome do perfil, o Team ID e a data de validade. Nunca o conteúdo do `.p12`, a senha, o perfil ou a identidade completa.
+
+### Renovação e troca
+
+- O certificado de distribuição e o perfil **valem 1 ano**. Perto do vencimento (anote a data; o resumo do job mostra "expira em"): crie o perfil novo (passos 4-5; se o certificado também vence, refaça os passos 1-2) e **atualize os secrets** (substituir o valor basta; não precisa mexer no workflow).
+- **Trocar o certificado:** refaça 1, 2, 4 e 5 (o perfil precisa ser criado com o certificado novo) e atualize os TRÊS secrets.
+- **Só mudou uma capability** (ex.: ligou HealthKit): edite o App ID, **recrie o perfil** (o antigo não ganha a capability), baixe e atualize só `IOS_PROVISIONING_PROFILE_B64`.
+- **Voltar ao modo anterior:** apague os três secrets.
+
+### O que NÃO foi validado
+
+O keychain, o `codesign` e o `xcodebuild` só existem no macOS do GitHub: nesta máquina (Windows) só foram testados o texto dos scripts, a ordem dos passos do workflow, o fallback sem secrets, o `always()` do cleanup e a classificação dos erros. A primeira execução real com os secrets é a validação. Risco conhecido: o `ruby` do runner precisa enxergar a gem `xcodeproj` do CocoaPods (o passo tenta o caminho do Homebrew se não enxergar).
 
 ## Entitlements do .ipa (Sign in with Apple)
 
