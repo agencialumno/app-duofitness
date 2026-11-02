@@ -241,6 +241,16 @@ describe('check-version', () => {
     writeFileSync(path.join(dir2, 'app.json'), JSON.stringify({ expo: { version: '1.0.0' } })); writeFileSync(path.join(dir2, 'package.json'), JSON.stringify({ version: '1.0.0' }));
     expect(node('check-version.mjs', ['--root', dir2]).out).toMatch(/aponta para um app\.json com versão 0\.9\.0/);
   });
+  it('channel=store com prelançamento no versao.json FALHA com a mensagem clara; store sem prelançamento e beta/rc/dev com prelançamento passam', () => {
+    const beta = project({ prerelease: 'beta.1' });
+    const r = node('check-version.mjs', ['--root', beta, '--channel', 'store']);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('build de loja exige versao.json sem prelançamento; rode bump-version release');
+    expect(r.out).toContain('beta.1');
+    expect(node('check-version.mjs', ['--root', project({ prerelease: 'rc.2' }), '--channel', 'store']).code).toBe(1);
+    expect(node('check-version.mjs', ['--root', project({ prerelease: '' }), '--channel', 'store']).code).toBe(0);
+    for (const ch of ['dev', 'beta', 'rc', '']) expect(node('check-version.mjs', ['--root', beta, '--channel', ch]).code, ch).toBe(0);
+  });
   it('versão iOS com letras é recusada (só números e pontos)', () => {
     const r = checkVersion({ root: project({ appVersion: '1.0.0-beta' , pkgVersion: '1.0.0-beta' }), gitFn: () => null });
     expect(r.problems.join(' ')).toMatch(/iOS|MAJOR\.MINOR\.PATCH/);
@@ -369,6 +379,16 @@ describe('workflows: versão, tag, canal e build', () => {
     expect(snippet('beta.1', 'workflow_dispatch', '')).toBe('beta');
     expect(snippet('beta.1', 'workflow_dispatch', 'dev')).toBe('dev');
     expect(snippet('', 'workflow_dispatch', 'store')).toBe('store');
+  });
+  it('os dois workflows FALHAM no canal store com prelançamento (chamam o check-version --channel) e não só avisam', () => {
+    for (const f of ['android.yml', 'ios.yml']) {
+      const run = step(f).run!;
+      expect(run, f).toContain('node scripts/check-version.mjs --channel "$CHANNEL"');
+      expect(run, f).not.toContain('::warning::Canal store');
+      // a conferência vem DEPOIS de decidir o canal e ANTES de gravar as variáveis da build
+      expect(run.indexOf('--channel "$CHANNEL"'), f).toBeGreaterThan(run.indexOf('case "$CHANNEL" in dev|beta|rc|store)'));
+      expect(run.indexOf('--channel "$CHANNEL"'), f).toBeLessThan(run.indexOf('SHA_SHORT='));
+    }
   });
   it('o test:all do package.json inclui o check-version', () => {
     expect(JSON.parse(read('package.json')).scripts['test:all']).toContain('node scripts/check-version.mjs');

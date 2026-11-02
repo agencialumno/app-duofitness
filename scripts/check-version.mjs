@@ -6,7 +6,8 @@
 // bate com o nome esperado (aceita prelançamento: v1.0.0-beta.3); (8) uma tag vX.Y.Z do núcleo atual que já exista não pode apontar para outro núcleo
 // nem para outro commit (item 3 da SemVer: versão lançada não muda).
 //
-// Uso: node scripts/check-version.mjs [--platform ios|android] [--build N] [--tag <ref>] [--root <pasta>]
+// Com --channel store, o versao.json PRECISA estar sem prelançamento (build de loja é versão final).
+// Uso: node scripts/check-version.mjs [--platform ios|android] [--build N] [--tag <ref>] [--channel dev|beta|rc|store] [--root <pasta>]
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -19,7 +20,8 @@ const arg = (n, d) => { const i = process.argv.indexOf(n); return i > -1 ? proce
 const git = (root, ...a) => { try { return execFileSync('git', a, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return null; } };
 
 // Devolve { problems, notes, name }
-export function checkVersion({ root, platform, build, tag, gitFn = git }) {
+export const STORE_PRERELEASE_MESSAGE = 'build de loja exige versao.json sem prelançamento; rode bump-version release';
+export function checkVersion({ root, platform, build, tag, channel, gitFn = git }) {
   const problems = [];
   const notes = [];
   const read = (f) => JSON.parse(readFileSync(path.join(root, f), 'utf8'));
@@ -42,6 +44,7 @@ export function checkVersion({ root, platform, build, tag, gitFn = git }) {
     else problems.push(...checkBuild(platform, build));
   }
   if (tag) problems.push(...checkTag(tag, name));
+  if (channel === 'store' && pre) problems.push(`${STORE_PRERELEASE_MESSAGE} (versao.json tem "${pre}"; node scripts/bump-version.mjs release)`);
 
   // item 3 da SemVer: versão lançada não muda
   if (parse(name)) {
@@ -64,7 +67,8 @@ function main() {
   const platform = arg('--platform');
   const build = arg('--build', process.env.RUN_NUMBER);
   const tag = arg('--tag', '');
-  const r = checkVersion({ root, platform, build, tag });
+  const channel = arg('--channel', '');
+  const r = checkVersion({ root, platform, build, tag, channel });
   const onGithub = process.env.GITHUB_ACTIONS === 'true';
   for (const p of r.problems) console.log(`${onGithub ? '::error::' : 'ERRO  '}${p}`);
   if (r.problems.length) { console.log(`\ncheck-version: ${r.problems.length} problema(s).`); process.exit(1); }

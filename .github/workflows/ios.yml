@@ -119,9 +119,8 @@ jobs:
             CHANNEL="${INPUT_CHANNEL:-beta}"
           fi
           case "$CHANNEL" in dev|beta|rc|store) ;; *) echo "::error::Canal inválido: $CHANNEL (use dev, beta, rc ou store)."; exit 1 ;; esac
-          if [ "$CHANNEL" = "store" ] && [ -n "$PRE" ]; then
-            echo "::warning::Canal store com versão de prelançamento ($PRE). Para a loja, suba a versão final (node scripts/bump-version.mjs release)."
-          fi
+          # Build de loja exige versão final: com channel=store e prelançamento no versao.json o build FALHA (mensagem em scripts/check-version.mjs).
+          node scripts/check-version.mjs --channel "$CHANNEL"
           SHA_SHORT="$(git rev-parse --short HEAD)"
           {
             echo "EXPO_PUBLIC_BUILD_CHANNEL=$CHANNEL"
