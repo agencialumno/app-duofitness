@@ -67,6 +67,12 @@ jobs:
       # CI instala os módulos nativos, o check dos entitlements do .ipa o exige E o JavaScript do app liga a integração (esta linha). Só no iOS:
       # o android.yml não recebe a flag (o Android não muda). Está no env do JOB, então chega ao bundle gerado pelo xcodebuild.
       EXPO_PUBLIC_HEALTH_INTEGRATION: ${{ vars.HEALTH_INTEGRATION_ENABLED }}
+      # Lembretes de treino e de inatividade (notificações LOCAIS no aparelho): OPCIONAL. UM SÓ significado para a variável do repositório
+      # NOTIFICATIONS_ENABLED=true: o CI instala o módulo expo-notifications, o prebuild aplica o plugin próprio (sem push, sem alarmes exatos), o
+      # check-notifications-project confere o projeto e o JavaScript do app liga os lembretes (a linha EXPO_PUBLIC abaixo, no env do JOB, chega ao bundle).
+      # Sem a variável o build fica idêntico ao de antes. Nenhum dado sai do aparelho.
+      NOTIFICATIONS_ENABLED: ${{ vars.NOTIFICATIONS_ENABLED }}
+      EXPO_PUBLIC_NOTIFICATIONS_ENABLED: ${{ vars.NOTIFICATIONS_ENABLED }}
       EXPO_PUBLIC_TERMS_URL: ${{ vars.EXPO_PUBLIC_TERMS_URL }}
       EXPO_PUBLIC_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_PRIVACY_URL }}
       # ID de cliente WEB do Firebase para o login com Google (valor PÚBLICO, não é segredo; vai dentro do app). Está no env do job, então
@@ -247,6 +253,11 @@ jobs:
         if: env.HEALTH_INTEGRATION_ENABLED == 'true'
         run: node scripts/install-healthkit-deps.mjs
 
+      # ---- Notificações locais (lembretes): OPCIONAL. Sem NOTIFICATIONS_ENABLED=true nada disto acontece e o iOS gerado fica como sempre ----
+      - name: Notificações (opcional) - instalar o módulo nativo (grava no package.json do runner, para o autolinking ver)
+        if: env.NOTIFICATIONS_ENABLED == 'true'
+        run: node scripts/install-notifications-deps.mjs
+
       - name: Conferir autolinking do iOS (módulos Expo obrigatórios; com Firebase, também os de conta; com HealthKit, os dele)
         run: node scripts/check-autolinking.mjs --platform ios
 
@@ -279,6 +290,10 @@ jobs:
           ls -d ios/*.xcodeproj ios/*.xcworkspace 2>&1 || true # o .xcworkspace só nasce no pod install
           echo "::endgroup::"
           node scripts/check-ios-project.mjs --bundle-id "$BUNDLE_ID"
+
+      # Em qualquer caso: nada de aps-environment (push) nos entitlements nem de remote-notification nos modos de fundo.
+      - name: Conferir que o iOS gerado NÃO tem push (lembretes são locais)
+        run: node scripts/check-notifications-project.mjs --platform ios
 
       # O Expo grava CFBundleVersion e CFBundleShortVersionString no Info.plist com os valores LITERAIS
       # do app.json (ios.buildNumber "1"); o Info.plist não usa $(CURRENT_PROJECT_VERSION). Por isso
