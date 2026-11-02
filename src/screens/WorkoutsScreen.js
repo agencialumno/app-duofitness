@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { buildHistoryView, confirmDeleteSeries } from '../utils/seriesView';
+import ScreenHeader from '../components/ScreenHeader';
 
 export default function WorkoutsScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { workouts, completedSessions, seriesStore, deleteSeries, user, ageInfo } = useApp();
   const getSessionCount = (id) => completedSessions.filter(s => s.workoutId === id).length;
 
@@ -106,12 +105,15 @@ export default function WorkoutsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <Text style={styles.title}>Meus Treinos</Text>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Criar treino" hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
-          <Ionicons name="add" size={22} color={COLORS.black} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        variant="root"
+        title="Meus Treinos"
+        right={(
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Criar treino" hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }} style={styles.addBtn} onPress={() => navigation.navigate('CreateWorkout')}>
+            <Ionicons name="add" size={22} color={COLORS.black} />
+          </TouchableOpacity>
+        )}
+      />
 
       {workouts.length === 0 ? (
         <View style={styles.empty}>
@@ -218,11 +220,6 @@ export default function WorkoutsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: SPACING.lg,
-  },
-  title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   addBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, width: 38, height: 38, justifyContent: 'center', alignItems: 'center' },
   list: { padding: SPACING.lg, paddingTop: 0, gap: SPACING.sm },
   banners: { gap: SPACING.sm, marginBottom: SPACING.sm },
