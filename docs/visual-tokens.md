@@ -8,7 +8,7 @@ Definidos em `src/utils/theme.js` (único arquivo de tema). Esta etapa **só def
 
 | grupo | tokens |
 |---|---|
-| cores | `primary` #fed205, `black`, `white`, `bg` #0A0A0A, `bgCard` #141414, `bgCardAlt` #1C1C1C, `border` #2A2A2A, `textPrimary` #FFFFFF, `textSecondary` #888888, **`textMuted` #8E8E93 (era #555555)**, `success`, `error`, `warning` |
+| cores | `primary` #fed205, `black`, `white`, `bg` #0A0A0A, `bgCard` #141414, `bgCardAlt` #1C1C1C, `border` #2A2A2A, `textPrimary` #FFFFFF, `textSecondary` **#B0B0B5 (era #888888)**, **`textMuted` #8E8E93 (era #555555)**, `success`, `error`, `warning` |
 | tamanhos (`FONTS.sizes`) | xs 11, sm 13, md 15, lg 18, xl 22, xxl 28, xxxl 36 |
 | pesos (`FONTS.weights`) | regular 400, medium 500, semibold 600, bold 700 (nenhum peso novo) |
 | escala tipográfica (`TYPE`) | `caption` 11 regular; `bodySmall` 13 regular; `body` 15 regular; `bodyLarge` 18 semibold; `title` 22 bold; `titleLarge` 28 bold; `display` 36 bold. A fonte continua a do sistema |
@@ -32,7 +32,17 @@ Observações:
 
 Passa nas três superfícies sem ajuste de tom. Fora das três exigidas: sobre `border` (#2A2A2A) 4,40:1 e sobre o literal `#3a2a00` 4,26:1 (abaixo de 4,5:1; nenhum uso de `textMuted` sobre esses fundos foi achado na auditoria); sobre `black` 6,44:1 e sobre os literais `#1a1700`, `#141200` e `#0d1117` 5,52, 5,77 e 5,80:1.
 
-**Atenção para a decisão de design:** o novo `textMuted` ficou **um pouco mais claro que `textSecondary` (#888888)**: razão entre eles ≈ 1,1:1 (luminância 0,272 contra 0,246). Para um `textMuted` mais apagado que o secundário e ainda com 4,5:1 sobre `bgCardAlt`, o tom mínimo seria perto de #838383; não foi feito porque a escolha pedida foi #8E8E93.
+## Hierarquia do texto
+
+`textPrimary` > `textSecondary` > `textMuted`. O `textSecondary` subiu de #888888 para **#B0B0B5**, porque o `textMuted` novo (#8E8E93) tinha ficado mais claro que ele.
+
+| texto | cor | sobre `bg` | sobre `bgCard` | sobre `bgCardAlt` |
+|---|---|---|---|---|
+| `textPrimary` | #FFFFFF | 19,8:1 | 18,4:1 | 17,0:1 |
+| `textSecondary` | #B0B0B5 | **9,17:1** | **8,53:1** | **7,89:1** |
+| `textMuted` | #8E8E93 | 6,07:1 | 5,65:1 | 5,23:1 |
+
+Regra testada (`tokens.test.ts`): contraste do secundário sobre `bg` >= 1,3 x o do mudo (9,17 / 6,07 = 1,51) e o do primário maior que o do secundário.
 
 ## Usos de `textMuted` com baixo contraste intencional (para decidir depois)
 

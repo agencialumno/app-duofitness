@@ -7,9 +7,9 @@ export const COLORS = {
   bgCardAlt: '#1C1C1C',
   border: '#2A2A2A',
   textPrimary: '#FFFFFF',
-  textSecondary: '#888888',
+  // #B0B0B5: 9,17:1 sobre bg, 8,53:1 sobre bgCard e 7,89:1 sobre bgCardAlt. Hierarquia: textPrimary > textSecondary > textMuted (era #888888, mais escuro que o textMuted novo).
+  textSecondary: '#B0B0B5',
   // #8E8E93: 6,07:1 sobre bg, 5,65:1 sobre bgCard e 5,23:1 sobre bgCardAlt (WCAG 2.1, texto normal pede 4,5:1). Era #555555 (2,29 a 2,66:1).
-  // Atenção: fica um pouco MAIS CLARO que textSecondary (#888888); a diferença entre os dois é pequena (luminância 0,272 e 0,246).
   textMuted: '#8E8E93',
   success: '#22c55e',
   error: '#ef4444',

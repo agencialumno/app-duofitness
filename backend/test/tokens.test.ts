@@ -34,6 +34,13 @@ describe('contraste do textMuted (WCAG 2.1, texto normal 4,5:1)', () => {
       expect(r, `textMuted sobre ${bg} = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
     }
   });
+  it('hierarquia: textPrimary > textSecondary > textMuted (secundário com pelo menos 1,3x o contraste do mudo, ambos sobre bg)', () => {
+    const p = ratio(T.COLORS.textPrimary, T.COLORS.bg);
+    const s = ratio(T.COLORS.textSecondary, T.COLORS.bg);
+    const m = ratio(T.COLORS.textMuted, T.COLORS.bg);
+    expect(s, `secundário ${s.toFixed(2)} x mudo ${m.toFixed(2)}`).toBeGreaterThanOrEqual(1.3 * m);
+    expect(p).toBeGreaterThan(s);
+  });
   it('o valor é o decidido (#8E8E93)', () => {
     expect(T.COLORS.textMuted.toLowerCase()).toBe('#8e8e93');
   });
@@ -103,11 +110,12 @@ describe('escalas', () => {
 
 describe('nada mais mudou: os valores antigos do tema continuam iguais', () => {
   it('cores (exceto textMuted), tamanhos, pesos, espaços, raios e sombra', () => {
-    const { textMuted, ...cores } = T.COLORS;
+    const { textMuted, textSecondary, ...cores } = T.COLORS;
     expect(textMuted).toBeTruthy();
+    expect(textSecondary).toBeTruthy();
     expect(cores).toEqual({
       primary: '#fed205', black: '#000000', white: '#FFFFFF', bg: '#0A0A0A', bgCard: '#141414', bgCardAlt: '#1C1C1C', border: '#2A2A2A',
-      textPrimary: '#FFFFFF', textSecondary: '#888888', success: '#22c55e', error: '#ef4444', warning: '#f97316',
+      textPrimary: '#FFFFFF', success: '#22c55e', error: '#ef4444', warning: '#f97316',
     });
     expect(T.FONTS.sizes).toEqual({ xs: 11, sm: 13, md: 15, lg: 18, xl: 22, xxl: 28, xxxl: 36 });
     expect(T.FONTS.weights).toEqual({ regular: '400', medium: '500', semibold: '600', bold: '700' });
