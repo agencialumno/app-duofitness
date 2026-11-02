@@ -49,10 +49,10 @@ O canal aparece na tela **Sobre** do Perfil e é definido por `EXPO_PUBLIC_BUILD
 
 | Canal | Quando | Aparece no app |
 |---|---|---|
-| `dev` | testes da equipe | versão + nome SemVer completo + branch + commit |
+| `dev` | testes da equipe | versão + canal + build + nome SemVer completo + branch + commit (visíveis de saída) |
 | `beta` | execução manual (padrão) ou tag com `-beta.N` | idem |
 | `rc` | tag com `-rc.N` | idem |
-| `store` | tag da versão final | só "Versão X.Y.Z (build)" |
+| `store` (ou variável ausente) | tag da versão final | só "Versão X.Y.Z"; 7 toques seguidos no texto da versão revelam/ocultam os detalhes (suporte), em qualquer canal, sem dica na tela |
 
 | Loja | O que recebe | Campo |
 |---|---|---|
