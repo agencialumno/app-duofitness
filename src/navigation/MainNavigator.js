@@ -17,6 +17,7 @@ import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
 import SmartPlanScreen from '../screens/SmartPlanScreen';
 import AIPersonalTrainerScreen from '../screens/AIPersonalTrainerScreen';
 import SeriesTimelineScreen from '../screens/SeriesTimelineScreen';
+import RemindersScreen from '../screens/RemindersScreen';
 import GuidedPlanScreen from '../screens/GuidedPlanScreen';
 import EditBodyDataScreen from '../screens/EditBodyDataScreen';
 import StoreScreen from '../screens/StoreScreen';
@@ -80,6 +81,7 @@ function ProfileStackNav() {
     <ProfileStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="EditBodyData" component={EditBodyDataScreen} />
+      <ProfileStack.Screen name="Lembretes" component={RemindersScreen} />
       {/* A Saúde é a mesma tela da aba Início, registrada aqui também para o voltar retornar ao Perfil */}
       <ProfileStack.Screen name="Saude" component={HealthScreen} />
       <ProfileStack.Screen name="SaudeDetalhe" component={HealthCategoryScreen} />
