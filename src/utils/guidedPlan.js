@@ -12,6 +12,7 @@ import {
 import { calculateIMC, getIMCCategory } from './imc';
 import { effectiveGoals, generatePlanForAge, recommendationsForAge } from './planForAge';
 import { COMBOS, getComboEquipment } from '../data/combosEquipment';
+import { filterByCombo, filterForMinor } from '../data/comboEquipment';
 import { GOAL_OPTIONS, LEVEL_OPTIONS, LIMITATION_OPTIONS } from './planOptions';
 
 export const PLAN_LABEL = 'Personal Trainer Duo';
@@ -127,9 +128,10 @@ function getEquipment(settings) {
   return getComboEquipment(settings.combo);
 }
 
-// Exercícios do catálogo que valem para este morador (combo, nível, limitação e impacto).
-function eligible(list, settings, recs) {
-  let out = filterByEquipment(list, getEquipment(settings));
+// Exercícios do catálogo que valem para este morador (combo, nível, limitação e impacto). Combo ausente = só calistenia; 13 a 17 anos: regra provisória
+// de exclusões (comboEquipment.js).
+function eligible(list, settings, recs, ageGroup) {
+  let out = filterForMinor(filterByCombo(list, settings.combo ?? null), ageGroup);
   out = filterByLevel(out, settings.level);
   out = filterByLimitation(out, settings.limitation);
   out = filterHighImpact(out, settings.avoidImpact || !!recs?.avoidHighImpact);
@@ -146,8 +148,8 @@ function recsFor(settings, user) {
 }
 
 // Troca exercícios do fim da série por glúteos do combo (até `perSerie` por série).
-function addGlutes(workouts, settings, recs, perSerie = 2) {
-  const glutes = eligible(EXERCISE_DB.glutes || [], settings, recs);
+function addGlutes(workouts, settings, recs, ageGroup, perSerie = 2) {
+  const glutes = eligible(EXERCISE_DB.glutes || [], settings, recs, ageGroup);
   const gluteIds = new Set((EXERCISE_DB.glutes || []).map((e) => e.id));
   return workouts.map((w) => {
     const exercises = [...w.exercises];
@@ -178,6 +180,7 @@ export function generateGuidedPlan(settings, user) {
     days: settings.days,
     time: settings.time,
     equipment: getEquipment(settings),
+    combo: settings.combo ?? null, // combo ausente = só calistenia (padrão seguro)
     focus: settings.focus && settings.focus !== 'balanced' ? settings.focus : undefined,
     limitation: settings.limitation || 'none',
     imcCategory: imcInfo?.id,
@@ -189,7 +192,7 @@ export function generateGuidedPlan(settings, user) {
     workouts = workouts.map((w) => ({ ...w, exercises: filterHighImpact(w.exercises, true) }));
   }
   if (settings.extraGlutes) {
-    workouts = addGlutes(workouts, settings, recs);
+    workouts = addGlutes(workouts, settings, recs, user?.ageGroup);
   }
 
   return {
@@ -218,7 +221,7 @@ export function getAlternatives(workouts, serieIndex, exerciseId, settings, user
   if (!serie || !current || !key) return [];
   const recs = recsFor(settings, user);
   const present = new Set(serie.exercises.map((e) => e.id));
-  const pool = eligible(EXERCISE_DB[key], settings, recs).filter((e) => !present.has(e.id));
+  const pool = eligible(EXERCISE_DB[key], settings, recs, user?.ageGroup).filter((e) => !present.has(e.id));
   const main = current.muscleGroup?.[0];
   const same = pool.filter((e) => e.muscleGroup?.[0] === main);
   return same.length > 0 ? same : pool;

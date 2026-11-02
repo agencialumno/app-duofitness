@@ -177,3 +177,8 @@ O que fazer:
 - **Confirme a procedência** (autoria e direito de uso das imagens, ou troque por fotos próprias), registre em `docs/procedencia-midia.md` e **só então mude o campo `CONFIRMADO: não` para `CONFIRMADO: sim`**.
 - **Portão de loja:** crie a variável `RELEASE_BUILD` (GitHub > Settings > Secrets and variables > Actions > Variables) com o valor `true` nos builds de loja. Com ela ligada, `scripts/check-media-provenance.mjs` **falha o build** se houver fotos em `assets/exercicios-ref/` e o campo ainda for "não". Sem a variável, o passo não roda (nada muda). Builds de CI não têm as fotos, então o portão só pesa em build local com as fotos.
 - Para um build local de loja **sem** essas fotos: `node scripts/preparar-fotos-exercicios.mjs --limpar` (apaga as fotos e o arquivo gerado; o app cai no visual de hoje).
+
+## Séries por combo de equipamentos (branch series-equipamentos)
+
+- **Regra provisória para 13 a 17 anos, pendente de revisão do educador físico:** sem `smith_squat`, `smith_bench_press`, `leg_press_ex` e `rdl` (`MINOR_EXCLUDED_IDS` em `src/data/comboEquipment.js`). Não existia regra anterior de aparelho com carga para menores; as regras antigas (sem impacto, volume 0,9, nota de supervisão) continuam.
+- **Pendente de validação do educador físico:** uso do Cross com Smith (polia alta ajustável, deixada baixa) para `lat_pulldown_ex` e `seated_cable_row`. Não vale para CROSS_ANG nem ESTACAO_MULT até confirmação. Efeito: o UNO não recebe puxada nem remada.
