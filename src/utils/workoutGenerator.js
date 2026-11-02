@@ -253,36 +253,49 @@ function apparatusFirst(list) {
   return [...list.filter((e) => e.equipment !== 'bodyweight'), ...list.filter((e) => e.equipment === 'bodyweight')];
 }
 
-// Fatias CONSECUTIVAS por grupo: cada grupo (pernas, glúteos, core...) tem um cursor compartilhado pelas séries A, B e C sobre a lista já ordenada (aparelho
-// disponível primeiro, calistenia depois). A série B continua de onde a A parou e a C de onde a B parou, sem pular nenhum aparelho: a calistenia só entra
-// quando os aparelhos disponíveis do grupo acabaram. Um por série: não repete o mesmo exercício (por id) na mesma série. Se a lista inteira já foi usada,
-// o cursor dá a volta. Sem sorteio.
+// Distribuição entre as séries A, B e C, por grupo muscular. A lista do grupo já vem com o aparelho disponível primeiro e a calistenia depois. Cada série pega
+// FATIAS CONSECUTIVAS dos aparelhos, sem pular nenhum, e quando os aparelhos acabam o cursor DÁ A VOLTA e reaproveita os aparelhos desde o início da lista
+// (decisão do Victor): a calistenia só entra numa série quando todos os aparelhos disponíveis do grupo (que passam nos filtros) já estão nela. Para não gerar
+// séries idênticas, a rotação desloca o ponto de partida da série seguinte quando uma série já usou a volta inteira. Nenhum exercício se repete DENTRO de uma
+// série (por id); entre séries pode repetir. Sem sorteio: o mesmo perfil dá sempre o mesmo resultado.
 function newTaker(already, cursors) {
   const used = new Set(already.filter(Boolean).map((e) => e.id));
-  const log = []; // { group, start (posição na lista), id }: o que esta série pegou, na ordem
-  const take = (group, list, count) => {
+  const log = []; // { key, start, id }: o que esta série pegou, na ordem
+  // pega até `count` de `part` a partir do cursor de `key`, dando a volta, sem repetir o que já está na série
+  const run = (key, part, count) => {
     const out = [];
-    let i = cursors.get(group) ?? 0;
-    for (let seen = 0; list.length && out.length < count && seen < list.length; seen++) {
-      const pos = i % list.length;
-      const e = list[pos];
+    if (!part.length || count <= 0) return out;
+    const startCursor = cursors.get(key) ?? 0;
+    let i = startCursor;
+    for (let seen = 0; out.length < count && seen < part.length; seen++) {
+      const pos = i % part.length;
       i++;
+      const e = part[pos];
       if (!e || used.has(e.id)) continue;
       used.add(e.id);
       out.push(e);
-      log.push({ group, start: pos, id: e.id });
+      log.push({ key, start: pos, id: e.id });
     }
-    cursors.set(group, list.length ? i % list.length : 0);
+    // volta inteira numa série só: a próxima começa um passo adiante (rotação), em vez de repetir a mesma ordem
+    const fullLap = i - startCursor >= part.length;
+    cursors.set(key, (fullLap ? startCursor + 1 : i) % part.length);
     return out;
   };
-  // Depois do corte por tempo da sessão: o cursor de cada grupo volta para o primeiro exercício cortado, para ele não se perder nas séries seguintes.
+  const take = (group, list, count) => {
+    const apparatus = list.filter((e) => e && e.equipment !== 'bodyweight');
+    const calisthenics = list.filter((e) => e && e.equipment === 'bodyweight');
+    const out = run(`${group}:a`, apparatus, count);
+    if (out.length < count) out.push(...run(`${group}:c`, calisthenics, count - out.length));
+    return out;
+  };
+  // Depois do corte por tempo da sessão: o cursor volta para o primeiro exercício cortado, para ele não se perder nas séries seguintes.
   take.commit = (kept) => {
     const keptIds = new Set(kept.filter(Boolean).map((e) => e.id));
     const done = new Set();
     for (const g of log) {
-      if (done.has(g.group) || keptIds.has(g.id)) continue;
-      done.add(g.group);
-      cursors.set(g.group, g.start);
+      if (done.has(g.key) || keptIds.has(g.id)) continue;
+      done.add(g.key);
+      cursors.set(g.key, g.start);
     }
     return kept;
   };
