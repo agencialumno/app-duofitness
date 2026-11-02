@@ -253,19 +253,40 @@ function apparatusFirst(list) {
   return [...list.filter((e) => e.equipment !== 'bodyweight'), ...list.filter((e) => e.equipment === 'bodyweight')];
 }
 
-// Escolhe `count` exercícios do `pool` que ainda não estão na série (por id). Um por série: sem repetir o mesmo exercício na mesma série.
-function newPicker(already = []) {
+// Fatias CONSECUTIVAS por grupo: cada grupo (pernas, glúteos, core...) tem um cursor compartilhado pelas séries A, B e C sobre a lista já ordenada (aparelho
+// disponível primeiro, calistenia depois). A série B continua de onde a A parou e a C de onde a B parou, sem pular nenhum aparelho: a calistenia só entra
+// quando os aparelhos disponíveis do grupo acabaram. Um por série: não repete o mesmo exercício (por id) na mesma série. Se a lista inteira já foi usada,
+// o cursor dá a volta. Sem sorteio.
+function newTaker(already, cursors) {
   const used = new Set(already.filter(Boolean).map((e) => e.id));
-  return (pool, count) => {
+  const log = []; // { group, start (posição na lista), id }: o que esta série pegou, na ordem
+  const take = (group, list, count) => {
     const out = [];
-    for (const e of pool) {
-      if (out.length >= count) break;
+    let i = cursors.get(group) ?? 0;
+    for (let seen = 0; list.length && out.length < count && seen < list.length; seen++) {
+      const pos = i % list.length;
+      const e = list[pos];
+      i++;
       if (!e || used.has(e.id)) continue;
       used.add(e.id);
       out.push(e);
+      log.push({ group, start: pos, id: e.id });
     }
+    cursors.set(group, list.length ? i % list.length : 0);
     return out;
   };
+  // Depois do corte por tempo da sessão: o cursor de cada grupo volta para o primeiro exercício cortado, para ele não se perder nas séries seguintes.
+  take.commit = (kept) => {
+    const keptIds = new Set(kept.filter(Boolean).map((e) => e.id));
+    const done = new Set();
+    for (const g of log) {
+      if (done.has(g.group) || keptIds.has(g.id)) continue;
+      done.add(g.group);
+      cursors.set(g.group, g.start);
+    }
+    return kept;
+  };
+  return take;
 }
 
 // Limites de exercícios por tempo de sessão — generosos para aproveitar
@@ -291,33 +312,34 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
     filtered = filterByLimitation(filtered, limitation);
     filtered = filterHighImpact(filtered, recs.avoidHighImpact);
     filtered = applyIMCRecommendations(filtered, recs);
-    db[key] = key === 'core' ? filtered : apparatusFirst(filtered);
+    db[key] = apparatusFirst(filtered); // inclusive o core (hoje só o abdominal no cabo é de aparelho)
   }
 
   // Cardio no início se IMC ou objetivo indicar
   const cardioWarmup = recs.cardioFirst ? [db.cardio[0]].filter(Boolean) : [];
 
   const plans = [];
+  const cursors = new Map(); // um cursor por grupo, compartilhado pelas séries A, B e C
 
   // === SÉRIE A — Empurrar (Peito, Ombros, Tríceps) ===
   let exA = [...cardioWarmup];
-  const pick = newPicker(cardioWarmup);
+  const pick = newTaker(cardioWarmup, cursors);
   if (focus === 'lower') {
-    exA.push(...pick(db.legs, 5));
-    exA.push(...pick(db.glutes, 3));
+    exA.push(...pick('legs', db.legs, 5));
+    exA.push(...pick('glutes', db.glutes, 3));
   } else if (focus === 'upper') {
-    exA.push(...pick(db.chest, 3));
-    exA.push(...pick(db.shoulders, 3));
-    exA.push(...pick(db.arms.filter(e => e.id.includes('tricep') || e.id.includes('cable_push')), 2));
+    exA.push(...pick('chest', db.chest, 3));
+    exA.push(...pick('shoulders', db.shoulders, 3));
+    exA.push(...pick('triceps', db.arms.filter(e => e.id.includes('tricep') || e.id.includes('cable_push')), 2));
   } else {
-    exA.push(...pick(db.chest, 3));
-    exA.push(...pick(db.shoulders, 2));
-    exA.push(...pick(db.arms.filter(e => e.id.includes('tricep') || e.id.includes('cable_push')), 2));
-    exA.push(...pick(db.core, 2));
+    exA.push(...pick('chest', db.chest, 3));
+    exA.push(...pick('shoulders', db.shoulders, 2));
+    exA.push(...pick('triceps', db.arms.filter(e => e.id.includes('tricep') || e.id.includes('cable_push')), 2));
+    exA.push(...pick('core', db.core, 2));
   }
   // Feminino: prioriza glúteos na Série A
   if (gender === 'female' && focus !== 'upper') {
-    exA.push(...pick(db.glutes, 2));
+    exA.push(...pick('glutes', db.glutes, 2));
   }
 
   plans.push({
@@ -325,26 +347,26 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
     name: focus === 'lower' ? 'Série A — Pernas e Glúteos' : focus === 'upper' ? 'Série A — Peito e Ombros' : 'Série A — Peito, Ombros e Tríceps',
     category: focus === 'lower' ? 'Pernas' : 'Peito',
     focus: focus === 'lower' ? 'Pernas e Glúteos' : 'Peito e Ombros',
-    exercises: adjustForTime(exA, time),
+    exercises: pick.commit(adjustForTime(exA, time)),
     personalNotes: recs.notes,
   });
 
   if (numSeries >= 2) {
     // === SÉRIE B — Puxar (Costas, Bíceps) ===
     let exB = [...cardioWarmup];
-  const pick = newPicker(cardioWarmup);
+  const pick = newTaker(cardioWarmup, cursors);
     if (focus === 'lower') {
-      exB.push(...pick(db.legs.slice(3), 3));
-      exB.push(...pick(db.glutes.slice(2), 3));
-      exB.push(...pick(db.core, 3));
+      exB.push(...pick('legs', db.legs, 3));
+      exB.push(...pick('glutes', db.glutes, 3));
+      exB.push(...pick('core', db.core, 3));
     } else if (focus === 'upper') {
-      exB.push(...pick(db.back, 3));
-      exB.push(...pick(db.arms.filter(e => e.id.includes('curl')), 3));
-      exB.push(...pick(db.core, 2));
+      exB.push(...pick('back', db.back, 3));
+      exB.push(...pick('biceps', db.arms.filter(e => e.id.includes('curl')), 3));
+      exB.push(...pick('core', db.core, 2));
     } else {
-      exB.push(...pick(db.back, 3));
-      exB.push(...pick(db.arms.filter(e => e.id.includes('curl')), 3));
-      exB.push(...pick(db.core.slice(1), 2));
+      exB.push(...pick('back', db.back, 3));
+      exB.push(...pick('biceps', db.arms.filter(e => e.id.includes('curl')), 3));
+      exB.push(...pick('core', db.core, 2));
     }
 
     plans.push({
@@ -352,7 +374,7 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
       name: focus === 'lower' ? 'Série B — Variação de Pernas' : 'Série B — Costas e Bíceps',
       category: 'Costas',
       focus: focus === 'lower' ? 'Pernas e Core' : 'Costas e Bíceps',
-      exercises: adjustForTime(exB, time),
+      exercises: pick.commit(adjustForTime(exB, time)),
       personalNotes: recs.notes,
     });
   }
@@ -360,19 +382,19 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
   if (numSeries >= 3) {
     // === SÉRIE C — Pernas / Core / Cardio ===
     let exC = [...cardioWarmup];
-  const pick = newPicker(cardioWarmup);
+  const pick = newTaker(cardioWarmup, cursors);
     if (focus === 'core') {
-      exC.push(...pick(db.core, 5));
-      exC.push(...pick(db.cardio, 3));
+      exC.push(...pick('core', db.core, 5));
+      exC.push(...pick('cardio', db.cardio, 3));
     } else if (focus === 'upper') {
-      exC.push(...pick(db.legs, 4));
-      exC.push(...pick(db.core, 3));
-      exC.push(...pick(db.cardio.slice(1), 2));
+      exC.push(...pick('legs', db.legs, 4));
+      exC.push(...pick('core', db.core, 3));
+      exC.push(...pick('cardio', db.cardio, 2));
     } else {
-      exC.push(...pick(db.legs.slice(1), 4));
-      exC.push(...pick(db.glutes.slice(2), 3));
-      exC.push(...pick(db.core, 3));
-      if (goalList.includes('lose_weight')) exC.push(...pick(db.cardio.slice(1), 2));
+      exC.push(...pick('legs', db.legs, 4));
+      exC.push(...pick('glutes', db.glutes, 3));
+      exC.push(...pick('core', db.core, 3));
+      if (goalList.includes('lose_weight')) exC.push(...pick('cardio', db.cardio, 2));
     }
 
     plans.push({
@@ -380,7 +402,7 @@ export function generateWorkoutPlan({ goals, goal, level, days, time, equipment,
       name: focus === 'core' ? 'Série C — Core e Cardio' : 'Série C — Pernas e Core',
       category: 'Pernas',
       focus: 'Pernas e Core',
-      exercises: adjustForTime(exC, time),
+      exercises: pick.commit(adjustForTime(exC, time)),
       personalNotes: recs.notes,
     });
   }

@@ -85,58 +85,58 @@ Total: **59** exercícios. Ordem: quantas séries A, B e C usam o exercício (so
 
 | # | Gravado | Arquivo (id) | Exercício | Equipamento | Combos | A | B | C | Total |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | ⬜ | `plank` | Prancha Isométrica | bodyweight | todos (UNO a ELITE) | 20 | 30 | 40 | 90 |
-| 2 | ⬜ | `crunch` | Abdominal Crunch | bodyweight | todos (UNO a ELITE) | 10 | 35 | 40 | 85 |
-| 3 | ⬜ | `cable_crunch` | Abdominal no Cabo | cable | todos (UNO a ELITE) | 10 | 10 | 20 | 40 |
-| 4 | ⬜ | `russian_twist` | Giro Russo | bodyweight | todos (UNO a ELITE) | 0 | 15 | 25 | 40 |
-| 5 | ⬜ | `donkey_kick` | Coice de Burro | bodyweight | todos (UNO a ELITE) | 6 | 10 | 20 | 36 |
-| 6 | ⬜ | `leg_curl` | Cadeira Flexora | leg_machine | DUO a ELITE | 8 | 3 | 24 | 35 |
-| 7 | ⬜ | `adductor_machine` | Cadeira Adutora | leg_machine | DUO a ELITE | 8 | 4 | 21 | 33 |
-| 8 | ⬜ | `tricep_ext` | Extensão Tríceps com Haltere | dumbbells | todos (UNO a ELITE) | 30 | 0 | 0 | 30 |
-| 9 | ⬜ | `seated_cable_row` | Remada no Pulley | cable | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
-| 10 | ⬜ | `bicep_curl` | Rosca Bíceps | dumbbells | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
-| 11 | ⬜ | `barbell_curl` | Rosca Direta na Barra W | barbell | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
-| 12 | ⬜ | `cable_curl` | Rosca no Cabo | cable | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
-| 13 | ⬜ | `cable_pushdown` | Tríceps no Pulley (Corda) | cable | todos (UNO a ELITE) | 30 | 0 | 0 | 30 |
-| 14 | ⬜ | `fire_hydrant` | Abdução Quadrupede | bodyweight | todos (UNO a ELITE) | 0 | 9 | 18 | 27 |
-| 15 | ⬜ | `abductor_machine` | Cadeira Abdutora | leg_machine | DUO a ELITE | 5 | 8 | 14 | 27 |
+| 1 | ⬜ | `plank` | Prancha Isométrica | bodyweight | todos (UNO a ELITE) | 20 | 20 | 25 | 65 |
+| 2 | ⬜ | `crunch` | Abdominal Crunch | bodyweight | todos (UNO a ELITE) | 10 | 25 | 25 | 60 |
+| 3 | ⬜ | `russian_twist` | Giro Russo | bodyweight | todos (UNO a ELITE) | 0 | 15 | 35 | 50 |
+| 4 | ⬜ | `dead_bug` | Dead Bug | bodyweight | todos (UNO a ELITE) | 0 | 10 | 30 | 40 |
+| 5 | ⬜ | `cable_crunch` | Abdominal no Cabo | cable | todos (UNO a ELITE) | 10 | 10 | 10 | 30 |
+| 6 | ⬜ | `tricep_ext` | Extensão Tríceps com Haltere | dumbbells | todos (UNO a ELITE) | 30 | 0 | 0 | 30 |
+| 7 | ⬜ | `seated_cable_row` | Remada no Pulley | cable | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
+| 8 | ⬜ | `bicep_curl` | Rosca Bíceps | dumbbells | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
+| 9 | ⬜ | `barbell_curl` | Rosca Direta na Barra W | barbell | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
+| 10 | ⬜ | `cable_curl` | Rosca no Cabo | cable | todos (UNO a ELITE) | 0 | 30 | 0 | 30 |
+| 11 | ⬜ | `cable_pushdown` | Tríceps no Pulley (Corda) | cable | todos (UNO a ELITE) | 30 | 0 | 0 | 30 |
+| 12 | ⬜ | `cable_kickback` | Coice no Cabo | cable | todos (UNO a ELITE) | 10 | 6 | 13 | 29 |
+| 13 | ⬜ | `leg_extension` | Cadeira Extensora | leg_machine | DUO a ELITE | 8 | 0 | 20 | 28 |
+| 14 | ⬜ | `leg_curl` | Cadeira Flexora | leg_machine | DUO a ELITE | 8 | 0 | 20 | 28 |
+| 15 | ⬜ | `glute_bridge` | Elevação de Quadril | bodyweight | todos (UNO a ELITE) | 9 | 1 | 18 | 28 |
 | 16 | ⬜ | `row_db` | Remada Unilateral | dumbbells | todos (UNO a ELITE) | 0 | 27 | 0 | 27 |
-| 17 | ⬜ | `leg_extension` | Cadeira Extensora | leg_machine | DUO a ELITE | 8 | 0 | 16 | 24 |
-| 18 | ⬜ | `goblet_squat` | Agachamento Goblet | dumbbells | todos (UNO a ELITE) | 6 | 5 | 10 | 21 |
-| 19 | ⬜ | `glute_bridge` | Elevação de Quadril | bodyweight | todos (UNO a ELITE) | 9 | 4 | 8 | 21 |
-| 20 | ⬜ | `bike_cardio` | Bike Ergométrica | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
-| 21 | ⬜ | `jumping_jack` | Polichinelo | bodyweight | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
+| 17 | ⬜ | `adductor_machine` | Cadeira Adutora | leg_machine | DUO a ELITE | 8 | 0 | 14 | 22 |
+| 18 | ⬜ | `donkey_kick` | Coice de Burro | bodyweight | todos (UNO a ELITE) | 6 | 4 | 12 | 22 |
+| 19 | ⬜ | `bike_cardio` | Bike Ergométrica | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
+| 20 | ⬜ | `leg_raise` | Elevação de Pernas | bodyweight | todos (UNO a ELITE) | 0 | 10 | 10 | 20 |
+| 21 | ⬜ | `treadmill` | Esteira | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
 | 22 | ⬜ | `lateral_raise` | Elevação Lateral | dumbbells | todos (UNO a ELITE) | 19 | 0 | 0 | 19 |
-| 23 | ⬜ | `sumo_squat` | Agachamento Sumo | bodyweight | todos (UNO a ELITE) | 0 | 6 | 12 | 18 |
-| 24 | ⬜ | `chest_press_machine` | Supino na Máquina (Peitoral Dorsal) | chest_back_machine | TRIPLE a ELITE | 18 | 0 | 0 | 18 |
-| 25 | ⬜ | `rear_delt_machine` | Voador Invertido na Máquina | chest_back_machine | TRIPLE a ELITE | 0 | 18 | 0 | 18 |
-| 26 | ⬜ | `cable_crossover` | Crucifixo no Cabo | cable | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
-| 27 | ⬜ | `cable_lateral_raise` | Elevação Lateral no Cabo | cable | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
-| 28 | ⬜ | `pushup` | Flexão de Braço | bodyweight | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
-| 29 | ⬜ | `incline_pushup` | Flexão Inclinada | bodyweight | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
-| 30 | ⬜ | `smith_squat` | Agachamento no Smith | smith | DUO a ELITE | 4 | 0 | 10 | 14 |
-| 31 | ⬜ | `cable_kickback` | Coice no Cabo | cable | todos (UNO a ELITE) | 10 | 1 | 2 | 13 |
-| 32 | ⬜ | `shoulder_press` | Desenvolvimento com Halteres | dumbbells | todos (UNO a ELITE) | 13 | 0 | 0 | 13 |
-| 33 | ⬜ | `front_raise` | Elevação Frontal | dumbbells | todos (UNO a ELITE) | 13 | 0 | 0 | 13 |
-| 34 | ⬜ | `squat` | Agachamento Livre | bodyweight | todos (UNO a ELITE) | 2 | 4 | 6 | 12 |
-| 35 | ⬜ | `smith_bench_press` | Supino no Smith | smith | DUO a ELITE | 12 | 0 | 0 | 12 |
-| 36 | ⬜ | `treadmill` | Esteira | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 10 | 10 |
-| 37 | ⬜ | `lunge` | Avanço | bodyweight | todos (UNO a ELITE) | 2 | 1 | 6 | 9 |
-| 38 | ⬜ | `calf_raise` | Elevação de Panturrilha | bodyweight | todos (UNO a ELITE) | 2 | 2 | 5 | 9 |
-| 39 | ⬜ | `shoulder_machine_press` | Desenvolvimento na Máquina | shoulder_machine | ELITE | 6 | 0 | 0 | 6 |
-| 40 | ⬜ | `leg_press_ex` | Leg Press | leg_press | TRIPLE a ELITE | 3 | 0 | 3 | 6 |
-| 41 | ⬜ | `pullover` | Pullover com Haltere | dumbbells | todos (UNO a ELITE) | 0 | 6 | 0 | 6 |
-| 42 | ⬜ | `db_press` | Supino com Halteres | dumbbells | todos (UNO a ELITE) | 6 | 0 | 0 | 6 |
-| 43 | ⬜ | `reverse_fly` | Voador Invertido | dumbbells | todos (UNO a ELITE) | 0 | 6 | 0 | 6 |
-| 44 | ⬜ | `wall_sit` | Cadeira na Parede | bodyweight | todos (UNO a ELITE) | 1 | 2 | 2 | 5 |
-| 45 | ⬜ | `dead_bug` | Dead Bug | bodyweight | todos (UNO a ELITE) | 0 | 0 | 5 | 5 |
-| 46 | ⬜ | `leg_raise` | Elevação de Pernas | bodyweight | todos (UNO a ELITE) | 0 | 0 | 5 | 5 |
-| 47 | ⬜ | `pike_pushup` | Flexão Pike | bodyweight | todos (UNO a ELITE) | 4 | 0 | 0 | 4 |
-| 48 | ⬜ | `glute_machine_ex` | Glúteo Máximo na Máquina | glute_machine | PRIME a ELITE | 4 | 0 | 0 | 4 |
-| 49 | ⬜ | `rdl` | Levantamento Terra Romeno | dumbbells | todos (UNO a ELITE) | 1 | 0 | 3 | 4 |
+| 23 | ⬜ | `chest_press_machine` | Supino na Máquina (Peitoral Dorsal) | chest_back_machine | TRIPLE a ELITE | 18 | 0 | 0 | 18 |
+| 24 | ⬜ | `rear_delt_machine` | Voador Invertido na Máquina | chest_back_machine | TRIPLE a ELITE | 0 | 18 | 0 | 18 |
+| 25 | ⬜ | `goblet_squat` | Agachamento Goblet | dumbbells | todos (UNO a ELITE) | 6 | 6 | 5 | 17 |
+| 26 | ⬜ | `squat` | Agachamento Livre | bodyweight | todos (UNO a ELITE) | 2 | 6 | 9 | 17 |
+| 27 | ⬜ | `fire_hydrant` | Abdução Quadrupede | bodyweight | todos (UNO a ELITE) | 0 | 10 | 6 | 16 |
+| 28 | ⬜ | `lunge` | Avanço | bodyweight | todos (UNO a ELITE) | 2 | 5 | 9 | 16 |
+| 29 | ⬜ | `abductor_machine` | Cadeira Abdutora | leg_machine | DUO a ELITE | 5 | 3 | 8 | 16 |
+| 30 | ⬜ | `cable_crossover` | Crucifixo no Cabo | cable | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
+| 31 | ⬜ | `cable_lateral_raise` | Elevação Lateral no Cabo | cable | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
+| 32 | ⬜ | `pushup` | Flexão de Braço | bodyweight | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
+| 33 | ⬜ | `incline_pushup` | Flexão Inclinada | bodyweight | todos (UNO a ELITE) | 15 | 0 | 0 | 15 |
+| 34 | ⬜ | `calf_raise` | Elevação de Panturrilha | bodyweight | todos (UNO a ELITE) | 2 | 4 | 8 | 14 |
+| 35 | ⬜ | `smith_squat` | Agachamento no Smith | smith | DUO a ELITE | 4 | 0 | 9 | 13 |
+| 36 | ⬜ | `shoulder_press` | Desenvolvimento com Halteres | dumbbells | todos (UNO a ELITE) | 13 | 0 | 0 | 13 |
+| 37 | ⬜ | `front_raise` | Elevação Frontal | dumbbells | todos (UNO a ELITE) | 13 | 0 | 0 | 13 |
+| 38 | ⬜ | `wall_sit` | Cadeira na Parede | bodyweight | todos (UNO a ELITE) | 1 | 1 | 10 | 12 |
+| 39 | ⬜ | `glute_machine_ex` | Glúteo Máximo na Máquina | glute_machine | PRIME a ELITE | 4 | 0 | 8 | 12 |
+| 40 | ⬜ | `smith_bench_press` | Supino no Smith | smith | DUO a ELITE | 12 | 0 | 0 | 12 |
+| 41 | ⬜ | `sumo_squat` | Agachamento Sumo | bodyweight | todos (UNO a ELITE) | 0 | 9 | 1 | 10 |
+| 42 | ⬜ | `jumping_jack` | Polichinelo | bodyweight | todos (UNO a ELITE) | 0 | 0 | 10 | 10 |
+| 43 | ⬜ | `leg_press_ex` | Leg Press | leg_press | TRIPLE a ELITE | 3 | 0 | 6 | 9 |
+| 44 | ⬜ | `rdl` | Levantamento Terra Romeno | dumbbells | todos (UNO a ELITE) | 1 | 5 | 2 | 8 |
+| 45 | ⬜ | `shoulder_machine_press` | Desenvolvimento na Máquina | shoulder_machine | ELITE | 6 | 0 | 0 | 6 |
+| 46 | ⬜ | `pullover` | Pullover com Haltere | dumbbells | todos (UNO a ELITE) | 0 | 6 | 0 | 6 |
+| 47 | ⬜ | `db_press` | Supino com Halteres | dumbbells | todos (UNO a ELITE) | 6 | 0 | 0 | 6 |
+| 48 | ⬜ | `reverse_fly` | Voador Invertido | dumbbells | todos (UNO a ELITE) | 0 | 6 | 0 | 6 |
+| 49 | ⬜ | `pike_pushup` | Flexão Pike | bodyweight | todos (UNO a ELITE) | 4 | 0 | 0 | 4 |
 | 50 | ⬜ | `db_fly` | Crucifixo com Halteres | dumbbells | todos (UNO a ELITE) | 3 | 0 | 0 | 3 |
-| 51 | ⬜ | `lat_pulldown_ex` | Puxada Alta | lat_pulldown | ELITE | 0 | 3 | 0 | 3 |
-| 52 | ⬜ | `hip_thrust_machine` | Elevação Pélvica na Máquina | hip_machine | ELITE | 1 | 0 | 0 | 1 |
+| 51 | ⬜ | `hip_thrust_machine` | Elevação Pélvica na Máquina | hip_machine | ELITE | 1 | 0 | 2 | 3 |
+| 52 | ⬜ | `lat_pulldown_ex` | Puxada Alta | lat_pulldown | ELITE | 0 | 3 | 0 | 3 |
 | 53 | ⬜ | `burpee` | Burpee | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
 | 54 | ⬜ | `high_knees` | Corrida Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
 | 55 | ⬜ | `march_place` | Marcha Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
