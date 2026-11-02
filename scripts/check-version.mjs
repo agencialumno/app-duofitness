@@ -7,6 +7,7 @@
 // nem para outro commit (item 3 da SemVer: versão lançada não muda).
 //
 // Com --channel store, o versao.json PRECISA estar sem prelançamento (build de loja é versão final).
+// --platform só é obrigatório quando --build ou --tag são passados; --channel sozinho confere só canal x prelançamento.
 // Uso: node scripts/check-version.mjs [--platform ios|android] [--build N] [--tag <ref>] [--channel dev|beta|rc|store] [--root <pasta>]
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -39,11 +40,12 @@ export function checkVersion({ root, platform, build, tag, channel, gitFn = git 
   if (pkg.version !== core) problems.push(`package.json (${pkg.version}) e app.json (${core}) divergem: use scripts/bump-version.mjs`);
   if (!/^\d+(\.\d+){0,2}$/.test(String(core))) problems.push(`a versão curta do iOS só pode ter números e pontos (app.json: ${core})`);
 
-  if (build !== undefined && build !== '' && build !== null) {
-    if (!platform) problems.push('informe --platform ios|android para conferir a build');
-    else problems.push(...checkBuild(platform, build));
+  const hasBuild = build !== undefined && build !== '' && build !== null;
+  if ((hasBuild || tag) && !platform) problems.push('informe --platform ios|android para conferir a build ou a tag');
+  else {
+    if (hasBuild) problems.push(...checkBuild(platform, build));
+    if (tag) problems.push(...checkTag(tag, name));
   }
-  if (tag) problems.push(...checkTag(tag, name));
   if (channel === 'store' && pre) problems.push(`${STORE_PRERELEASE_MESSAGE} (versao.json tem "${pre}"; node scripts/bump-version.mjs release)`);
 
   // item 3 da SemVer: versão lançada não muda
@@ -65,7 +67,8 @@ export function checkVersion({ root, platform, build, tag, channel, gitFn = git 
 function main() {
   const root = path.resolve(arg('--root', path.join(here, '..')));
   const platform = arg('--platform');
-  const build = arg('--build', process.env.RUN_NUMBER);
+  // RUN_NUMBER do ambiente só vale quando há --platform; --channel sozinho confere só canal x prelançamento (sem build).
+  const build = arg('--build', platform ? process.env.RUN_NUMBER : undefined);
   const tag = arg('--tag', '');
   const channel = arg('--channel', '');
   const r = checkVersion({ root, platform, build, tag, channel });
