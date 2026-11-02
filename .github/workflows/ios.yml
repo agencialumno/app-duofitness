@@ -104,6 +104,8 @@ jobs:
           echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "IOS_BUILD_NUMBER=$RUN_NUMBER" >> "$GITHUB_ENV"
           # Só o núcleo MAJOR.MINOR.PATCH vai ao CFBundleShortVersionString. A tag (ios-vX.Y.Z[-beta.N]) é só conferência; o piso do iOS é 31.
+          # O checkout é raso e não traz as tags: busca-as para a regra "versão já lançada não muda" (check-version) valer também no CI.
+          git fetch --tags --quiet || echo "::warning::Não consegui buscar as tags: a conferência de versão já lançada fica incompleta neste build."
           if [ "$REF_TYPE" = "tag" ]; then
             node scripts/check-version.mjs --platform ios --build "$RUN_NUMBER" --tag "$REF_NAME"
           else

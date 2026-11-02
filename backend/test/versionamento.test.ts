@@ -390,6 +390,14 @@ describe('workflows: versão, tag, canal e build', () => {
       expect(run.indexOf('--channel "$CHANNEL"'), f).toBeLessThan(run.indexOf('SHA_SHORT='));
     }
   });
+  it('git fetch --tags roda ANTES da conferência de tag/versão nos dois workflows (checkout raso não traz as tags)', () => {
+    for (const f of ['android.yml', 'ios.yml']) {
+      const run = step(f).run!;
+      expect(run, f).toContain('git fetch --tags --quiet');
+      expect(run.indexOf('git fetch --tags'), f).toBeGreaterThan(-1);
+      expect(run.indexOf('git fetch --tags'), f).toBeLessThan(run.indexOf('node scripts/check-version.mjs --platform'));
+    }
+  });
   it('o test:all do package.json inclui o check-version', () => {
     expect(JSON.parse(read('package.json')).scripts['test:all']).toContain('node scripts/check-version.mjs');
   });

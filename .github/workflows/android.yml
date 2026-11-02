@@ -73,6 +73,8 @@ jobs:
           set -euo pipefail
           # A versão vem SEMPRE do app.json (núcleo MAJOR.MINOR.PATCH); a tag é só conferência (aceita prelançamento: v1.0.0-beta.3).
           VERSION_NAME="$(node -p "require('./app.json').expo.version")"
+          # O checkout é raso e não traz as tags: busca-as para a regra "versão já lançada não muda" (check-version) valer também no CI.
+          git fetch --tags --quiet || echo "::warning::Não consegui buscar as tags: a conferência de versão já lançada fica incompleta neste build."
           if [ "$REF_TYPE" = "tag" ]; then
             node scripts/check-version.mjs --platform android --build "$RUN_NUMBER" --tag "$REF_NAME"
           else
