@@ -13,6 +13,13 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Canal da build (aparece na tela Sobre do Perfil): dev, beta, rc ou store'
+        required: true
+        default: beta
+        type: choice
+        options: [dev, beta, rc, store]
 
 concurrency:
   group: android-${{ github.ref }}
@@ -54,25 +61,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Versão (versionName da tag, versionCode = run_number)
+      - name: Versão (SemVer do app.json; versionCode = run_number), conferência da tag e canal
         env:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          BRANCH_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          # A versão vem SEMPRE do app.json (núcleo MAJOR.MINOR.PATCH); a tag é só conferência (aceita prelançamento: v1.0.0-beta.3).
+          VERSION_NAME="$(node -p "require('./app.json').expo.version")"
           if [ "$REF_TYPE" = "tag" ]; then
-            if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::error::A tag não segue o padrão vMAJOR.MINOR.PATCH (ex: v0.1.0)."
-              exit 1
-            fi
-            VERSION_NAME="${REF_NAME#v}"
+            node scripts/check-version.mjs --platform android --build "$RUN_NUMBER" --tag "$REF_NAME"
           else
-            # execução manual, sem tag: usa a versão do app.json
-            VERSION_NAME="$(node -p "require('./app.json').expo.version")"
+            node scripts/check-version.mjs --platform android --build "$RUN_NUMBER"
           fi
           echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "ANDROID_VERSION_CODE=$RUN_NUMBER" >> "$GITHUB_ENV"
+
+          # Canal e identificação da build (aparecem na tela "Sobre" do Perfil em canais de teste). Tag = o canal vem do prelançamento da versão
+          # (versao.json): "" = store, beta.N = beta, rc.N = rc. Execução manual = a entrada "channel" (padrão beta).
+          PRE="$(node -p "require('./versao.json').prerelease")"
+          if [ "$EVENT_NAME" = "push" ]; then
+            case "$PRE" in "") CHANNEL=store ;; rc.*) CHANNEL=rc ;; beta.*) CHANNEL=beta ;; *) CHANNEL=dev ;; esac
+          else
+            CHANNEL="${INPUT_CHANNEL:-beta}"
+          fi
+          case "$CHANNEL" in dev|beta|rc|store) ;; *) echo "::error::Canal inválido: $CHANNEL (use dev, beta, rc ou store)."; exit 1 ;; esac
+          if [ "$CHANNEL" = "store" ] && [ -n "$PRE" ]; then
+            echo "::warning::Canal store com versão de prelançamento ($PRE). Para a loja, suba a versão final (node scripts/bump-version.mjs release)."
+          fi
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          {
+            echo "EXPO_PUBLIC_BUILD_CHANNEL=$CHANNEL"
+            echo "EXPO_PUBLIC_BUILD_BRANCH=$BRANCH_NAME"
+            echo "EXPO_PUBLIC_BUILD_SHA=$SHA_SHORT"
+            echo "EXPO_PUBLIC_BUILD_PRERELEASE=$PRE"
+          } >> "$GITHUB_ENV"
 
           if [ -n "${EXPO_PUBLIC_API_URL:-}" ]; then API="sim"; else API="não (app 100% offline)"; fi
           if [ -n "${EXPO_PUBLIC_APP_KEY:-}" ]; then KEY="sim"; else KEY="não"; fi
@@ -80,7 +107,7 @@ jobs:
           {
             echo "## Build Android"
             echo ""
-            echo "- versionName: \`$VERSION_NAME\`"
+            echo "- versionName: \`$VERSION_NAME\` (nome SemVer: \`$VERSION_NAME${PRE:+-$PRE}\`, canal: \`$CHANNEL\`)"
             echo "- versionCode: \`$RUN_NUMBER\`"
             echo "- ABIs configuradas: \`$ANDROID_ABIS\`"
             echo "- URL da API embutida no app: **$API**"

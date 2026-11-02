@@ -15,6 +15,12 @@ on:
     tags: ['ios-v*']
   workflow_dispatch:
     inputs:
+      channel:
+        description: 'Canal da build (aparece na tela Sobre do Perfil): dev, beta, rc ou store'
+        required: true
+        default: beta
+        type: choice
+        options: [dev, beta, rc, store]
       branch:
         description: 'Branch ou tag a compilar (vazio = a ref escolhida em "Use workflow from")'
         required: false
@@ -84,21 +90,52 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Versão e modo (versão do app.json, build number = run_number)
+      - name: Versão e modo (SemVer do app.json, build number = run_number), conferência da tag e canal
         env:
           RUN_NUMBER: ${{ github.run_number }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          BRANCH_NAME: ${{ inputs.branch || github.ref_name }}
         run: |
           set -euo pipefail
           VERSION_NAME="$(node -p "require('./app.json').expo.version")"
           echo "APP_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "IOS_BUILD_NUMBER=$RUN_NUMBER" >> "$GITHUB_ENV"
+          # Só o núcleo MAJOR.MINOR.PATCH vai ao CFBundleShortVersionString. A tag (ios-vX.Y.Z[-beta.N]) é só conferência; o piso do iOS é 31.
+          if [ "$REF_TYPE" = "tag" ]; then
+            node scripts/check-version.mjs --platform ios --build "$RUN_NUMBER" --tag "$REF_NAME"
+          else
+            node scripts/check-version.mjs --platform ios --build "$RUN_NUMBER"
+          fi
+
+          # Canal e identificação da build (aparecem na tela "Sobre" do Perfil em canais de teste). Tag = o canal vem do prelançamento da versão
+          # (versao.json): "" = store, beta.N = beta, rc.N = rc. Execução manual = a entrada "channel" (padrão beta).
+          PRE="$(node -p "require('./versao.json').prerelease")"
+          if [ "$EVENT_NAME" = "push" ]; then
+            case "$PRE" in "") CHANNEL=store ;; rc.*) CHANNEL=rc ;; beta.*) CHANNEL=beta ;; *) CHANNEL=dev ;; esac
+          else
+            CHANNEL="${INPUT_CHANNEL:-beta}"
+          fi
+          case "$CHANNEL" in dev|beta|rc|store) ;; *) echo "::error::Canal inválido: $CHANNEL (use dev, beta, rc ou store)."; exit 1 ;; esac
+          if [ "$CHANNEL" = "store" ] && [ -n "$PRE" ]; then
+            echo "::warning::Canal store com versão de prelançamento ($PRE). Para a loja, suba a versão final (node scripts/bump-version.mjs release)."
+          fi
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          {
+            echo "EXPO_PUBLIC_BUILD_CHANNEL=$CHANNEL"
+            echo "EXPO_PUBLIC_BUILD_BRANCH=$BRANCH_NAME"
+            echo "EXPO_PUBLIC_BUILD_SHA=$SHA_SHORT"
+            echo "EXPO_PUBLIC_BUILD_PRERELEASE=$PRE"
+          } >> "$GITHUB_ENV"
           if [ -n "${EXPO_PUBLIC_API_URL:-}" ]; then API="sim"; else API="não (app 100% offline)"; fi
           if [ -n "${EXPO_PUBLIC_MARKETPLACE_WHATSAPP:-}" ]; then WPP="sim"; else WPP="não"; fi
           if [ "$UPLOAD" = "true" ]; then MODE="envia ao TestFlight"; else MODE="só valida a assinatura (sem enviar)"; fi
           {
             echo "## Build iOS"
             echo ""
-            echo "- versão (app.json): \`$VERSION_NAME\`"
+            echo "- versão (app.json): \`$VERSION_NAME\` (nome SemVer: \`$VERSION_NAME${PRE:+-$PRE}\`, canal: \`$CHANNEL\`)"
             echo "- build number: \`$RUN_NUMBER\`"
             echo "- modo: **$MODE**"
             echo "- URL da API embutida no app: **$API**"
