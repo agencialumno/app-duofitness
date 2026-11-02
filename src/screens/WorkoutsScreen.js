@@ -1,14 +1,108 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import { buildHistoryView, confirmDeleteSeries } from '../utils/seriesView';
 
 export default function WorkoutsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { workouts, completedSessions } = useApp();
+  const { workouts, completedSessions, seriesStore, deleteSeries, user, ageInfo } = useApp();
   const getSessionCount = (id) => completedSessions.filter(s => s.workoutId === id).length;
+
+  // Histórico de séries: a série ATUAL (a geração mais recente) em destaque e as anteriores recolhidas em "Séries anteriores".
+  // Treinos criados à mão (sem série A/B/C) ficam em "Outros treinos", fora do histórico.
+  const ageGroup = ageInfo?.ageGroup ?? user?.ageGroup;
+  const view = useMemo(() => buildHistoryView({ store: seriesStore, workouts, sessions: completedSessions, ageGroup }), [seriesStore, workouts, completedSessions, ageGroup]);
+  const [showPrevious, setShowPrevious] = useState(false);
+  const [openPrevious, setOpenPrevious] = useState({});
+  const rows = [];
+  if (view.current) {
+    rows.push({ key: 'cur-head', type: 'seriesHead', s: view.current });
+    view.current.workouts.forEach((w) => rows.push({ key: `w-${w.id}`, type: 'workout', w }));
+    rows.push({ key: 'cur-actions', type: 'seriesActions', s: view.current });
+  }
+  if (view.others.length > 0) {
+    rows.push({ key: 'others-title', type: 'title', text: view.current ? 'Outros treinos' : 'Meus treinos' });
+    view.others.forEach((w) => rows.push({ key: `w-${w.id}`, type: 'workout', w }));
+  }
+  if (view.previous.length > 0) {
+    rows.push({ key: 'prev-toggle', type: 'prevToggle' });
+    if (showPrevious) {
+      view.previous.forEach((p) => {
+        rows.push({ key: `ph-${p.id}`, type: 'prevHead', s: p });
+        if (openPrevious[p.id]) {
+          p.workouts.forEach((w) => rows.push({ key: `w-${w.id}`, type: 'workout', w }));
+          rows.push({ key: `pa-${p.id}`, type: 'seriesActions', s: p, previous: true });
+        }
+      });
+    }
+  }
+  const askDelete = (s) => confirmDeleteSeries(Alert, () => deleteSeries(s.id));
+  const renderExtra = (row) => {
+    if (row.type === 'title') return <Text style={styles.sectionTitle} accessibilityRole="header">{row.text}</Text>;
+    if (row.type === 'seriesHead') {
+      const s = row.s;
+      return (
+        <View style={styles.currentHead} testID="series-current">
+          <Text style={styles.sectionTitle} accessibilityRole="header">Série atual</Text>
+          <Text style={styles.seriesMeta}>{`${s.dateText} · Objetivo: ${s.goalsText} · Combo: ${s.comboText}`}</Text>
+          <Text style={styles.seriesMeta}>{`Treinos concluídos: ${s.completed}`}</Text>
+        </View>
+      );
+    }
+    if (row.type === 'seriesActions') {
+      const s = row.s;
+      return (
+        <View style={styles.actionsRow}>
+          {!row.previous ? (
+            <TouchableOpacity style={styles.linkBtn} accessibilityRole="button" accessibilityLabel="Ver evolução das séries" onPress={() => navigation.navigate('EvolucaoSeries')}>
+              <Text style={styles.linkBtnText}>Ver evolução</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity style={styles.linkBtn} accessibilityRole="button" accessibilityLabel={`Excluir a série de ${s.dateText}`} onPress={() => askDelete(s)} testID={`delete-${s.id}`}>
+            <Text style={styles.dangerBtnText}>Excluir série</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (row.type === 'prevToggle') {
+      return (
+        <TouchableOpacity
+          style={styles.toggleRow}
+          accessibilityRole="button"
+          accessibilityLabel={`Séries anteriores, ${view.previous.length}. ${showPrevious ? 'Recolher' : 'Expandir'}`}
+          accessibilityState={{ expanded: showPrevious }}
+          onPress={() => setShowPrevious((v) => !v)}
+          testID="previous-toggle"
+        >
+          <Text style={styles.toggleTitle}>{`Séries anteriores (${view.previous.length})`}</Text>
+          <Ionicons name={showPrevious ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} />
+        </TouchableOpacity>
+      );
+    }
+    if (row.type === 'prevHead') {
+      const s = row.s;
+      const open = !!openPrevious[s.id];
+      return (
+        <TouchableOpacity
+          style={styles.toggleRow}
+          accessibilityRole="button"
+          accessibilityLabel={`Série de ${s.dateText}, objetivo ${s.goalsText}, ${s.completed} treinos concluídos. ${open ? 'Recolher' : 'Expandir'}`}
+          accessibilityState={{ expanded: open }}
+          onPress={() => setOpenPrevious((o) => ({ ...o, [s.id]: !o[s.id] }))}
+        >
+          <View style={styles.cardBody}>
+            <Text style={styles.cardName}>{`Série de ${s.dateText}`}</Text>
+            <Text style={styles.cardMetaText}>{`${s.goalsText} · ${s.comboText} · ${s.completed} concluídos`}</Text>
+          </View>
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} />
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
 
   return (
     <View style={styles.container}>
@@ -54,8 +148,8 @@ export default function WorkoutsScreen({ navigation }) {
         </View>
       ) : (
         <FlatList showsVerticalScrollIndicator={false}
-          data={workouts}
-          keyExtractor={item => item.id}
+          data={rows}
+          keyExtractor={item => item.key}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.banners}>
@@ -74,9 +168,15 @@ export default function WorkoutsScreen({ navigation }) {
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={COLORS.black} />
               </TouchableOpacity>
+              {view.count > 0 ? (
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Ver evolução das séries" style={styles.evoBtn} onPress={() => navigation.navigate('EvolucaoSeries')}>
+                  <Ionicons name="trending-up-outline" size={18} color={COLORS.primary} />
+                  <Text style={styles.evoBtnText}>Evolução das séries</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item: row }) => (row.type !== 'workout' ? renderExtra(row) : ((item) => (
             <TouchableOpacity accessibilityRole="button"
               style={styles.card}
               onPress={() => navigation.navigate('WorkoutDetail', { workout: item })}
@@ -109,7 +209,7 @@ export default function WorkoutsScreen({ navigation }) {
               </View>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
-          )}
+          ))(row.w))}
         />
       )}
     </View>
@@ -169,4 +269,21 @@ const styles = StyleSheet.create({
   smartBtnText: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.primary },
   manualBtn: { padding: SPACING.sm },
   manualBtnText: { fontSize: FONTS.sizes.sm, color: COLORS.textMuted, textDecorationLine: 'underline' },
+  sectionTitle: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white, marginTop: SPACING.sm },
+  currentHead: { gap: 2 },
+  seriesMeta: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm },
+  linkBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', paddingHorizontal: SPACING.sm },
+  dangerBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.error || '#FF6B6B', textDecorationLine: 'underline' },
+  linkBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary, textDecorationLine: 'underline' },
+  toggleRow: {
+    minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACING.sm,
+    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, marginTop: SPACING.xs,
+  },
+  toggleTitle: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white },
+  evoBtn: {
+    minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs,
+    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+  },
+  evoBtnText: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.primary },
 });
