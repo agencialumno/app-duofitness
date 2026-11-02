@@ -89,6 +89,10 @@ describe('props e acessibilidade', () => {
     expect(b.props.accessibilityHint).toBe('Abre o e-mail');
     expect(b.props.testID).toBe('ok');
   });
+  it('accessibilityRole pode ser trocado (ex.: "link" no LinkButton); o padrão é "button"', () => {
+    expect(btn().props.accessibilityRole).toBe('button');
+    expect(btn({ accessibilityRole: 'link' }).props.accessibilityRole).toBe('link');
+  });
   it('accessibilityState: disabled e busy', () => {
     expect(btn().props.accessibilityState).toEqual({ disabled: false, busy: false });
     expect(btn({ disabled: true }).props.accessibilityState).toEqual({ disabled: true, busy: false });

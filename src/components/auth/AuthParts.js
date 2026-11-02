@@ -130,11 +130,10 @@ export function SocialButton({ provider, label, onPress, disabled, testID }) {
   );
 }
 
+// LinkButton: invólucro fino do Button terciário compacto (o `danger` vira o destrutivo só de texto). Mantém o papel "link" de antes.
 export function LinkButton({ label, onPress, testID, danger }) {
   return (
-    <TouchableOpacity testID={testID} onPress={onPress} style={styles.link} accessibilityRole="link" accessibilityLabel={label}>
-      <Text style={[styles.linkText, danger && { color: COLORS.error }]}>{label}</Text>
-    </TouchableOpacity>
+    <Button label={label} onPress={onPress} variant={danger ? 'destructive' : 'tertiary'} quiet={!!danger} size="compact" accessibilityRole="link" testID={testID} />
   );
 }
 
@@ -273,8 +272,6 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.45 },
   social: { flexDirection: 'row', gap: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
   socialText: { fontSize: FONTS.sizes.md, fontWeight: '600', textAlign: 'center' },
-  link: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.sm },
-  linkText: { fontSize: FONTS.sizes.md, color: COLORS.primary, textDecorationLine: 'underline', textAlign: 'center' },
   notice: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start', borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, backgroundColor: COLORS.bgCard },
   noticeText: { flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.white, lineHeight: 20 },
   checkRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start', minHeight: 44, paddingVertical: SPACING.xs },

@@ -3,6 +3,7 @@ import { Animated, Easing, LayoutAnimation, Platform, StyleSheet, Text, Touchabl
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
+import Button from '../Button';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -99,17 +100,7 @@ export function Chip({ label, selected, onPress, accessibilityLabel }) {
 export function FooterButton({ label, onPress, disabled, secondary, icon }) {
   return (
     <View style={styles.footer}>
-      <TouchableOpacity
-        style={[styles.primaryBtn, secondary && styles.secondaryBtn, disabled && styles.btnDisabled]}
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !!disabled }}
-        accessibilityLabel={label}
-      >
-        {icon ? <Ionicons name={icon} size={20} color={secondary ? COLORS.primary : COLORS.black} /> : null}
-        <Text style={[styles.primaryBtnText, secondary && styles.secondaryBtnText]}>{label}</Text>
-      </TouchableOpacity>
+      <Button label={label} onPress={onPress} variant={secondary ? 'secondary' : 'primary'} iconLeft={icon} disabled={!!disabled} />
     </View>
   );
 }
@@ -176,11 +167,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
   chipTextSelected: { color: COLORS.black },
   footer: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
-  primaryBtn: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
-  secondaryBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.primary },
-  btnDisabled: { opacity: 0.4 },
-  primaryBtnText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black, flexShrink: 1, textAlign: 'center' },
-  secondaryBtnText: { color: COLORS.primary },
   checklist: { gap: SPACING.md },
   checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, padding: SPACING.md, borderRadius: RADIUS.lg, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border },
   checkText: { flex: 1 },
