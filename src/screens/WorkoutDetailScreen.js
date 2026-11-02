@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { openInTab } from '../navigation/crossTab';
+import ExerciseIcon from '../components/ExerciseIcon';
 import useReturnToOrigin from '../navigation/useReturnToOrigin';
 
 export default function WorkoutDetailScreen({ navigation, route }) {
@@ -59,7 +60,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
             >
               <View style={styles.exNum}><Text style={styles.exNumText}>{i + 1}</Text></View>
               <View style={styles.exIcon}>
-                <Ionicons name="fitness-outline" size={18} color={COLORS.primary} />
+                <ExerciseIcon exerciseId={ex.id} size={18} />
               </View>
               <View style={styles.exInfo}>
                 <Text style={styles.exName}>{ex.name}</Text>
