@@ -182,3 +182,9 @@ O que fazer:
 
 - **Regra provisória para 13 a 17 anos, pendente de revisão do educador físico:** sem `smith_squat`, `smith_bench_press`, `leg_press_ex` e `rdl` (`MINOR_EXCLUDED_IDS` em `src/data/comboEquipment.js`). Não existia regra anterior de aparelho com carga para menores; as regras antigas (sem impacto, volume 0,9, nota de supervisão) continuam.
 - **Pendente de validação do educador físico:** uso do Cross com Smith (polia alta ajustável, deixada baixa) para `lat_pulldown_ex` e `seated_cable_row`. Não vale para CROSS_ANG nem ESTACAO_MULT até confirmação. Efeito: o UNO não recebe puxada nem remada.
+
+## Lembretes de treino (notificações locais, branch notificacoes)
+
+- **Atualizar a política de privacidade** (`docs/juridico/` e a página publicada): o app agenda **lembretes locais** no aparelho (lembrete de treino e lembrete de inatividade, no máximo um por dia), com horário de silêncio das 21h às 8h. Nenhum dado sai do aparelho, não há servidor nem token de notificação push; só ficam no aparelho as preferências, o último acesso e o estado da permissão (`@duo_reminders`), apagados na exclusão da conta.
+- **Conferir o rótulo de privacidade da App Store** (e a seção "Segurança dos dados" do Google Play): não deveria mudar, porque nada é coletado nem enviado. Confirme na hora de enviar a build com lembretes. No iOS não há entitlement de push; no Android as permissões novas são POST_NOTIFICATIONS e RECEIVE_BOOT_COMPLETED (para reagendar depois de reiniciar), sem alarmes exatos.
+- **Criar a variável do repositório** `NOTIFICATIONS_ENABLED=true` (Settings > Secrets and variables > Actions > Variables) quando quiser lançar os lembretes. Sem ela as builds ficam idênticas às de antes. Detalhes em `docs/lembretes.md`.
