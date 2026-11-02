@@ -96,8 +96,8 @@ export function PrimaryButton({ label, onPress, disabled, loading, testID }) {
   return <Button label={label} onPress={onPress} variant="primary" disabled={!!disabled} loading={!!loading} testID={testID} />;
 }
 
-export function SecondaryButton({ label, onPress, icon, disabled, testID }) {
-  return <Button label={label} onPress={onPress} variant="secondary" iconLeft={icon} disabled={!!disabled} testID={testID} />;
+export function SecondaryButton({ label, onPress, icon, disabled, size, testID }) {
+  return <Button label={label} onPress={onPress} variant="secondary" size={size} iconLeft={icon} disabled={!!disabled} testID={testID} />;
 }
 
 // Botões de login social para FUNDO ESCURO.

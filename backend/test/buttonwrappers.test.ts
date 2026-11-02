@@ -50,6 +50,15 @@ describe('SecondaryButton (invólucro do Button secondary)', () => {
     expect(styleOf(b).backgroundColor).toBeUndefined();
     expect(findAll(tree, (n) => n.type === 'Ionicons')[0].props.name).toBe('log-out-outline');
   });
+  it('`size` é repassado ao Button: normal por padrão (52) e compacto (44) quando pedido', () => {
+    expect(styleOf(press(SecondaryButton, { label: 'X', onPress: () => {} })).minHeight).toBe(52);
+    expect(styleOf(press(SecondaryButton, { label: 'X', onPress: () => {}, size: 'compact' })).minHeight).toBe(44);
+  });
+  it('os 3 botões do AccountCard usam size="compact"; nenhuma outra tela passa size ao SecondaryButton', () => {
+    const acc = code('src/components/auth/AccountCard.js');
+    expect(acc.match(/<SecondaryButton size="compact"/g)).toHaveLength(3);
+    expect(acc.match(/<SecondaryButton /g)).toHaveLength(3);
+  });
   it('disabled bloqueia o toque', () => {
     const d = press(SecondaryButton, { label: 'X', onPress: () => {}, disabled: true });
     expect(d.props.onPress).toBeUndefined();

@@ -64,9 +64,9 @@ export default function AccountCard() {
       {view.canAct ? (
         <View style={styles.actions}>
           {view.kind === 'unverified' ? (
-            <SecondaryButton testID="account-resend" label={wait > 0 ? `Reenviar e-mail de verificação (aguarde ${wait} s)` : 'Reenviar e-mail de verificação'} onPress={resend} disabled={busy || wait > 0} />
+            <SecondaryButton size="compact" testID="account-resend" label={wait > 0 ? `Reenviar e-mail de verificação (aguarde ${wait} s)` : 'Reenviar e-mail de verificação'} onPress={resend} disabled={busy || wait > 0} />
           ) : null}
-          <SecondaryButton testID="account-refresh" label="Já verifiquei" onPress={refresh} disabled={busy} />
+          <SecondaryButton size="compact" testID="account-refresh" label="Já verifiquei" onPress={refresh} disabled={busy} />
         </View>
       ) : null}
       <Notice kind="success" text={info} testID="account-info" />
@@ -110,7 +110,7 @@ export function AccountActions() {
       <Text style={styles.sectionTitle}>Conta</Text>
       <Text style={styles.text}>Ao sair, os seus treinos e dados ficam guardados neste aparelho e voltam quando você entrar de novo com esta conta.</Text>
       <Notice kind="error" text={error} testID="account-error-actions" />
-      <SecondaryButton testID="account-signout" label="Sair da conta" onPress={signOut} disabled={busy} />
+      <SecondaryButton size="compact" testID="account-signout" label="Sair da conta" onPress={signOut} disabled={busy} />
       <TouchableOpacity
         testID="account-delete"
         style={styles.deleteLink}
