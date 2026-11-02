@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils/theme';
+import { COLORS, HEALTH_UI } from '../utils/theme';
 import { getInfoTheme } from '../data/infoContent';
 import InfoSheet from './InfoSheet';
 
@@ -39,6 +39,6 @@ export default function InfoButton({ tema, blocks, titulo, label, color = COLORS
 }
 
 const styles = StyleSheet.create({
-  btn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  btn: { width: HEALTH_UI.minTouch, height: HEALTH_UI.minTouch, alignItems: 'center', justifyContent: 'center' },
   circle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

@@ -287,7 +287,7 @@ describe('componentes (fiação)', () => {
   const button = read('src/components/InfoButton.js');
   const sheet = read('src/components/InfoSheet.js');
   it('InfoButton: área de 44x44, role button e rótulo "Saiba mais sobre <tema>"', () => {
-    expect(button).toMatch(/width: 44, height: 44/);
+    expect(button).toMatch(/width: HEALTH_UI.minTouch, height: HEALTH_UI.minTouch/);
     expect(button).toMatch(/accessibilityRole="button"/);
     expect(button).toMatch(/accessibilityLabel=\{`Saiba mais sobre \$\{theme\.label\}`\}/);
   });
