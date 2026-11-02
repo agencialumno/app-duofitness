@@ -53,14 +53,14 @@ export const EXERCISE_ICONS = {
   pike_pushup: M('triangle'),
   // braços
   cable_pushdown: M('arrow-down-bold-box'),
-  cable_curl: M('cable-data'),
+  cable_curl: I('hand-right'),
   barbell_curl: I('barbell'),
   bicep_curl: M('arm-flex'),
   hammer_curl: M('hammer'),
   tricep_ext: M('angle-acute'),
   tricep_dip: M('bench'),
   // core
-  cable_crunch: M('ethernet-cable'),
+  cable_crunch: M('link-variant'),
   plank: M('timer'),
   crunch: M('arrow-collapse-down'),
   leg_raise: M('chevron-double-up'),
