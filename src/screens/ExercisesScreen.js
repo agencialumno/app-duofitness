@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import ScreenTopInset from '../components/ScreenTopInset';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { EXERCISES, CATEGORIES } from '../data/exercises';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +25,8 @@ export default function ExercisesScreen({ navigation }) {
   const diffStyle = (difficulty) => DIFFICULTY_COLORS[difficulty] || { bg: COLORS.bgCardAlt, text: COLORS.textMuted };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <View style={styles.safeArea}>
+      <ScreenTopInset />
       {/* Header fixo */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
@@ -108,7 +109,7 @@ export default function ExercisesScreen({ navigation }) {
           );
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
