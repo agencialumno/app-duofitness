@@ -1,5 +1,5 @@
-// Texto da tela "Sobre" (puro). Todos veem "Versão {versão} ({build})". Nos canais de teste (dev, beta, rc) aparecem também o nome SemVer completo
-// (núcleo + -prelançamento + +build), a branch e o commit curto. Sem as variáveis da build (build local) ou no canal store, só a versão.
+// Texto da tela "Sobre" (puro). Todos veem só "Versão {versão}". Os detalhes (canal, build, nome SemVer completo, branch e commit curto) aparecem de saída
+// nos canais de teste (dev, beta, rc); em build de loja (store ou sem a variável) ficam ocultos e só 7 toques seguidos no texto da versão os revelam (suporte).
 export const TEST_CHANNELS = ['dev', 'beta', 'rc'];
 export const CHANNEL_LABEL = { dev: 'desenvolvimento', beta: 'beta', rc: 'candidata a lançamento', store: 'loja' };
 
@@ -9,20 +9,20 @@ export function buildAboutInfo({ version, build, channel, branch, sha, prereleas
   const v = clean(version);
   const b = clean(build);
   if (!v) {
-    return { available: false, versionLine: 'Versão não disponível neste ambiente', details: [], a11y: 'Sobre o app. Versão não disponível neste ambiente.', showDetails: false };
+    return { available: false, versionLine: 'Versão não disponível neste ambiente', details: [], a11y: 'Versão não disponível neste ambiente', a11yFor: () => 'Versão não disponível neste ambiente', showDetails: false };
   }
-  const versionLine = b ? `Versão ${v} (${b})` : `Versão ${v}`;
+  const versionLine = `Versão ${v}`;
   const ch = clean(channel).toLowerCase();
-  const showDetails = TEST_CHANNELS.includes(ch);
+  const showDetails = TEST_CHANNELS.includes(ch); // visíveis de saída
   const pre = clean(prerelease);
   const fullName = `${v}${pre ? `-${pre}` : ''}${b ? `+${b}` : ''}`;
   const details = [];
-  if (showDetails) {
-    details.push({ id: 'canal', label: 'Canal', value: CHANNEL_LABEL[ch] });
-    details.push({ id: 'semver', label: 'Nome completo', value: fullName });
-    if (clean(branch)) details.push({ id: 'branch', label: 'Branch', value: clean(branch) });
-    if (clean(sha)) details.push({ id: 'commit', label: 'Commit', value: clean(sha) });
-  }
-  const a11y = `Sobre o app. ${versionLine}.${showDetails ? ` ${details.map((d) => `${d.label}: ${d.value}`).join('. ')}.` : ''}`;
-  return { available: true, versionLine, details, a11y, showDetails, fullName };
+  details.push({ id: 'canal', label: 'Canal', value: CHANNEL_LABEL[ch] ?? CHANNEL_LABEL.store });
+  if (b) details.push({ id: 'build', label: 'Build', value: b });
+  details.push({ id: 'semver', label: 'Nome completo', value: fullName });
+  if (clean(branch)) details.push({ id: 'branch', label: 'Branch', value: clean(branch) });
+  if (clean(sha)) details.push({ id: 'commit', label: 'Commit', value: clean(sha) });
+  // rótulo de leitor de tela: com os detalhes ocultos continua só "Versão X.Y.Z" (nada sobre o gesto dos 7 toques)
+  const a11yFor = (visible) => (visible ? `${versionLine}. ${details.map((d) => `${d.label}: ${d.value}`).join('. ')}.` : versionLine);
+  return { available: true, versionLine, details, a11y: a11yFor(showDetails), a11yFor, showDetails, fullName };
 }

@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Application from 'expo-application';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import { BUILD_INFO } from '../data/buildInfo';
 import { buildAboutInfo } from '../utils/aboutInfo';
+import { createTapCounter } from '../utils/tapCounter';
 
-// Cartão "Sobre" do Perfil: "Versão 1.0.0 (33)" para todos. Em canais de teste (dev, beta, rc) mostra também o nome SemVer completo, a branch e o commit
-// curto, com um botão (44 pt) para ocultar os detalhes. `application` e `buildInfo` são injetáveis nos testes.
-export default function AboutCard({ application = Application, buildInfo = BUILD_INFO }) {
-  const [hidden, setHidden] = useState(false);
+// Cartão "Sobre" do Perfil: "Versão 1.0.0" para todos. Em canais de teste (dev, beta, rc) os detalhes (canal, build, nome SemVer, branch e commit curto)
+// aparecem de saída, com um botão (44 pt) para ocultar. Em build de loja (store ou sem a variável) ficam ocultos; em QUALQUER canal, 7 toques seguidos
+// no texto da versão revelam ou ocultam os detalhes (suporte), sem dica visual nem rótulo de acessibilidade sobre o gesto. `application`, `buildInfo` e
+// `now` são injetáveis nos testes.
+export default function AboutCard({ application = Application, buildInfo = BUILD_INFO, now }) {
   const info = buildAboutInfo({
     version: application.nativeApplicationVersion,
     build: application.nativeBuildVersion,
@@ -17,11 +19,16 @@ export default function AboutCard({ application = Application, buildInfo = BUILD
     sha: buildInfo.sha,
     prerelease: buildInfo.prerelease,
   });
-  const showDetails = info.showDetails && !hidden;
+  const [visible, setVisible] = useState(info.showDetails);
+  const counter = useRef(null);
+  if (!counter.current) counter.current = createTapCounter({ count: 7, gapMs: 2000, ...(now ? { now } : {}) });
+  const onVersionPress = () => { if (info.available && counter.current.hit()) setVisible((v) => !v); };
+  const showDetails = info.available && visible;
   return (
     <View style={styles.card} testID="about-card">
       <Text style={styles.title} accessibilityRole="header">Sobre</Text>
-      <View accessible accessibilityLabel={info.a11y} testID="about-info">
+      {/* Os 7 toques usam onTouchEnd num View comum (não é um botão para o leitor de tela): o rótulo continua só "Versão X.Y.Z" e não há dica nem papel. */}
+      <View accessible accessibilityLabel={info.a11yFor(showDetails)} onTouchEnd={onVersionPress} testID="about-info">
         <Text style={styles.version} testID="about-version">{info.versionLine}</Text>
         {showDetails ? info.details.map((d) => (
           <Text key={d.id} style={styles.detail} testID={`about-${d.id}`}>{`${d.label}: ${d.value}`}</Text>
@@ -30,12 +37,12 @@ export default function AboutCard({ application = Application, buildInfo = BUILD
       {info.showDetails ? (
         <TouchableOpacity
           style={styles.toggle}
-          onPress={() => setHidden((h) => !h)}
+          onPress={() => setVisible((v) => !v)}
           accessibilityRole="button"
-          accessibilityLabel={hidden ? 'Mostrar detalhes da build' : 'Ocultar detalhes da build'}
+          accessibilityLabel={visible ? 'Ocultar detalhes da build' : 'Mostrar detalhes da build'}
           testID="about-toggle"
         >
-          <Text style={styles.toggleText}>{hidden ? 'Mostrar detalhes da build' : 'Ocultar detalhes da build'}</Text>
+          <Text style={styles.toggleText}>{visible ? 'Ocultar detalhes da build' : 'Mostrar detalhes da build'}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
