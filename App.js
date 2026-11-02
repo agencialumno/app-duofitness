@@ -11,7 +11,7 @@ import { NAV_COLORS } from './src/navigation/navTheme';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { createForcedError } from './src/utils/errorTestFlag';
 import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Tema ESCURO da navegação (partindo do DarkTheme): sem ele o React Navigation usa o tema claro e as telas sem fundo próprio
 // aparecem brancas. Ver src/navigation/navTheme.js.
@@ -27,9 +27,9 @@ function ForceRenderError() {
 }
 
 function AppRoot() {
-  // Pré-carrega a fonte dos ícones antes de renderizar. Se falhar, registra o erro e
+  // Pré-carrega as fontes dos ícones (Ionicons e MaterialCommunityIcons, dos ícones dos exercícios) antes de renderizar. Se falhar, registra o erro e
   // segue renderizando o app mesmo assim (sem travar).
-  const [fontsLoaded, fontError] = useFonts(Ionicons.font);
+  const [fontsLoaded, fontError] = useFonts({ ...Ionicons.font, ...MaterialCommunityIcons.font });
 
   useEffect(() => {
     if (fontError) console.error('Falha ao carregar a fonte dos ícones:', fontError);

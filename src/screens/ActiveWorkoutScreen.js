@@ -4,6 +4,7 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import ExerciseIcon from '../components/ExerciseIcon';
 
 export default function ActiveWorkoutScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -120,7 +121,7 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
         <Animated.View style={{ opacity: flashAnim }}>
           <View style={styles.exerciseCard}>
             <View style={styles.exerciseIconWrap}>
-              <Ionicons name="fitness-outline" size={36} color={COLORS.primary} />
+              <ExerciseIcon exerciseId={currentEx?.id} size={36} />
             </View>
             <Text style={styles.exName}>{currentEx?.name}</Text>
             <Text style={styles.exCategory}>{currentEx?.category}</Text>

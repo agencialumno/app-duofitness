@@ -4,17 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { EXERCISES, CATEGORIES } from '../data/exercises';
 import { Ionicons } from '@expo/vector-icons';
-
-const CATEGORY_ICONS = {
-  'Pernas':   'walk-outline',
-  'Peito':    'body-outline',
-  'Costas':   'arrow-back-outline',
-  'Ombros':   'accessibility-outline',
-  'Braços':   'hand-left-outline',
-  'Core':     'ellipse-outline',
-  'Glúteos':  'stats-chart-outline',
-  'Cardio':   'heart-outline',
-};
+import ExerciseIcon from '../components/ExerciseIcon';
 
 const DIFFICULTY_COLORS = {
   'Iniciante':     { bg: '#0D1A0D', text: COLORS.success },
@@ -92,7 +82,6 @@ export default function ExercisesScreen({ navigation }) {
         }
         renderItem={({ item }) => {
           const diff = diffStyle(item.difficulty);
-          const iconName = CATEGORY_ICONS[item.category] || 'fitness-outline';
           return (
             <TouchableOpacity accessibilityRole="button"
               style={styles.card}
@@ -100,7 +89,7 @@ export default function ExercisesScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <View style={styles.cardIcon}>
-                <Ionicons name={iconName} size={22} color={COLORS.primary} />
+                <ExerciseIcon exerciseId={item.id} size={22} />
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.cardName}>{item.name}</Text>

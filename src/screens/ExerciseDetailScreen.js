@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import useReturnToOrigin from '../navigation/useReturnToOrigin';
 import ExerciseMedia from '../components/ExerciseMedia';
+import ExerciseIcon from '../components/ExerciseIcon';
 import InfoButton from '../components/InfoButton';
 import { EXERCISE_VIDEOS_ENABLED } from '../data/exerciseVideosConfig';
 
@@ -24,7 +25,7 @@ export default function ExerciseDetailScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
-            <Ionicons name="fitness-outline" size={40} color={COLORS.primary} />
+            <ExerciseIcon exerciseId={ex.id} size={40} />
           </View>
           <Text style={styles.heroName}>{ex.name}</Text>
           <View style={styles.tags}>
