@@ -14,6 +14,11 @@ export const COLORS = {
   success: '#22c55e',
   error: '#ef4444',
   warning: '#f97316',
+  // Botões (docs/visual-botoes.md). #D9B204: preto sobre ele 10,32:1 (primário pressionado). #DC2626: texto branco 4,83:1 (destrutivo preenchido; era #ef4444 com 3,76:1).
+  // #B91C1C: texto branco 6,47:1 (destrutivo pressionado).
+  primaryPressed: '#D9B204',
+  danger: '#DC2626',
+  dangerPressed: '#B91C1C',
 };
 
 export const FONTS = {
@@ -95,4 +100,41 @@ export const HEALTH_UI = {
   },
   card: { radius: 16, borderWidth: 1 },
   minTouch: 44,
+};
+
+// Botões (componente Button). Medidas e cores por variante e estado; o Button só lê daqui. Desabilitado: fundo bgCardAlt com texto textMuted (5,23:1), sem opacity.
+// Pares texto/fundo e razões de contraste: docs/visual-botoes.md (item 4.2) e backend/test/button.test.ts. `bg: null` = sem fundo (transparente).
+export const BUTTON = {
+  minHeight: { normal: 52, compact: HEALTH_UI.minTouch },
+  minWidth: HEALTH_UI.minTouch,
+  iconSize: 20,
+  borderWidth: HEALTH_UI.card.borderWidth,
+  colors: {
+    primary: {
+      rest: { bg: COLORS.primary, fg: COLORS.black },
+      pressed: { bg: COLORS.primaryPressed, fg: COLORS.black },
+      disabled: { bg: COLORS.bgCardAlt, fg: COLORS.textMuted },
+    },
+    secondary: {
+      rest: { bg: null, fg: COLORS.white, border: COLORS.textSecondary },
+      pressed: { bg: COLORS.bgCardAlt, fg: COLORS.white, border: COLORS.textSecondary },
+      disabled: { bg: null, fg: COLORS.textMuted, border: COLORS.border },
+    },
+    tertiary: {
+      rest: { bg: null, fg: COLORS.textSecondary },
+      pressed: { bg: null, fg: COLORS.white },
+      disabled: { bg: null, fg: COLORS.textMuted },
+    },
+    destructive: {
+      rest: { bg: COLORS.danger, fg: COLORS.white },
+      pressed: { bg: COLORS.dangerPressed, fg: COLORS.white },
+      disabled: { bg: COLORS.bgCardAlt, fg: COLORS.textMuted },
+    },
+    // destrutivo só de texto (forma `quiet`): vermelho já existente no tema; pressionado sobe um degrau de superfície
+    destructiveQuiet: {
+      rest: { bg: null, fg: COLORS.error },
+      pressed: { bg: COLORS.bgCardAlt, fg: COLORS.error },
+      disabled: { bg: null, fg: COLORS.textMuted },
+    },
+  },
 };

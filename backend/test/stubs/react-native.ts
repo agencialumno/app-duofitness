@@ -4,6 +4,8 @@ export const Text = 'Text';
 export const ScrollView = 'ScrollView';
 export const TouchableOpacity = 'TouchableOpacity';
 export const Image = 'Image';
+export const Pressable = 'Pressable';
+export const ActivityIndicator = 'ActivityIndicator';
 export const StyleSheet = {
   create: (s: any) => s,
   hairlineWidth: 1,

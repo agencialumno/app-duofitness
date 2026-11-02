@@ -53,7 +53,7 @@ describe('toda referência a token existe no tema', () => {
     const t = strip(readFileSync(f, 'utf8'));
     const lines = t.split('\n');
     lines.forEach((line, i) => {
-      for (const m of line.matchAll(/\b(COLORS|SPACING|RADIUS|SHADOWS|TYPE)\.(\w+)/g)) {
+      for (const m of line.matchAll(/\b(COLORS|SPACING|RADIUS|SHADOWS|TYPE|BUTTON)\.(\w+)/g)) {
         refs++;
         if (!(m[2]! in T[m[1]!])) missing.push(`${rel(f)}:${i + 1} ${m[0]}`);
       }
@@ -110,9 +110,10 @@ describe('escalas', () => {
 
 describe('nada mais mudou: os valores antigos do tema continuam iguais', () => {
   it('cores (exceto textMuted), tamanhos, pesos, espaços, raios e sombra', () => {
-    const { textMuted, textSecondary, ...cores } = T.COLORS;
+    const { textMuted, textSecondary, primaryPressed, danger, dangerPressed, ...cores } = T.COLORS;
     expect(textMuted).toBeTruthy();
     expect(textSecondary).toBeTruthy();
+    expect([primaryPressed, danger, dangerPressed]).toEqual(['#D9B204', '#DC2626', '#B91C1C']); // tokens do botão (lote 0 de botões)
     expect(cores).toEqual({
       primary: '#fed205', black: '#000000', white: '#FFFFFF', bg: '#0A0A0A', bgCard: '#141414', bgCardAlt: '#1C1C1C', border: '#2A2A2A',
       textPrimary: '#FFFFFF', success: '#22c55e', error: '#ef4444', warning: '#f97316',
@@ -125,7 +126,7 @@ describe('nada mais mudou: os valores antigos do tema continuam iguais', () => {
     expect(T.HEALTH_UI.minTouch).toBe(44);
   });
   // Arquivos que já usam TYPE por decisão dos lotes do cabeçalho (docs/visual-cabecalho.md): o componente novo e as telas migradas (lote 3: Saúde).
-  const MIGRADOS = ['src/components/ScreenHeader.js', 'src/screens/HealthScreen.js'];
+  const MIGRADOS = ['src/components/ScreenHeader.js', 'src/components/Button.js', 'src/screens/HealthScreen.js'];
   it('só o ScreenHeader e as telas migradas dos lotes do cabeçalho usam TYPE, SPACING.smd ou RADIUS.tight', () => {
     const users = files.filter((f) => /\b(TYPE\.|SPACING\.smd\b|RADIUS\.tight\b)/.test(strip(readFileSync(f, 'utf8')))).map(rel).filter((f) => !MIGRADOS.includes(f));
     expect(users).toEqual([]);
