@@ -221,7 +221,7 @@ export default function WorkoutsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   addBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, width: 38, height: 38, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: SPACING.lg, paddingTop: 0, gap: SPACING.sm },
+  list: { padding: SPACING.lg, paddingTop: SPACING.md, gap: SPACING.sm },
   banners: { gap: SPACING.sm, marginBottom: SPACING.sm },
   aiBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
