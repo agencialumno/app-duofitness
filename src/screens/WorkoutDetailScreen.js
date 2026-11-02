@@ -4,10 +4,13 @@ import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import { openInTab } from '../navigation/crossTab';
+import useReturnToOrigin from '../navigation/useReturnToOrigin';
 
 export default function WorkoutDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { workout } = route.params;
+  useReturnToOrigin(navigation, route); // aberta a partir do Início: o voltar retorna ao Início
   const { deleteWorkout, completedSessions } = useApp();
   const sessionCount = completedSessions.filter(s => s.workoutId === workout.id).length;
 
@@ -52,7 +55,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
             <TouchableOpacity accessibilityRole="button"
               key={ex.id || i}
               style={styles.exRow}
-              onPress={() => navigation.navigate('Exercises', { screen: 'ExerciseDetail', params: { exercise: ex } })}
+              onPress={() => openInTab(navigation, 'Exercises', 'ExerciseDetail', { exercise: ex }, 'Workouts')}
             >
               <View style={styles.exNum}><Text style={styles.exNumText}>{i + 1}</Text></View>
               <View style={styles.exIcon}>

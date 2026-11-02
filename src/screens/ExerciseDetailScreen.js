@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import useReturnToOrigin from '../navigation/useReturnToOrigin';
 import ExerciseMedia from '../components/ExerciseMedia';
 import InfoButton from '../components/InfoButton';
 import { EXERCISE_VIDEOS_ENABLED } from '../data/exerciseVideosConfig';
@@ -10,6 +11,7 @@ import { EXERCISE_VIDEOS_ENABLED } from '../data/exerciseVideosConfig';
 export default function ExerciseDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { exercise: ex } = route.params;
+  useReturnToOrigin(navigation, route); // aberto a partir de Treinos: o voltar retorna ao detalhe do treino
 
   return (
     <View style={styles.container}>

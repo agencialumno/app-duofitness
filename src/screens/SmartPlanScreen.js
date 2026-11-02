@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useReturnToOrigin from '../navigation/useReturnToOrigin';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 } from 'react-native';
@@ -79,7 +80,8 @@ const QUESTIONS = [
 // Perguntas do gerador rápido que têm explicação ("i"): combo e limitação física.
 const INFO_BY_QUESTION = { combo: 'combos', limitation: 'limitacao' };
 
-export default function SmartPlanScreen({ navigation }) {
+export default function SmartPlanScreen({ navigation, route }) {
+  useReturnToOrigin(navigation, route);
   const insets = useSafeAreaInsets();
   const { addWorkouts, user } = useApp();
   const [step, setStep] = useState(0);

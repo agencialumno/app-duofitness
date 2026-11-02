@@ -5,8 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { EXERCISES, CATEGORIES } from '../data/exercises';
 import { Ionicons } from '@expo/vector-icons';
+import useReturnToOrigin from '../navigation/useReturnToOrigin';
 
-export default function CreateWorkoutScreen({ navigation }) {
+export default function CreateWorkoutScreen({ navigation, route }) {
+  useReturnToOrigin(navigation, route);
   const insets = useSafeAreaInsets();
   const { addWorkout } = useApp();
   const [name, setName] = useState('');
