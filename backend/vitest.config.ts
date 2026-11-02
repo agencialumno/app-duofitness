@@ -26,6 +26,7 @@ export default defineConfig({
       '@react-navigation/native': stub('navigation.ts'),
       '@expo/vector-icons': stub('vector-icons.ts'),
       'expo-video': stub('expo-video.ts'),
+      'expo-application': stub('expo-application.ts'),
       'react-native-safe-area-context': stub('safe-area.ts'),
       '@react-native-async-storage/async-storage': stub('async-storage.ts'),
       'react-native': stub('react-native.ts'),

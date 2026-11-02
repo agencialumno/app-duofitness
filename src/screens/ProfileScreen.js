@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import EditNameRow from '../components/EditNameRow';
 import LegalLinks from '../components/LegalLinks';
+import AboutCard from '../components/AboutCard';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
@@ -198,6 +199,9 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Legal: Termos de Uso e Política de Privacidade (só os que têm URL configurada) */}
       <LegalLinks testIDPrefix="profile" />
+
+      {/* Sobre: versão e build; nos canais de teste, também o nome SemVer, a branch e o commit */}
+      <AboutCard />
 
       {/* Seção "Conta", discreta e no fim: Sair da conta e, abaixo, o link "Excluir minha conta" */}
       <AccountActions />
