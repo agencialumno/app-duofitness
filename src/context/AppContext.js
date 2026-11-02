@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readAppData, readJsonKey } from '../utils/safeStorage';
 import { evaluateAchievements } from '../utils/achievements';
@@ -8,6 +9,7 @@ import { decideGate, deleteAccountFlow, rejectUnderageFlow, signOutFlow } from '
 import { adoptAccountName, readAccountName } from '../utils/accountNameStore';
 import { cleanName } from '../utils/accountName';
 import { useAuth } from '../auth/AuthContext';
+import { EMPTY_STORE, appendWeight, dropDeadSeries, isGeneratedWorkout, loadSeries, registerSeries, removeSeries, saveSeries } from '../utils/seriesHistory';
 
 const AppContext = createContext({});
 
@@ -16,6 +18,8 @@ export const useApp = () => useContext(AppContext);
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [workouts, setWorkouts] = useState([]);
+  // Histórico de séries (@duo_series_v2): um registro por geração; os treinos seguem em @duo_workouts (ver utils/seriesHistory.js)
+  const [seriesStore, setSeriesStore] = useState(EMPTY_STORE);
   const [completedSessions, setCompletedSessions] = useState([]);
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -61,6 +65,7 @@ export const AppProvider = ({ children }) => {
       // chave ausente = valor vazio (ao trocar de conta nada do estado anterior pode ficar na memória)
       setUser(d.user !== undefined ? d.user : null);
       setWorkouts(d.workouts !== undefined ? d.workouts : []);
+      try { setSeriesStore(await loadSeries(AsyncStorage, d.workouts !== undefined ? d.workouts : [])); } catch (e) { setSeriesStore(EMPTY_STORE); }
       setCompletedSessions(d.sessions !== undefined ? d.sessions : []);
       setXp(d.xp !== undefined ? d.xp : 0);
       setStreak(d.streak !== undefined ? d.streak : 0);
@@ -77,6 +82,13 @@ export const AppProvider = ({ children }) => {
     setUser(userData);
     await AsyncStorage.setItem('@duo_user', JSON.stringify(userData));
     await AsyncStorage.setItem('@duo_onboarded', 'true');
+    // Peso novo do perfil: vira um ponto da série atual (só maiores de 18; falha aqui nunca atrapalha o perfil)
+    try {
+      if (userData && userData.weight !== undefined && Number(userData.weight) !== Number(user?.weight)) {
+        const next = appendWeight(seriesStore, userData.weight, { ageGroup: ageInfo?.ageGroup ?? userData.ageGroup });
+        if (next !== seriesStore) { setSeriesStore(next); await saveSeries(AsyncStorage, next); }
+      }
+    } catch (e) { /* o perfil já foi salvo */ }
   };
 
   const addWorkout = async (workout) => {
@@ -89,7 +101,7 @@ export const AppProvider = ({ children }) => {
   // Use esta função em vez de chamar addWorkout em loop — chamadas em
   // sequência rápida leem o mesmo estado antigo e uma sobrescreve a
   // outra, fazendo só a última série sobreviver.
-  const addWorkouts = async (newWorkouts) => {
+  const addWorkouts = async (newWorkouts, meta = {}) => {
     const withMeta = newWorkouts.map((w, i) => ({
       ...w,
       id: `${Date.now()}_${i}`,
@@ -98,8 +110,40 @@ export const AppProvider = ({ children }) => {
     const updated = [...workouts, ...withMeta];
     setWorkouts(updated);
     await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
-  };
 
+    // Histórico: cada geração (séries A, B e C) vira um registro. Os treinos já estão salvos; qualquer falha aqui só deixa de registrar o histórico.
+    let trimmed = 0;
+    try {
+      const generated = withMeta.filter(isGeneratedWorkout);
+      if (generated.length > 0) {
+        const ageGroup = ageInfo?.ageGroup ?? user?.ageGroup;
+        const { store, removed } = registerSeries(seriesStore, {
+          workoutIds: generated.map((w) => w.id),
+          createdAt: generated[0].createdAt,
+          goals: meta.goals ?? user?.goals,
+          level: meta.level ?? user?.level,
+          combo: meta.combo,
+          source: meta.source,
+          weightKg: meta.weightKg ?? user?.weight,
+          ageGroup,
+        });
+        setSeriesStore(store);
+        await saveSeries(AsyncStorage, store);
+        if (removed.length > 0) {
+          // limite de 50 séries: as mais antigas saem junto com os treinos delas
+          const gone = new Set(removed.flatMap((r) => r.workoutIds));
+          const kept = updated.filter((w) => !gone.has(String(w.id)));
+          setWorkouts(kept);
+          await AsyncStorage.setItem('@duo_workouts', JSON.stringify(kept));
+          trimmed = removed.length;
+          Alert.alert('Limite de séries', 'O histórico guarda até 50 séries. As mais antigas foram removidas.');
+        }
+      }
+    } catch (e) {
+      console.log('Erro ao registrar o histórico de séries:', e);
+    }
+    return { trimmed };
+  };
 
   const updateWorkout = async (id, data) => {
     const updated = workouts.map(w => w.id === id ? { ...w, ...data } : w);
@@ -111,6 +155,20 @@ export const AppProvider = ({ children }) => {
     const updated = workouts.filter(w => w.id !== id);
     setWorkouts(updated);
     await AsyncStorage.setItem('@duo_workouts', JSON.stringify(updated));
+    try {
+      const next = dropDeadSeries(seriesStore, updated);
+      if (next !== seriesStore) { setSeriesStore(next); await saveSeries(AsyncStorage, next); }
+    } catch (e) { /* só o histórico; os treinos já foram salvos */ }
+  };
+
+  // Excluir uma série (a tela SEMPRE pede confirmação antes): apaga os treinos dela e o registro. As sessões (@duo_sessions) continuam contando no perfil.
+  const deleteSeries = async (seriesId) => {
+    const r = removeSeries({ store: seriesStore, workouts, id: seriesId });
+    if (r.removedWorkoutIds.length === 0 && r.store === seriesStore) return;
+    setWorkouts(r.workouts);
+    await AsyncStorage.setItem('@duo_workouts', JSON.stringify(r.workouts));
+    setSeriesStore(r.store);
+    await saveSeries(AsyncStorage, r.store);
   };
 
   const completeSession = async (workoutId) => {
@@ -150,6 +208,7 @@ export const AppProvider = ({ children }) => {
   const resetMemory = () => {
     setUser(null);
     setWorkouts([]);
+    setSeriesStore(EMPTY_STORE);
     setCompletedSessions([]);
     setXp(0);
     setStreak(0);
@@ -230,6 +289,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       user, saveUser,
       workouts, addWorkout, addWorkouts, updateWorkout, deleteWorkout,
+      seriesStore, seriesCount: seriesStore.items.length, deleteSeries,
       completedSessions, completeSession,
             xp, streak, achievements,
       getLevel,

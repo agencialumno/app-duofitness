@@ -398,6 +398,8 @@ export default function AIPersonalTrainerScreen({ navigation }) {
           exercicios: w.exercises,
         })),
         workouts: generated,
+        // dados desta geração para o histórico de séries (o peso só é guardado para maiores de 18, filtrado no contexto)
+        meta: { goals: allAnswers.goals, level: allAnswers.level, combo: allAnswers.combo ?? null, weightKg: allAnswers.weight, source: 'local' },
       };
 
       pushAI('Prontinho! Montei suas 3 séries com base no que você me contou. Dá uma olhada:', { plan });
@@ -477,7 +479,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
     if (!finalPlan) return;
     setSaving(true);
     try {
-      await addWorkouts(finalPlan.workouts);
+      await addWorkouts(finalPlan.workouts, finalPlan.meta || {});
       if (finalPlan.imc && user) {
         await saveUser({ ...user, imc: finalPlan.imc, imcCategory: finalPlan.imcCategoria });
       }

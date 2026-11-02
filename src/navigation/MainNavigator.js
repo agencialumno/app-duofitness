@@ -16,6 +16,7 @@ import CreateWorkoutScreen from '../screens/CreateWorkoutScreen';
 import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
 import SmartPlanScreen from '../screens/SmartPlanScreen';
 import AIPersonalTrainerScreen from '../screens/AIPersonalTrainerScreen';
+import SeriesTimelineScreen from '../screens/SeriesTimelineScreen';
 import GuidedPlanScreen from '../screens/GuidedPlanScreen';
 import EditBodyDataScreen from '../screens/EditBodyDataScreen';
 import StoreScreen from '../screens/StoreScreen';
@@ -60,6 +61,7 @@ function WorkoutStackNav() {
       {/* Os atalhos "Personal Trainer IA" abrem a série guiada; o chat antigo fica na rota alternativa. */}
       <WorkoutStack.Screen name="AIPersonalTrainer" component={GuidedPlanScreen} />
       <WorkoutStack.Screen name="AIPersonalTrainerChat" component={AIPersonalTrainerScreen} />
+      <WorkoutStack.Screen name="EvolucaoSeries" component={SeriesTimelineScreen} />
     </WorkoutStack.Navigator>
   );
 }

@@ -125,7 +125,7 @@ export default function SmartPlanScreen({ navigation, route }) {
         gender: user?.gender,
         ageGroup: user?.ageGroup,
       });
-      await addWorkouts(generated);
+      await addWorkouts(generated, { combo: answers.combo ?? null, source: 'local' });
       setPlan(generated);
       setGenerating(false);
       setDone(true);
