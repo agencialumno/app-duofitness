@@ -381,6 +381,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
         days: allAnswers.days,
         time: allAnswers.time,
         equipment: allAnswers.equipment,
+        combo: allAnswers.combo ?? null, // combo ausente = só calistenia
         limitation: allAnswers.limitation,
         imcCategory: imcInfo?.id,
         gender: user?.gender,

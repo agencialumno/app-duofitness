@@ -116,6 +116,7 @@ export default function SmartPlanScreen({ navigation }) {
       const generated = generatePlanForAge({
         ...answers,
         equipment: getComboEquipment(answers.combo),
+        combo: answers.combo ?? null, // combo ausente = só calistenia
         goals: user?.goals,
         level: user?.level,
         imcCategory: user?.imcCategory,
