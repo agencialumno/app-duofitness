@@ -104,8 +104,8 @@ Total: **59** exercícios. Ordem: quantas séries A, B e C usam o exercício (so
 | 17 | ⬜ | `leg_extension` | Cadeira Extensora | leg_machine | DUO a ELITE | 8 | 0 | 16 | 24 |
 | 18 | ⬜ | `goblet_squat` | Agachamento Goblet | dumbbells | todos (UNO a ELITE) | 6 | 5 | 10 | 21 |
 | 19 | ⬜ | `glute_bridge` | Elevação de Quadril | bodyweight | todos (UNO a ELITE) | 9 | 4 | 8 | 21 |
-| 20 | ⬜ | `high_knees` | Corrida Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
-| 21 | ⬜ | `step_touch` | Step Touch | bodyweight | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
+| 20 | ⬜ | `bike_cardio` | Bike Ergométrica | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
+| 21 | ⬜ | `jumping_jack` | Polichinelo | bodyweight | todos (UNO a ELITE) | 0 | 0 | 20 | 20 |
 | 22 | ⬜ | `lateral_raise` | Elevação Lateral | dumbbells | todos (UNO a ELITE) | 19 | 0 | 0 | 19 |
 | 23 | ⬜ | `sumo_squat` | Agachamento Sumo | bodyweight | todos (UNO a ELITE) | 0 | 6 | 12 | 18 |
 | 24 | ⬜ | `chest_press_machine` | Supino na Máquina (Peitoral Dorsal) | chest_back_machine | TRIPLE a ELITE | 18 | 0 | 0 | 18 |
@@ -120,7 +120,7 @@ Total: **59** exercícios. Ordem: quantas séries A, B e C usam o exercício (so
 | 33 | ⬜ | `front_raise` | Elevação Frontal | dumbbells | todos (UNO a ELITE) | 13 | 0 | 0 | 13 |
 | 34 | ⬜ | `squat` | Agachamento Livre | bodyweight | todos (UNO a ELITE) | 2 | 4 | 6 | 12 |
 | 35 | ⬜ | `smith_bench_press` | Supino no Smith | smith | DUO a ELITE | 12 | 0 | 0 | 12 |
-| 36 | ⬜ | `jumping_jack` | Polichinelo | bodyweight | todos (UNO a ELITE) | 0 | 0 | 10 | 10 |
+| 36 | ⬜ | `treadmill` | Esteira | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 10 | 10 |
 | 37 | ⬜ | `lunge` | Avanço | bodyweight | todos (UNO a ELITE) | 2 | 1 | 6 | 9 |
 | 38 | ⬜ | `calf_raise` | Elevação de Panturrilha | bodyweight | todos (UNO a ELITE) | 2 | 2 | 5 | 9 |
 | 39 | ⬜ | `shoulder_machine_press` | Desenvolvimento na Máquina | shoulder_machine | ELITE | 6 | 0 | 0 | 6 |
@@ -137,11 +137,11 @@ Total: **59** exercícios. Ordem: quantas séries A, B e C usam o exercício (so
 | 50 | ⬜ | `db_fly` | Crucifixo com Halteres | dumbbells | todos (UNO a ELITE) | 3 | 0 | 0 | 3 |
 | 51 | ⬜ | `lat_pulldown_ex` | Puxada Alta | lat_pulldown | ELITE | 0 | 3 | 0 | 3 |
 | 52 | ⬜ | `hip_thrust_machine` | Elevação Pélvica na Máquina | hip_machine | ELITE | 1 | 0 | 0 | 1 |
-| 53 | ⬜ | `bike_cardio` | Bike Ergométrica | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
-| 54 | ⬜ | `burpee` | Burpee | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
-| 55 | ⬜ | `treadmill` | Esteira | cardio_machine | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
-| 56 | ⬜ | `march_place` | Marcha Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
-| 57 | ⬜ | `hammer_curl` | Rosca Martelo | dumbbells | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
+| 53 | ⬜ | `burpee` | Burpee | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
+| 54 | ⬜ | `high_knees` | Corrida Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
+| 55 | ⬜ | `march_place` | Marcha Estacionária | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
+| 56 | ⬜ | `hammer_curl` | Rosca Martelo | dumbbells | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
+| 57 | ⬜ | `step_touch` | Step Touch | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
 | 58 | ⬜ | `superman` | Superman | bodyweight | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
 | 59 | ⬜ | `tricep_dip` | Tríceps no Banco | bench | todos (UNO a ELITE) | 0 | 0 | 0 | 0 |
 

@@ -36,7 +36,9 @@ describe('lista de exercícios de impacto', () => {
 
 describe('gerador offline: avoidHighImpact', () => {
   it('perfil de controle (26-35, IMC normal) ainda recebe exercício de impacto', () => {
-    const ids = idsOf(generate({}));
+    // só calistenia: com aparelho de cardio (esteira, bike) disponível, o aparelho vem primeiro (docs/pendencias-usuario.md, séries por combo) e o cardio de impacto
+    // deixa de entrar; sem aparelho, o filtro de impacto continua sendo a única coisa que o tira (e o perfil de controle o recebe).
+    const ids = idsOf(generate({ equipment: ['bodyweight'] }));
     expect(ids.some((id) => (APP_HIGH_IMPACT as string[]).includes(id))).toBe(true);
   });
 
