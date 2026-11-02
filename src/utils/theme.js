@@ -7,8 +7,10 @@ export const COLORS = {
   bgCardAlt: '#1C1C1C',
   border: '#2A2A2A',
   textPrimary: '#FFFFFF',
-  textSecondary: '#888888',
-  textMuted: '#555555',
+  // #B0B0B5: 9,17:1 sobre bg, 8,53:1 sobre bgCard e 7,89:1 sobre bgCardAlt. Hierarquia: textPrimary > textSecondary > textMuted (era #888888, mais escuro que o textMuted novo).
+  textSecondary: '#B0B0B5',
+  // #8E8E93: 6,07:1 sobre bg, 5,65:1 sobre bgCard e 5,23:1 sobre bgCardAlt (WCAG 2.1, texto normal pede 4,5:1). Era #555555 (2,29 a 2,66:1).
+  textMuted: '#8E8E93',
   success: '#22c55e',
   error: '#ef4444',
   warning: '#f97316',
@@ -32,16 +34,35 @@ export const FONTS = {
   },
 };
 
+// Escala tipográfica nomeada (só tamanhos e pesos que já existem; a fonte continua a do sistema). Baseada nos tamanhos mais usados da auditoria visual
+// (docs/visual-auditoria.md): 13 (127 usos), 15 (118), 11 (84), 18 (26), 28 (25), 22 (16), 36 (1). NENHUMA tela usa esta escala ainda (etapa de migração separada).
+export const TYPE = {
+  caption: { fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.regular },
+  bodySmall: { fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.regular },
+  body: { fontSize: FONTS.sizes.md, fontWeight: FONTS.weights.regular },
+  bodyLarge: { fontSize: FONTS.sizes.lg, fontWeight: FONTS.weights.semibold },
+  title: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.bold },
+  titleLarge: { fontSize: FONTS.sizes.xxl, fontWeight: FONTS.weights.bold },
+  display: { fontSize: FONTS.sizes.xxxl, fontWeight: FONTS.weights.bold },
+};
+
+// Espaçamento em múltiplos de 4. smd (12) cobre o literal 12 (7 usos na auditoria; os literais 2, 3, 6, 7 e 10 não são múltiplos de 4
+// e ficam para a etapa de migração decidir).
 export const SPACING = {
   xs: 4,
   sm: 8,
+  smd: 12,
   md: 16,
   lg: 24,
   xl: 32,
   xxl: 48,
 };
 
+// Raios em múltiplos de 4 (full é o círculo). xs vale 0 DE PROPÓSITO: `RADIUS.xs` já era usado (AIPersonalTrainerScreen.js:684) mas não existia, então o
+// borderRadius era undefined, que o React Native trata como sem arredondamento; 0 mantém o visual idêntico. tight (4) cobre o raio literal mais usado.
 export const RADIUS = {
+  xs: 0,
+  tight: 4,
   sm: 8,
   md: 12,
   lg: 16,

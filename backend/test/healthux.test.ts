@@ -28,7 +28,7 @@ describe('escalas de layout da Saúde (theme.js)', () => {
   it('alvo de toque mínimo de 44 e raio/borda únicos; as escalas globais não mudaram', () => {
     expect(HEALTH_UI.minTouch).toBe(44);
     expect(HEALTH_UI.card).toEqual({ radius: 16, borderWidth: 1 });
-    expect(SPACING).toEqual({ xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 });
+    expect(SPACING).toMatchObject({ xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 }); // os valores antigos não mudam; a etapa de tokens só ACRESCENTOU smd (12)
     expect(FONTS.sizes.md).toBe(15);
   });
 });

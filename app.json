@@ -21,6 +21,8 @@
       "./plugins/withNotificationsOptional"
     ],
     "ios": {
+      "userInterfaceStyle": "dark",
+      "supportsTablet": false,
       "bundleIdentifier": "com.duofitness.app",
       "buildNumber": "1",
       "infoPlist": {
