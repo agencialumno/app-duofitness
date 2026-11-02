@@ -24,5 +24,8 @@ export const useEffect = (fn: any, deps?: any[]) => need().useEffect(fn, deps);
 export const useRef = (init?: any) => need().useRef(init);
 export const useCallback = (fn: any, deps?: any[]) => need().useCallback(fn, deps);
 export const useMemo = (fn: any, deps?: any[]) => need().useMemo(fn, deps);
+// contexto mínimo: só o valor padrão (suficiente para montar componentes que declaram createContext no topo do módulo)
+export const createContext = (d: any) => ({ _d: d, Provider: 'Provider', Consumer: 'Consumer' });
+export const useContext = (c: any) => c._d;
 
-export default { Component, Fragment, createElement, useState, useEffect, useRef, useCallback, useMemo };
+export default { Component, Fragment, createElement, useState, useEffect, useRef, useCallback, useMemo, createContext, useContext };
