@@ -150,6 +150,48 @@ jobs:
       - name: Conferir o projeto iOS gerado (entitlement e texto de leitura do HealthKit)
         run: node scripts/check-ios-project.mjs --bundle-id com.duofitness.app
 
+  # Notificações locais (lembretes) COM a flag, em Linux: instala o expo-notifications, confere o autolinking e gera Android e iOS. Android: POST_NOTIFICATIONS e
+  # RECEIVE_BOOT_COMPLETED presentes e alarmes exatos removidos. iOS: sem aps-environment e sem modo de fundo de push. Depois confere que SEM a flag os dois
+  # projetos voltam a ser os de antes.
+  prebuild-notifications:
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Gerar Android e iOS SEM a flag e conferir que não há notificações
+        run: |
+          set -euo pipefail
+          env -u NOTIFICATIONS_ENABLED npx expo prebuild --platform android --no-install
+          env -u NOTIFICATIONS_ENABLED node scripts/check-notifications-project.mjs --platform android --expect off
+          env -u NOTIFICATIONS_ENABLED npx expo prebuild --platform ios --no-install
+          env -u NOTIFICATIONS_ENABLED node scripts/check-notifications-project.mjs --platform ios
+      - name: Instalar o módulo das notificações (grava no package.json do runner)
+        env:
+          NOTIFICATIONS_ENABLED: 'true'
+        run: node scripts/install-notifications-deps.mjs
+      - name: Conferir autolinking com as notificações (Android e iOS)
+        env:
+          NOTIFICATIONS_ENABLED: 'true'
+        run: |
+          node scripts/check-autolinking.mjs --platform android
+          node scripts/check-autolinking.mjs --platform ios
+      - name: Gerar Android e iOS COM a flag e conferir
+        env:
+          NOTIFICATIONS_ENABLED: 'true'
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --no-install --clean
+          node scripts/check-notifications-project.mjs --platform android --expect on
+          npx expo prebuild --platform ios --no-install --clean
+          node scripts/check-notifications-project.mjs --platform ios --expect on
+
   # Gera o projeto Android COM Firebase em Linux, como o android.yml: só o google-services.json (FALSO), SEM o plist do iOS.
   # Reproduz a regressão em que o plugin do google-signin era chamado com `{}` ("Missing iosUrlScheme") e quebrava o prebuild.
   android-prebuild-firebase:

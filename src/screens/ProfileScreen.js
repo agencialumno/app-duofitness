@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import EditNameRow from '../components/EditNameRow';
 import LegalLinks from '../components/LegalLinks';
 import AboutCard from '../components/AboutCard';
+import RemindersCard from '../components/RemindersCard';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
@@ -194,6 +195,8 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Saúde: a MESMA tela da aba Início (a rota Saude também existe na pilha do Perfil; o voltar retorna aqui) */}
       <ProfileHealthCard onPress={() => navigation.navigate('Saude')} />
+
+      <RemindersCard onPress={() => navigation.navigate('Lembretes')} />
 
       <AccountCard />
 

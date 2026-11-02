@@ -57,6 +57,12 @@ jobs:
       # gerado fica idêntico ao de antes.
       HEALTH_INTEGRATION_ENABLED: ${{ vars.HEALTH_INTEGRATION_ENABLED }}
       EXPO_PUBLIC_HEALTH_INTEGRATION: ${{ vars.HEALTH_INTEGRATION_ENABLED }}
+      # Lembretes de treino e de inatividade (notificações LOCAIS no aparelho): OPCIONAL. UM SÓ significado para a variável do repositório
+      # NOTIFICATIONS_ENABLED=true: o CI instala o módulo expo-notifications, o prebuild aplica o plugin próprio (sem push, sem alarmes exatos), o
+      # check-notifications-project confere o projeto e o JavaScript do app liga os lembretes (a linha EXPO_PUBLIC abaixo, no env do JOB, chega ao bundle).
+      # Sem a variável o build fica idêntico ao de antes. Nenhum dado sai do aparelho.
+      NOTIFICATIONS_ENABLED: ${{ vars.NOTIFICATIONS_ENABLED }}
+      EXPO_PUBLIC_NOTIFICATIONS_ENABLED: ${{ vars.NOTIFICATIONS_ENABLED }}
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4.2.2
@@ -291,6 +297,11 @@ jobs:
         if: env.HEALTH_INTEGRATION_ENABLED == 'true'
         run: node scripts/install-healthconnect-deps.mjs
 
+      # ---- Notificações locais (lembretes): OPCIONAL. Sem NOTIFICATIONS_ENABLED=true nada disto acontece ----
+      - name: Notificações (opcional) - instalar o módulo nativo (grava no package.json do runner, para o autolinking ver)
+        if: env.NOTIFICATIONS_ENABLED == 'true'
+        run: node scripts/install-notifications-deps.mjs
+
       - name: Gerar projeto Android (expo prebuild)
         run: |
           set -euo pipefail
@@ -312,6 +323,10 @@ jobs:
       # Com a flag: só permissões READ_*, filtro e alias da justificativa, minSdk 26. Sem a flag: nenhuma permissão do Health Connect.
       - name: Conferir o projeto Android gerado (Health Connect só leitura)
         run: node scripts/check-android-project.mjs
+
+      # Com a flag: POST_NOTIFICATIONS e RECEIVE_BOOT_COMPLETED, e alarmes exatos REMOVIDOS. Sem a flag: nenhuma delas.
+      - name: Conferir o projeto Android gerado (notificações locais, sem alarmes exatos)
+        run: node scripts/check-notifications-project.mjs --platform android
 
       - name: Build (APK e AAB)
         working-directory: android

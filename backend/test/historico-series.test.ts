@@ -340,7 +340,7 @@ describe('integração com o contexto e o Perfil', () => {
   });
   it('os três caminhos que geram séries passam os dados da geração ao histórico', () => {
     expect(read('src/screens/GuidedPlanScreen.js')).toContain('addWorkouts(plan.workouts, { goals: settings.goals, level: settings.level, combo: settings.combo');
-    expect(read('src/screens/SmartPlanScreen.js')).toContain("addWorkouts(generated, { combo: answers.combo ?? null, source: 'local' })");
+    expect(read('src/screens/SmartPlanScreen.js')).toContain("addWorkouts(generated, { combo: answers.combo ?? null, days: answers.days, source: 'local' })");
     expect(read('src/screens/AIPersonalTrainerScreen.js')).toContain('addWorkouts(finalPlan.workouts, finalPlan.meta || {})');
   });
   it('nenhum módulo novo lê @duo_* com JSON.parse direto, loga peso, usa rede ou manda dados a servidor', () => {

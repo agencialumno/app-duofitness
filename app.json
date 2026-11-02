@@ -17,7 +17,8 @@
       "expo-asset",
       "./plugins/withFirebaseOptional",
       "./plugins/withHealthKitOptional",
-      "./plugins/withHealthConnectOptional"
+      "./plugins/withHealthConnectOptional",
+      "./plugins/withNotificationsOptional"
     ],
     "ios": {
       "bundleIdentifier": "com.duofitness.app",

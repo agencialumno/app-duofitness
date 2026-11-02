@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readAppData, readJsonKey } from '../utils/safeStorage';
 import { evaluateAchievements } from '../utils/achievements';
@@ -9,6 +9,8 @@ import { decideGate, deleteAccountFlow, rejectUnderageFlow, signOutFlow } from '
 import { adoptAccountName, readAccountName } from '../utils/accountNameStore';
 import { cleanName } from '../utils/accountName';
 import { useAuth } from '../auth/AuthContext';
+import { NOTIFICATIONS_ENABLED } from '../data/remindersConfig';
+import { cancelAllReminders, loadNotifications, offerReminders, syncReminders } from '../utils/remindersService';
 import { EMPTY_STORE, appendWeight, dropDeadSeries, isGeneratedWorkout, loadSeries, registerSeries, removeSeries, saveSeries } from '../utils/seriesHistory';
 
 const AppContext = createContext({});
@@ -20,6 +22,8 @@ export const AppProvider = ({ children }) => {
   const [workouts, setWorkouts] = useState([]);
   // Histórico de séries (@duo_series_v2): um registro por geração; os treinos seguem em @duo_workouts (ver utils/seriesHistory.js)
   const [seriesStore, setSeriesStore] = useState(EMPTY_STORE);
+  const seriesDaysRef = useRef(undefined);
+  seriesDaysRef.current = seriesStore.items.length ? seriesStore.items[seriesStore.items.length - 1].days : undefined;
   const [completedSessions, setCompletedSessions] = useState([]);
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -55,6 +59,19 @@ export const AppProvider = ({ children }) => {
     })();
     return () => { alive = false; };
   }, [authReady, authUid]);
+
+  // Lembretes: ao ficar pronto e a cada volta ao primeiro plano, grava o último acesso, cancela tudo e reagenda (utils/remindersService.js).
+  // Sem a flag (build normal) isto não faz nada.
+  const syncNow = () => {
+    if (!NOTIFICATIONS_ENABLED) return;
+    syncReminders({ storage: AsyncStorage, notifications: loadNotifications(), seriesDays: seriesDaysRef.current, markOpen: true, platform: Platform.OS }).catch(() => {});
+  };
+  useEffect(() => {
+    if (!NOTIFICATIONS_ENABLED || bound.status !== 'ready' || !bound.uid) return undefined;
+    syncNow();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') syncNow(); });
+    return () => sub.remove();
+  }, [bound.status, bound.uid, dataEpoch]);
 
   const loadData = async () => {
     // Cada chave é lida e validada sozinha: valor corrompido (JSON quebrado, tipo errado) é tratado como
@@ -113,6 +130,7 @@ export const AppProvider = ({ children }) => {
 
     // Histórico: cada geração (séries A, B e C) vira um registro. Os treinos já estão salvos; qualquer falha aqui só deixa de registrar o histórico.
     let trimmed = 0;
+    const firstSeries = seriesStore.items.length === 0;
     try {
       const generated = withMeta.filter(isGeneratedWorkout);
       if (generated.length > 0) {
@@ -141,6 +159,10 @@ export const AppProvider = ({ children }) => {
       }
     } catch (e) {
       console.log('Erro ao registrar o histórico de séries:', e);
+    }
+    // Lembretes: só DEPOIS da primeira série gerada, com a explicação antes do pedido do sistema (nunca insiste; ver utils/remindersService.js)
+    if (NOTIFICATIONS_ENABLED && firstSeries) {
+      offerReminders({ Alert, storage: AsyncStorage, notifications: loadNotifications(), seriesDays: meta.days, platform: Platform.OS }).catch(() => {});
     }
     return { trimmed };
   };
@@ -249,6 +271,7 @@ export const AppProvider = ({ children }) => {
     setBound({ uid: null, status: 'signingout' });
     try {
       await signOutFlow({ storage: AsyncStorage, provider, uid: authUid });
+      await cancelAllReminders(loadNotifications()); // as notificações do sistema não são por conta: sair cancela todas
       resetMemory();
     } catch (e) {
       // não saiu: volta a vincular a conta ativa e mostra os dados de novo
@@ -262,6 +285,7 @@ export const AppProvider = ({ children }) => {
   // "Excluir minha conta": reautentica e apaga a conta online (provedor), depois apaga o snapshot do uid e os dados ativos.
   const deleteAccountAndData = async ({ password } = {}) => {
     await deleteAccountFlow({ storage: AsyncStorage, provider, uid: authUid, password });
+    await cancelAllReminders(loadNotifications());
     resetMemory();
   };
 
@@ -270,6 +294,7 @@ export const AppProvider = ({ children }) => {
   const rejectUnderage = async () => {
     setBound({ uid: null, status: 'signingout' });
     await rejectUnderageFlow({ storage: AsyncStorage, provider, uid: authUid });
+    await cancelAllReminders(loadNotifications());
     resetMemory();
   };
 

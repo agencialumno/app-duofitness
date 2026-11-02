@@ -44,7 +44,9 @@ const HEALTHKIT_RN_MODULES = ['@kingstinct/react-native-healthkit', '@react-nati
 const HEALTHCONNECT_RN_MODULES = ['react-native-health-connect'];
 const ORDER = 'npm ci -> firebase-prepare -> install-firebase-deps -> expo prebuild -> check-autolinking';
 
-const BASE_REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video'];
+// Notificações locais: com NOTIFICATIONS_ENABLED=true (scripts/install-notifications-deps.mjs) o expo-notifications também é obrigatório (Android e iOS).
+const NOTIFICATIONS_FLAG = String(process.env.NOTIFICATIONS_ENABLED || '').trim().toLowerCase() === 'true';
+const BASE_REQUIRED = ['expo-file-system', 'expo-asset', 'expo-font', 'expo-keep-awake', 'expo-video', ...(NOTIFICATIONS_FLAG ? ['expo-notifications'] : [])];
 // Resolvidos pelo Babel/Metro a partir da raiz do projeto.
 const RESOLVABLE_FROM_ROOT = ['babel-preset-expo', ...(FIREBASE_ON ? FIREBASE_ROOT_PACKAGES : [])];
 

@@ -1,6 +1,7 @@
 // Histórico de séries (puro: o armazenamento entra por parâmetro). Cada GERAÇÃO de série (A, B e C geradas juntas) vira um REGISTRO em "@duo_series_v2":
 //   { version: 1, migrated: true, items: [registro, ...] }   (do mais antigo para o mais novo; o último é a "série atual")
-//   registro: { id, createdAt, goals|null, level|null, combo|null, source, workoutIds: [ids dos treinos], weights: [{ date, kg }], migrated? }
+//   registro: { id, createdAt, goals|null, level|null, combo|null, days?, source, workoutIds: [ids dos treinos], weights: [{ date, kg }], migrated? }
+//   days (1 a 3, opcional): dias por semana da série; os lembretes derivam dele os dias padrão (séries migradas não têm: valem 3 dias, seg/qua/sex)
 // Os treinos continuam em "@duo_workouts" (formato intocado); o registro só REFERENCIA os ids. Treinos concluídos e sequência de dias NÃO são gravados aqui: são
 // calculados na hora de exibir a partir de "@duo_sessions" (seriesView.js). Peso: só de maiores de 18 (nunca se grava peso de menor ou de idade desconhecida).
 // Os dados ficam só no aparelho; a chave começa com "@duo_", então entra no snapshot por conta e na exclusão de conta sem código extra.
@@ -29,6 +30,7 @@ export function generationKey(w) {
 }
 
 const text = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+const daysOf = (v) => (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 3 ? Number(v) : null);
 const roundKg = (kg) => Math.round(Number(kg) * 10) / 10;
 
 function sanitizeRecord(r) {
@@ -46,6 +48,7 @@ function sanitizeRecord(r) {
     goals: Array.isArray(r.goals) && r.goals.length ? r.goals.map(String) : null,
     level: text(r.level),
     combo: text(r.combo),
+    ...(daysOf(r.days) ? { days: daysOf(r.days) } : {}),
     source: text(r.source) || 'local',
     workoutIds: ids,
     weights,
@@ -106,7 +109,7 @@ export function ensureSeriesStore({ stored, workouts }) {
 }
 
 // Cria o registro de uma geração nova. `removed` traz os registros mais antigos que saíram pelo limite de MAX_SERIES (o chamador avisa e apaga os treinos deles).
-export function registerSeries(store, { workoutIds, createdAt, goals, level, combo, source, weightKg, ageGroup, now = new Date() }) {
+export function registerSeries(store, { workoutIds, createdAt, goals, level, combo, days, source, weightKg, ageGroup, now = new Date() }) {
   const ids = (workoutIds || []).map(String).filter(Boolean);
   if (ids.length === 0) return { store, removed: [] };
   const created = createdAt && Number.isFinite(new Date(createdAt).getTime()) ? new Date(createdAt) : new Date(now);
@@ -121,6 +124,7 @@ export function registerSeries(store, { workoutIds, createdAt, goals, level, com
     goals: Array.isArray(goals) && goals.length ? goals.map(String) : null,
     level: text(level),
     combo: text(combo),
+    ...(daysOf(days) ? { days: daysOf(days) } : {}),
     source: text(source) || 'local',
     workoutIds: ids,
     weights,
