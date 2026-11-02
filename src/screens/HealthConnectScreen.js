@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import { ConfirmModal, Notice } from '../components/auth/AuthParts';
+import ScreenHeader from '../components/ScreenHeader';
 import { ANDROID_COPY, CONNECT_COPY } from '../data/healthConnectContent';
 import { PRIVACY_URL } from '../data/authConfig';
 import { openHealthConnectInPlayStore, openUrl } from '../utils/externalLinks';
@@ -117,15 +118,7 @@ export default function HealthConnectScreen({ navigation }) {
 
   return (
     <View style={styles.container} testID="health-connect">
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Voltar">
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View style={styles.headerText}>
-          <Text style={styles.title} accessibilityRole="header">{CONNECT_COPY.title}</Text>
-          <Text style={styles.subtitle}>{A ? A.subtitle : target ? target.name : 'Apple Saúde e Health Connect'}</Text>
-        </View>
-      </View>
+      <ScreenHeader title={CONNECT_COPY.title} subtitle={A ? A.subtitle : target ? target.name : 'Apple Saúde e Health Connect'} onBack={() => navigation.goBack()} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}>
         {minor ? (
@@ -301,11 +294,6 @@ export default function HealthConnectScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
-  backBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -SPACING.sm },
-  headerText: { flex: 1 },
-  title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
-  subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   content: { padding: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.md },
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: SPACING.sm },
   dim: { opacity: 0.7 },

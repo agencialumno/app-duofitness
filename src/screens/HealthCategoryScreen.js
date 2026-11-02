@@ -6,6 +6,7 @@ import { COLORS, FONTS, HEALTH_UI, RADIUS, SPACING } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import TrendBars from '../components/health/TrendBars';
 import InfoButton from '../components/InfoButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { dayKey } from '../utils/health';
 import { getCategory } from '../utils/healthModel';
 import { FORM_FIELDS, buildHistory, compactVariation, parseForm } from '../utils/healthView';
@@ -45,16 +46,12 @@ export default function HealthCategoryScreen({ navigation, route }) {
   const todayWater = (samples.filter((s) => s.metric === 'water' && s.date === today).sort((a, b) => (b.source === source) - (a.source === source))[0] || {}).value ?? null;
 
   const Header = (
-    <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Voltar">
-        <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-      </TouchableOpacity>
-      <View style={styles.headerText}>
-        <Text style={styles.title} accessibilityRole="header">{cat ? cat.label : 'Saúde'}</Text>
-        <Text style={styles.subtitle}>Detalhe e histórico</Text>
-      </View>
-      {info ? <InfoButton label={info.label} titulo={info.titulo} blocks={info.blocks} /> : null}
-    </View>
+    <ScreenHeader
+      title={cat ? cat.label : 'Saúde'}
+      subtitle="Detalhe e histórico"
+      onBack={() => navigation.goBack()}
+      right={info ? <InfoButton label={info.label} titulo={info.titulo} blocks={info.blocks} /> : undefined}
+    />
   );
 
   if (blocked) {
@@ -251,12 +248,7 @@ const SOURCE_NAME = { manual: 'Manual', apple_saude: 'Apple Saúde', apple_watch
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
-  backBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -SPACING.sm },
-  headerText: { flex: 1 },
-  title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
-  subtitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  content: { padding: HEALTH_UI.space.screen, paddingTop: SPACING.sm, gap: HEALTH_UI.space.cardGap },
+  content: { paddingHorizontal: SPACING.lg, paddingBottom: HEALTH_UI.space.screen, paddingTop: SPACING.sm, gap: HEALTH_UI.space.cardGap },
   formBox: { gap: SPACING.sm },
   variation: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   caption: { fontSize: 12, lineHeight: 16, color: COLORS.textSecondary },

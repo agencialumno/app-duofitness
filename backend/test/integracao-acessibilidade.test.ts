@@ -127,7 +127,7 @@ describe('acessibilidade estática dos toques', () => {
     const all = (f: string) => TOUCHES.filter((t) => t.file === f);
     for (const [file, label] of [
       ['src/screens/onboarding/WelcomeScreen.js', 'Criar conta'], ['src/screens/onboarding/WelcomeScreen.js', 'Entrar'],
-      ['src/screens/StoreScreen.js', 'Voltar'], ['src/screens/HealthConnectScreen.js', 'Voltar'],
+      ['src/screens/StoreScreen.js', 'Voltar'], ['src/components/ScreenHeader.js', 'Voltar'],
     ] as const) expect(all(file).some((t) => t.attrs.includes(`accessibilityLabel="${label}"`)), `${file} sem "${label}"`).toBe(true);
   });
   it('as caixas de seleção (checkbox) informam o estado marcado ao leitor de tela', () => {
