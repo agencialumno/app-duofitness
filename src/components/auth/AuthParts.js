@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../utils/theme';
 import { metCount } from '../../utils/passwordPolicy';
+import Button from '../Button';
 
 const FocusScroll = createContext(() => {});
 
@@ -262,19 +263,15 @@ export function ConfirmModal({ visible, title, children, confirmLabel, confirmDi
             <Text style={styles.sheetTitle} accessibilityRole="header">{title}</Text>
             {children}
             <View style={{ height: SPACING.md }} />
-            <TouchableOpacity
-              onPress={confirmDisabled || busy ? undefined : onConfirm}
-              disabled={!!(confirmDisabled || busy)}
-              aria-disabled={!!(confirmDisabled || busy)}
-              style={[styles.btn, danger && { backgroundColor: COLORS.error }, (confirmDisabled || busy) && styles.btnDisabled]}
-              accessibilityRole="button"
-              accessibilityLabel={confirmLabel}
-              accessibilityState={{ disabled: !!(confirmDisabled || busy) }}
+            <Button
+              label={confirmLabel}
+              onPress={onConfirm}
+              variant={danger ? 'destructive' : 'primary'}
+              disabled={!!confirmDisabled}
+              loading={!!busy}
               testID="confirm-modal-ok"
-            >
-              {busy ? <ActivityIndicator color={COLORS.white} /> : <Text style={[styles.btnText, danger && { color: COLORS.white }]}>{confirmLabel}</Text>}
-            </TouchableOpacity>
-            <LinkButton label="Cancelar" onPress={onCancel} testID="confirm-modal-cancel" />
+            />
+            <Button label="Cancelar" onPress={onCancel} variant="tertiary" testID="confirm-modal-cancel" />
           </ScrollView>
         </View>
       </View>
