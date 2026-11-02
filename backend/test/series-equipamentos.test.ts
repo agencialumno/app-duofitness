@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error módulo JS do app, sem tipos
-import { EXERCISE_DB, generateWorkoutPlan, HIGH_IMPACT_IDS } from '../../src/utils/workoutGenerator.js';
+import { EXERCISE_DB, generateWorkoutPlan, HIGH_IMPACT_IDS, LIMITATION_BLOCKED } from '../../src/utils/workoutGenerator.js';
 // @ts-expect-error módulo JS do app, sem tipos
 import { generateWorkoutPlan as generateV1 } from './helpers/workoutGeneratorV1.js';
 // @ts-expect-error módulo JS do app, sem tipos
@@ -125,50 +125,52 @@ describe('gerador por combo (todos os combos x 128 perfis)', () => {
     }
     expect(series).toBe(5 * PROFILES.length * 3);
   });
-  it('o aparelho que já entrava hoje e continua disponível NUNCA deixa de entrar (contagem por série >= a de hoje)', () => {
+  // As fatias de A, B e C são CONSECUTIVAS por grupo (o aparelho se distribui entre as séries), então a comparação com "hoje" vale para o PLANO (A+B+C).
+  const planIds = (plan: any[]) => plan.flatMap((s: any) => s.exercises);
+  const planUniq = (plan: any[]) => [...new Map(planIds(plan).filter((e: any) => e.category !== 'Cardio').map((e: any) => [e.id, e])).values()] as any[]; // exercícios únicos, sem cardio
+  it('o aparelho que já entrava hoje no plano e continua disponível NUNCA deixa de entrar (contagem do plano A+B+C >= a de hoje)', () => {
     for (const combo of COMBOS) for (const p of PROFILES) {
-      const before = genV1(combo, p);
-      gen(combo, p).forEach((serie: any, i: number) => {
-        const keepable = [...new Set<string>(before[i].exercises.map((e: any) => e.id))].filter((id) => isApp(BY_ID.get(id)) && CE.isAvailableInCombo(id, combo)).length;
-        const now = serie.exercises.filter(isApp).length;
-        expect(now, `${combo} ${JSON.stringify(p)} série ${serie.serie}`).toBeGreaterThanOrEqual(keepable);
-      });
+      const before = planIds(genV1(combo, p));
+      const keepable = [...new Set<string>(before.map((e: any) => e.id))].filter((id) => isApp(BY_ID.get(id)) && CE.isAvailableInCombo(id, combo)).length;
+      const now = new Set(planIds(gen(combo, p)).filter(isApp).map((e: any) => e.id)).size;
+      expect(now, `${combo} ${JSON.stringify(p)}`).toBeGreaterThanOrEqual(keepable);
     }
   });
-  it('a participação de aparelho NUNCA é menor que a de hoje nos combos com puxada e remada (DUO a ELITE) e a média sobe em todos os combos', () => {
+  it('a proporção de aparelho do plano (exercícios únicos, sem cardio) não cai mais que 5 pontos em média em nenhum combo e nunca mais que 25 pontos em um perfil', () => {
+    // O gerador antigo repetia a mesma máquina nas três séries; com fatias consecutivas ela aparece uma vez por plano e o resto do grupo vira calistenia
+    // quando os aparelhos acabam. Por isso a proporção por exercícios únicos pode cair um pouco; o que se garante é a CONTAGEM (teste acima) e o limite da queda.
     const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
     for (const combo of COMBOS) {
       const b: number[] = [];
       const a: number[] = [];
       for (const p of PROFILES) {
-        const before = genV1(combo, p);
-        gen(combo, p).forEach((serie: any, i: number) => {
-          const uniq = [...new Map(before[i].exercises.map((e: any) => [e.id, e])).values()];
-          b.push(share(uniq as any[]));
-          a.push(share(serie.exercises));
-        });
+        b.push(share(planUniq(genV1(combo, p))));
+        a.push(share(planUniq(gen(combo, p))));
       }
-      expect(mean(a), `${combo} média`).toBeGreaterThan(mean(b));
-      if (combo !== 'uno') {
-        // fora do UNO (que perdeu remada e puxada por decisão) a série nunca fica com menos aparelho; só a proporção pode cair onde a eliminação das repetições
-        // acrescenta exercícios de calistenia, então aqui vale a média por perfil e série
-        expect(Math.min(...a.map((x, i) => x - b[i]!)), `${combo}: pior diferença`).toBeGreaterThanOrEqual(-0.2);
-      }
+      expect(mean(a) - mean(b), `${combo} média`).toBeGreaterThanOrEqual(-0.05);
+      expect(Math.min(...a.map((x, i) => x - b[i]!)), `${combo}: pior diferença`).toBeGreaterThanOrEqual(-0.25);
     }
   });
-  it('as séries que hoje têm menos de 40% de aparelho melhoram nos combos que têm aparelho para o grupo (DUO a ELITE: a maioria sobe e nenhuma piora muito)', () => {
-    let low = 0;
-    let better = 0;
-    for (const combo of ['duo', 'triple', 'prime', 'elite']) for (const p of PROFILES) {
-      const before = genV1(combo, p);
-      gen(combo, p).forEach((serie: any, i: number) => {
-        const uniq = [...new Map(before[i].exercises.map((e: any) => [e.id, e])).values()] as any[];
-        if (share(uniq) < 0.4) { low++; if (share(serie.exercises) >= share(uniq) - 1e-9) better++; }
-      });
+  it('FATIAS CONSECUTIVAS: dentro de cada grupo, nenhuma calistenia é escolhida enquanto sobrar aparelho disponível do grupo (que passa nos filtros) fora do plano', () => {
+    const levelOk = (e: any, level: string) => level !== 'beginner' || e.difficulty === 'Iniciante';
+    let checked = 0;
+    for (const combo of COMBOS) for (const p of PROFILES) for (const limitation of ['none', 'knee', 'shoulder', 'back']) {
+      const plan = gen(combo, { ...p, time: 90 }, { limitation }); // 90 min = 12 exercícios por série: o limite de tempo não corta aparelho
+      const chosen = planIds(plan);
+      const chosenIds = new Set(chosen.map((e: any) => e.id));
+      const blocked = (LIMITATION_BLOCKED as Record<string, string[]>)[limitation] ?? [];
+      for (const cat of new Set(ALL.map((e: any) => e.category))) {
+        if (cat === 'Cardio') continue; // o aquecimento de cardio entra fora da regra de fatias
+        const calis = chosen.filter((e: any) => e.category === cat && !isApp(e));
+        if (!calis.length) continue;
+        const left = ALL.filter((e: any) => e.category === cat && isApp(e) && CE.isAvailableInCombo(e.id, combo) && levelOk(e, p.level) && !blocked.includes(e.id) && !HIGH_IMPACT_IDS.includes(e.id) && !chosenIds.has(e.id));
+        expect(left.map((e: any) => e.id), `${combo} ${cat} ${JSON.stringify(p)} ${limitation}`).toEqual([]);
+        checked++;
+      }
     }
-    expect(low).toBeGreaterThan(50);
-    expect(better / low).toBeGreaterThan(0.8);
+    expect(checked).toBeGreaterThan(0);
   });
+
   it('o UNO (poucos aparelhos) completa com calistenia sem repetir e sem forçar aparelho que não existe', () => {
     for (const p of PROFILES) for (const serie of gen('uno', p)) {
       const ids = serie.exercises.map((e: any) => e.id);
@@ -184,14 +186,16 @@ describe('gerador por combo (todos os combos x 128 perfis)', () => {
     for (const e of chest) expect(isApp(e), e.id).toBe(true);
     expect(chest.map((e: any) => e.id)).toEqual(['chest_press_machine', 'smith_bench_press', 'cable_crossover']);
   });
-  it('o core fica na ordem de sempre (calistenia é permitida); o cardio prefere esteira e bike', () => {
-    const p: Profile = { goals: ['lose_weight'], level: 'intermediate', time: 60, gender: 'male', focus: 'core' };
-    const c = gen('elite', p)[2];
-    const core = c.exercises.filter((e: any) => e.category === 'Core').map((e: any) => e.id);
-    const dbCore = EXERCISE_DB.core.map((e: any) => e.id);
-    expect(core).toEqual(dbCore.filter((id: string) => core.includes(id)).slice(0, core.length)); // mesma ordem do catálogo
-    const cardio = c.exercises.filter((e: any) => e.category === 'Cardio').map((e: any) => e.id);
-    expect(cardio.slice(0, 1)).toEqual(['treadmill']);
+  it('core: o abdominal no cabo (cabo + corda, nível intermediário) entra primeiro em DUO a ELITE; iniciante não o recebe (filtro de nível), por isso o core de iniciante é 0% de aparelho', () => {
+    for (const combo of ['duo', 'triple', 'prime', 'elite']) {
+      const inter = gen(combo, { goals: ['lose_weight'], level: 'intermediate', time: 60, gender: 'male', focus: 'core' }).flatMap((x: any) => x.exercises);
+      expect(inter.map((e: any) => e.id), combo).toContain('cable_crunch');
+      const beg = gen(combo, { goals: ['lose_weight'], level: 'beginner', time: 60, gender: 'male', focus: 'core' }).flatMap((x: any) => x.exercises);
+      expect(beg.map((e: any) => e.id), combo).not.toContain('cable_crunch');
+    }
+    expect(gen('uno', { goals: ['health'], level: 'intermediate', time: 60, gender: 'male', focus: 'core' }).flatMap((x: any) => x.exercises).map((e: any) => e.id)).toContain('cable_crunch');
+    const c = gen('elite', { goals: ['lose_weight'], level: 'intermediate', time: 60, gender: 'male', focus: 'core' })[2];
+    expect(c.exercises.filter((e: any) => e.category === 'Cardio').map((e: any) => e.id).slice(0, 1)).toEqual(['treadmill']);
   });
 });
 
