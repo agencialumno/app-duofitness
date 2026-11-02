@@ -211,18 +211,19 @@ describe('check-version', () => {
     expect(node('check-version.mjs', ['--root', dir, '--platform', 'android'], { RUN_NUMBER: '0' }).code).toBe(1);
     expect(node('check-version.mjs', ['--root', dir, '--platform', 'android'], { RUN_NUMBER: '2100000001' }).code).toBe(1);
     expect(node('check-version.mjs', ['--root', dir, '--platform', 'android'], { RUN_NUMBER: 'abc' }).code).toBe(1);
-    expect(node('check-version.mjs', ['--root', dir], { RUN_NUMBER: '40' }).out).toMatch(/--platform/);
+    expect(node('check-version.mjs', ['--root', dir, '--build', '40']).out).toMatch(/--platform/); // --build explícito sem plataforma
+    expect(node('check-version.mjs', ['--root', dir], { RUN_NUMBER: '40' }).code).toBe(0); // só RUN_NUMBER no ambiente, sem --platform: não é conferência de build
   });
   it('a tag: confere com app.json + versao.json (com e sem prelançamento) e falha na divergência', () => {
     const beta = project({ prerelease: 'beta.1' });
-    expect(node('check-version.mjs', ['--root', beta, '--tag', 'v1.0.0-beta.1']).code).toBe(0);
-    expect(node('check-version.mjs', ['--root', beta, '--tag', 'ios-v1.0.0-beta.1']).code).toBe(0);
-    const bad = node('check-version.mjs', ['--root', beta, '--tag', 'v1.0.0']);
+    expect(node('check-version.mjs', ['--root', beta, '--platform', 'android', '--build', '5', '--tag', 'v1.0.0-beta.1']).code).toBe(0);
+    expect(node('check-version.mjs', ['--root', beta, '--platform', 'android', '--build', '5', '--tag', 'ios-v1.0.0-beta.1']).code).toBe(0);
+    const bad = node('check-version.mjs', ['--root', beta, '--platform', 'android', '--build', '5', '--tag', 'v1.0.0']);
     expect(bad.code).toBe(1);
     expect(bad.out).toMatch(/diverge/);
     const final = project({ prerelease: '' });
-    expect(node('check-version.mjs', ['--root', final, '--tag', 'v1.0.0']).code).toBe(0);
-    expect(node('check-version.mjs', ['--root', final, '--tag', 'v1.0.0-beta.1']).code).toBe(1);
+    expect(node('check-version.mjs', ['--root', final, '--platform', 'android', '--build', '5', '--tag', 'v1.0.0']).code).toBe(0);
+    expect(node('check-version.mjs', ['--root', final, '--platform', 'android', '--build', '5', '--tag', 'v1.0.0-beta.1']).code).toBe(1);
   });
   it('item 3 da SemVer: tag do núcleo atual em OUTRO commit (ou apontando para outro núcleo) falha; no mesmo commit passa', () => {
     const dir = project({ prerelease: '' });
