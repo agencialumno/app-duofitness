@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import EditNameRow from '../components/EditNameRow';
 import LegalLinks from '../components/LegalLinks';
 import AboutCard from '../components/AboutCard';
+import ScreenTopInset from '../components/ScreenTopInset';
 import RemindersCard from '../components/RemindersCard';
 import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
@@ -34,7 +34,6 @@ function formatGoals(goals) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { user, xp, achievements, completedSessions, seriesCount, getLevel, renameUser } = useApp();
   const { refreshUser } = useAuth();
   // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
@@ -51,7 +50,9 @@ export default function ProfileScreen({ navigation }) {
   const imcCategoryVisible = showImcCategory(user?.ageGroup);
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
+    <View style={styles.container}>
+    <ScreenTopInset />
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} contentContainerStyle={[styles.content, { paddingTop: SPACING.sm }]}>
 
       {/* Avatar */}
       <View style={styles.profileHeader}>
@@ -209,6 +210,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Seção "Conta", discreta e no fim: Sair da conta e, abaixo, o link "Excluir minha conta" */}
       <AccountActions />
     </ScrollView>
+    </View>
   );
 }
 
