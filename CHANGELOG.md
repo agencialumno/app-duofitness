@@ -6,6 +6,8 @@ Todas as mudanças relevantes do Duo Fitness ficam aqui. O formato segue o [Keep
 
 ## [Não lançado]
 
+## [1.0.0-beta.2] - 2026-11-02
+
 - Versionamento SemVer 2.0.0: versão em `app.json`, prelançamento em `versao.json`, scripts `bump-version` e `check-version`, tela "Sobre" no Perfil e canais de build (dev, beta, rc, store).
 
 ## Textos da loja
