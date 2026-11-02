@@ -399,7 +399,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
         })),
         workouts: generated,
         // dados desta geração para o histórico de séries (o peso só é guardado para maiores de 18, filtrado no contexto)
-        meta: { goals: allAnswers.goals, level: allAnswers.level, combo: allAnswers.combo ?? null, weightKg: allAnswers.weight, source: 'local' },
+        meta: { goals: allAnswers.goals, level: allAnswers.level, combo: allAnswers.combo ?? null, days: allAnswers.days, weightKg: allAnswers.weight, source: 'local' },
       };
 
       pushAI('Prontinho! Montei suas 3 séries com base no que você me contou. Dá uma olhada:', { plan });
