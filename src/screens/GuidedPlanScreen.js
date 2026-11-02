@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, BackHandler, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import useReturnToOrigin from '../navigation/useReturnToOrigin';
 import { COLORS, FONTS, RADIUS, SPACING } from '../utils/theme';
 import { useApp } from '../context/AppContext';
 import { COMBOS } from '../data/combosEquipment';
@@ -21,7 +22,8 @@ import { BuildingChecklist, animateLayout, Chip, FooterButton, GuidedHeader, Opt
 // "AIPersonalTrainerChat". Nada aqui altera os dados salvos até o morador tocar em "Salvar série".
 const QUESTIONS = ['schedule', 'combo', 'limitation', 'focus'];
 
-export default function GuidedPlanScreen({ navigation }) {
+export default function GuidedPlanScreen({ navigation, route }) {
+  useReturnToOrigin(navigation, route); // o voltar interno (etapas) segue igual; só o voltar que SAI da tela volta à aba de origem
   const { user, addWorkouts, saveUser } = useApp();
   const [settings, setSettings] = useState(() => defaultSettings(getProfileDefaults(user)));
   const [stage, setStage] = useState('intro'); // 'intro' | 'ask' | 'building' | 'review'

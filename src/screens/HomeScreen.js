@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
 import MarketplaceImage from '../components/MarketplaceImage';
 import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
+import { openInTab } from '../navigation/crossTab';
 import useOccupancy from '../hooks/useOccupancy';
 import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
@@ -138,7 +139,7 @@ export default function HomeScreen({ navigation }) {
       {/* IA Banner — sempre visível */}
       <TouchableOpacity accessibilityRole="button"
         style={styles.aiBanner}
-        onPress={() => navigation.navigate('Workouts', { screen: 'AIPersonalTrainer' })}
+        onPress={() => openInTab(navigation, 'Workouts', 'AIPersonalTrainer', {}, 'Home')}
         activeOpacity={0.85}
       >
         <View style={styles.aiBannerLeft}>
@@ -158,14 +159,14 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.quickActions}>
         <TouchableOpacity accessibilityRole="button"
           style={styles.qActionSecondary}
-          onPress={() => navigation.navigate('Workouts', { screen: 'SmartPlan' })}
+          onPress={() => openInTab(navigation, 'Workouts', 'SmartPlan', {}, 'Home')}
         >
           <Ionicons name="options-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Gerador rápido</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityRole="button"
           style={styles.qActionSecondary}
-          onPress={() => navigation.navigate('Workouts', { screen: 'CreateWorkout' })}
+          onPress={() => openInTab(navigation, 'Workouts', 'CreateWorkout', {}, 'Home')}
         >
           <Ionicons name="add-outline" size={18} color={COLORS.primary} />
           <Text style={styles.qActionSecondaryText}>Criar manualmente</Text>
@@ -254,10 +255,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.sectionTitle}>ÚLTIMO TREINO</Text>
           <TouchableOpacity accessibilityRole="button"
             style={styles.workoutCard}
-            onPress={() => navigation.navigate('Workouts', {
-              screen: 'WorkoutDetail',
-              params: { workout: lastWorkout },
-            })}
+            onPress={() => openInTab(navigation, 'Workouts', 'WorkoutDetail', { workout: lastWorkout }, 'Home')}
           >
             <View style={styles.workoutCardIcon}>
               <Ionicons name="barbell-outline" size={20} color={COLORS.primary} />
