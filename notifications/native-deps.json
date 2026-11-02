@@ -1,0 +1,7 @@
+{
+  "_comentario": "Módulo nativo das notificações LOCAIS (lembretes de treino e de inatividade). NÃO está no package.json do repositório: scripts/install-notifications-deps.mjs o grava no package.json do WORKSPACE do CI só quando NOTIFICATIONS_ENABLED=true (o autolinking só enxerga dependencies da raiz). Sem a flag o build fica idêntico ao de antes. expo-notifications é um módulo do Expo: a versão vem de bundledNativeModules.json do SDK (~0.32.17 no SDK 54), nunca chutada. NÃO usamos o plugin do pacote (app.plugin.js): ele grava o entitlement aps-environment (push) no iOS; o nosso (plugins/withNotificationsOptional.js) só garante o que os lembretes locais precisam e REMOVE alarmes exatos. Nenhum token push é pedido.",
+  "expo": [
+    "expo-notifications"
+  ],
+  "pinned": {}
+}
