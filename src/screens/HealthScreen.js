@@ -155,7 +155,7 @@ export default function HealthScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   updated: { ...TYPE.bodySmall, color: COLORS.textSecondary },
-  content: { paddingHorizontal: space.screen, paddingTop: space.inner },
+  content: { paddingHorizontal: SPACING.lg, paddingTop: space.inner },
   firstSection: { marginTop: space.inner },
   section: { marginTop: space.section },
   cards: { gap: space.cardGap },

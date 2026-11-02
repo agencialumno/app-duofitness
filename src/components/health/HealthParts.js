@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, HEALTH_UI } from '../../utils/theme';
+import { COLORS, HEALTH_UI, SPACING } from '../../utils/theme';
 import { scoreBand } from '../../utils/health';
 import { connectButtonState, scorePhrase } from '../../utils/healthView';
 import { COACH_TEXTS } from '../../data/healthCoachTexts';
@@ -87,7 +87,7 @@ function QuickButton({ icon, label, sub, onPress, muted, testID, accessibilityLa
 // ---- (c) Chips que rolam a tela até cada categoria ----
 export function CategoryChips({ items, onSelect }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.chips} testID="health-chips" accessibilityLabel="Ir para uma categoria">
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} style={styles.chipsBleed} contentContainerStyle={styles.chips} testID="health-chips" accessibilityLabel="Ir para uma categoria">
       {items.map((v) => (
         <TouchableOpacity
           key={v.id}
@@ -259,7 +259,9 @@ const styles = StyleSheet.create({
   quickMuted: { backgroundColor: COLORS.bg },
   quickText: { flexShrink: 1 },
   quickLabel: { ...type.label, color: COLORS.white },
-  chips: { gap: space.inner, paddingRight: space.screen },
+  // A faixa vai até a borda da tela: o pai (conteúdo da Saúde) tem paddingHorizontal SPACING.lg; a margem negativa anula e o preenchimento devolve o mesmo valor ao primeiro e ao último chip.
+  chipsBleed: { marginHorizontal: -SPACING.lg },
+  chips: { gap: space.inner, paddingHorizontal: SPACING.lg },
   chip: { minHeight: minTouch, justifyContent: 'center', paddingHorizontal: space.screen, borderRadius: 999, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border },
   chipText: { ...type.support, fontWeight: '600', color: COLORS.white },
   sugRow: { gap: space.tight },
