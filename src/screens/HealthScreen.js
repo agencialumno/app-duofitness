@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, LayoutAnimation, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, LayoutAnimation, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, HEALTH_UI, SPACING } from '../utils/theme';
+import { COLORS, HEALTH_UI, SPACING, TYPE } from '../utils/theme';
 import useHealth from '../hooks/useHealth';
 import CategoryCard from '../components/health/CategoryCard';
 import { CategoryChips, NoDataGroup, QuickActions, ScoreHero, SuggestionsCard, WeeklyReport } from '../components/health/HealthParts';
 import InfoButton from '../components/InfoButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { SCORE_DISCLAIMER } from '../utils/health';
 import { connectButtonState, splitViews } from '../utils/healthView';
 import { ANDROID_COPY } from '../data/healthConnectContent';
@@ -59,18 +60,7 @@ export default function HealthScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Voltar">
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View style={styles.headerText}>
-          <Text style={styles.title} accessibilityRole="header">Saúde</Text>
-          <Text style={styles.subtitle}>Seus hábitos da semana</Text>
-          {canSync && lastSyncAt ? <Text style={styles.updated} testID="health-updated" accessibilityLiveRegion="polite">{updatedAtLabel(lastSyncAt)}</Text> : null}
-          {canSync && provider && provider.source === 'healthconnect' ? <Text style={styles.updated} testID="health-watch-hint">{ANDROID_COPY.syncHintShort}</Text> : null}
-        </View>
-        <InfoButton tema="saude" />
-      </View>
+      <ScreenHeader title="Saúde" subtitle="Seus hábitos da semana" onBack={() => navigation.goBack()} right={<InfoButton tema="saude" />} />
 
       <ScrollView
         ref={scrollRef}
@@ -78,6 +68,10 @@ export default function HealthScreen({ navigation }) {
         refreshControl={canSync ? <RefreshControl refreshing={syncing} onRefresh={() => sync({ force: true })} tintColor={COLORS.primary} colors={[COLORS.primary]} /> : undefined}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
       >
+        {/* "Atualizado às" e a dica do relógio: antes ficavam no cabeçalho */}
+        {canSync && lastSyncAt ? <Text style={styles.updated} testID="health-updated" accessibilityLiveRegion="polite">{updatedAtLabel(lastSyncAt)}</Text> : null}
+        {canSync && provider && provider.source === 'healthconnect' ? <Text style={styles.updated} testID="health-watch-hint">{ANDROID_COPY.syncHintShort}</Text> : null}
+
         {/* (a) Duo Score */}
         <View style={styles.firstSection}>
           <ScoreHero loading={loading} result={result} score={score} minor={minor} />
@@ -160,12 +154,7 @@ export default function HealthScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: space.screen, paddingBottom: SPACING.sm },
-  backBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -SPACING.sm },
-  headerText: { flex: 1 },
-  title: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
-  subtitle: { ...type.support, color: COLORS.textSecondary },
-  updated: { ...type.caption, color: COLORS.textSecondary },
+  updated: { ...TYPE.bodySmall, color: COLORS.textSecondary },
   content: { paddingHorizontal: space.screen, paddingTop: space.inner },
   firstSection: { marginTop: space.inner },
   section: { marginTop: space.section },

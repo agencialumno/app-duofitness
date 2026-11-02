@@ -124,9 +124,10 @@ describe('nada mais mudou: os valores antigos do tema continuam iguais', () => {
     expect(T.SHADOWS.card.elevation).toBe(4);
     expect(T.HEALTH_UI.minTouch).toBe(44);
   });
-  // Desde o lote 1 do cabeçalho (docs/visual-cabecalho.md) o ScreenHeader é o primeiro usuário de TYPE; nenhuma TELA usa ainda.
-  it('nenhuma tela foi migrada para TYPE, SPACING.smd ou RADIUS.tight (só o ScreenHeader, componente novo, usa TYPE)', () => {
-    const users = files.filter((f) => /\b(TYPE\.|SPACING\.smd\b|RADIUS\.tight\b)/.test(strip(readFileSync(f, 'utf8')))).map(rel).filter((f) => f !== 'src/components/ScreenHeader.js');
+  // Arquivos que já usam TYPE por decisão dos lotes do cabeçalho (docs/visual-cabecalho.md): o componente novo e as telas migradas (lote 3: Saúde).
+  const MIGRADOS = ['src/components/ScreenHeader.js', 'src/screens/HealthScreen.js'];
+  it('só o ScreenHeader e as telas migradas dos lotes do cabeçalho usam TYPE, SPACING.smd ou RADIUS.tight', () => {
+    const users = files.filter((f) => /\b(TYPE\.|SPACING\.smd\b|RADIUS\.tight\b)/.test(strip(readFileSync(f, 'utf8')))).map(rel).filter((f) => !MIGRADOS.includes(f));
     expect(users).toEqual([]);
   });
 });
