@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenTopInset from '../components/ScreenTopInset';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getIMCCategory } from '../utils/imc';
@@ -16,7 +16,6 @@ import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 
 export default function HomeScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { user, xp, getLevel, workouts, completedSessions, achievements } = useApp();
   // Sequência = dias seguidos com treino, pelas datas das sessões: a MESMA função da Saúde (computeStreak).
   // O contador gravado em @duo_streak segue existindo (conquistas), mas não é mais exibido aqui.
@@ -38,10 +37,11 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <ScreenTopInset />
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.content}>
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+      <View style={[styles.header, { paddingTop: SPACING.sm }]}>
         <View>
           <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0]}</Text>
           <Text style={styles.subGreeting}>
