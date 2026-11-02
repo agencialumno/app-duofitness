@@ -34,7 +34,7 @@ function formatGoals(goals) {
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { user, xp, achievements, completedSessions, workouts, getLevel, renameUser } = useApp();
+  const { user, xp, achievements, completedSessions, seriesCount, getLevel, renameUser } = useApp();
   const { refreshUser } = useAuth();
   // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
   useEffect(() => {
@@ -143,7 +143,7 @@ export default function ProfileScreen({ navigation }) {
           {[
             { label: 'Treinos realizados', value: completedSessions.length, icon: 'checkmark-circle-outline' },
             { label: 'Sequência atual', value: `${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}`, icon: 'flame-outline' },
-            { label: 'Séries criadas', value: workouts.length, icon: 'barbell-outline' },
+            { label: 'Séries criadas', value: seriesCount ?? 0, icon: 'barbell-outline' },
             { label: 'Conquistas', value: achievements.length, icon: 'trophy-outline' },
           ].map((s, i) => (
             <View key={i} style={styles.statCard}>

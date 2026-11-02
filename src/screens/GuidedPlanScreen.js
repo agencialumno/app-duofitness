@@ -56,7 +56,8 @@ export default function GuidedPlanScreen({ navigation, route }) {
     if (!plan || saving) return;
     setSaving(true);
     try {
-      await addWorkouts(plan.workouts);
+      // meta: o histórico de séries guarda objetivo, nível, combo e o peso usado nesta geração (peso só de maiores de 18, filtrado no contexto)
+      await addWorkouts(plan.workouts, { goals: settings.goals, level: settings.level, combo: settings.combo, source: plan.source, weightKg: settings.weight });
       const sameBody = user && Number(user.weight) === settings.weight && Number(user.height) === settings.height;
       if (plan.imc && sameBody) await saveUser({ ...user, imc: plan.imc, imcCategory: plan.imcCategoria });
       setStage('saved');
