@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   exercises: { gap: SPACING.sm },
   exRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md },
   exNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
-  exNumText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.primary },
+  exNumText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.white },
   exIcon: { width: 36, height: 36, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   exInfo: { flex: 1, gap: 2 },
   exName: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white },

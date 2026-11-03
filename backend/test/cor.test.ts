@@ -183,8 +183,29 @@ export const LOTES: Record<string, Ent[]> = {
     { file: 'src/components/InfoSheet.js', key: 'bullet' }, { file: 'src/components/health/HealthParts.js', key: 'sugAction' },
     { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'bubbleTextUser' }, { file: 'src/screens/ExerciseDetailScreen.js', key: 'tipText' },
   ],
+  'números em destaque (decisão 4.1): branco em negrito; XP, sequência, treino ativo e faixas de saúde são exceções': [
+    { file: 'src/screens/StoreScreen.js', key: 'price' }, { file: 'src/screens/StoreDetailScreen.js', key: 'price' },
+    { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'planSerieText' }, { file: 'src/screens/SmartPlanScreen.js', key: 'planSerieText' },
+    { file: 'src/screens/WorkoutsScreen.js', key: 'cardSerieText' }, { file: 'src/screens/WorkoutDetailScreen.js', key: 'exNumText' },
+    { file: 'src/screens/ExerciseDetailScreen.js', key: 'stepNumText' }, { file: 'src/screens/ExerciseDetailScreen.js', key: 'configValue' },
+    { file: 'src/components/InfoSheet.js', key: 'stepNumText' }, { file: 'src/screens/onboarding/LevelSelectScreen.js', key: 'daysText' },
+    // exceções (continuam amarelos): ver STYLE_EXCEPTIONS
+    { file: 'src/screens/HomeScreen.js', key: 'streakNum' }, { file: 'src/screens/HomeScreen.js', key: 'xpText' }, { file: 'src/screens/ProfileScreen.js', key: 'xpValue' },
+    { file: 'src/screens/ActiveWorkoutScreen.js', key: 'repsNumber' }, { file: 'src/screens/ActiveWorkoutScreen.js', key: 'restTimer' },
+    { file: 'src/screens/ActiveWorkoutScreen.js', key: 'doneStatValue' },
+    { file: 'src/screens/HomeScreen.js', key: 'healthBand' }, { file: 'src/components/health/ProfileHealthCard.js', key: 'band' },
+  ],
 };
 export const STYLE_EXCEPTIONS: StyleExc[] = [
+  { file: 'src/screens/HomeScreen.js', key: 'streakNum', trecho: 'COLORS.primary', motivo: 'sequência continua amarela (decisão 4.1)' },
+  { file: 'src/screens/HomeScreen.js', key: 'xpText', trecho: 'COLORS.primary', motivo: 'XP continua amarelo (decisão 4.1)' },
+  { file: 'src/screens/ProfileScreen.js', key: 'xpValue', trecho: 'COLORS.primary', motivo: 'XP continua amarelo (decisão 4.1)' },
+  { file: 'src/screens/ActiveWorkoutScreen.js', key: 'repsNumber', trecho: 'COLORS.primary', motivo: 'número do treino ativo: exceção (decisão 4.1)' },
+  { file: 'src/screens/ActiveWorkoutScreen.js', key: 'restTimer', trecho: 'COLORS.primary', motivo: 'número do treino ativo: exceção (decisão 4.1)' },
+  { file: 'src/screens/ActiveWorkoutScreen.js', key: 'doneStatValue', trecho: 'COLORS.primary', motivo: 'número do treino ativo: exceção (decisão 4.1)' },
+  { file: 'src/screens/HomeScreen.js', key: 'healthBand', trecho: 'COLORS.primary', motivo: 'faixa de saúde depende de cor por faixa: não mudar (decisão 4.1)' },
+  { file: 'src/components/health/ProfileHealthCard.js', key: 'band', trecho: 'COLORS.primary', motivo: 'faixa de saúde depende de cor por faixa: não mudar (decisão 4.1)' },
+
   { file: 'src/screens/CreateWorkoutScreen.js', key: 'exCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
   { file: 'src/screens/EditBodyDataScreen.js', key: 'ageCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
   { file: 'src/screens/onboarding/BodyDataScreen.js', key: 'ageCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
@@ -195,7 +216,7 @@ export const STYLE_EXCEPTIONS: StyleExc[] = [
   { file: 'src/screens/onboarding/LevelSelectScreen.js', key: 'cardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
   { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'goalCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
 ];
-const MAX_STYLE_EXCEPTIONS = 9; // só diminui
+const MAX_STYLE_EXCEPTIONS = 17; // só diminui (9 bordas do lote 7 + 8 números)
 
 function styleBlock(file: string, key: string): string | null {
   const L = readFileSync(path.join(REPO, file), 'utf8').split(/\r?\n/);
@@ -249,5 +270,36 @@ describe('lote 8: indicadores de carregamento não usam o amarelo', () => {
     expect(g('src/screens/SmartPlanScreen.js')).toMatch(/<ActivityIndicator size="large" color=\{COLORS\.textSecondary\} \/>/);
     expect(g('src/screens/AIPersonalTrainerScreen.js').match(/<ActivityIndicator[^>]*color=\{COLORS\.textSecondary\}/g)).toHaveLength(2);
     expect(g('src/screens/HealthScreen.js')).toMatch(/tintColor=\{COLORS\.textSecondary\} colors=\{\[COLORS\.textSecondary\]\}/);
+  });
+});
+
+describe('tinta âmbar: nenhuma tela usa mais (fora das exceções)', () => {
+  const AMBER = /#(?:1a1700|141200|3a2a00|2a2400|1a1200|c8a800|1a0f00)\b/i;
+  // exceções: arquivo + trecho + motivo (a lista só encolhe)
+  const AMBER_EXCEPTIONS: { file: string; trecho: string; motivo: string }[] = [
+    { file: 'src/screens/ExercisesScreen.js', trecho: "'#1A1200'", motivo: 'fundo da etiqueta de dificuldade "Intermediário" (laranja de aviso, não a tinta da marca): caso de fronteira 4.7' },
+  ];
+  it('nenhum arquivo de src usa a tinta âmbar literal fora das exceções', () => {
+    const bad: string[] = [];
+    for (const f of files) {
+      readFileSync(f, 'utf8').split(/\r?\n/).forEach((l, i) => {
+        if (AMBER.test(l) && !AMBER_EXCEPTIONS.some((x) => x.file === rel(f) && l.includes(x.trecho))) bad.push(`${rel(f)}:${i + 1}  ${l.trim().slice(0, 120)}`);
+      });
+    }
+    expect(bad, bad.join('\n')).toEqual([]);
+  });
+  it('as exceções ainda existem (senão, apague-as) e a lista só encolhe', () => {
+    for (const x of AMBER_EXCEPTIONS) expect(readFileSync(path.join(REPO, x.file), 'utf8'), `${x.file} «${x.trecho}»`).toContain(x.trecho);
+    expect(AMBER_EXCEPTIONS.length).toBeLessThanOrEqual(1);
+  });
+  it('número da faixa em linha (Duo Score por pilar, HealthParts) continua amarelo: exceção da decisão 4.1', () => {
+    expect(readFileSync(path.join(REPO, 'src/components/health/HealthParts.js'), 'utf8')).toContain("<Text style={[styles.label, { color: COLORS.primary }]}>{c.present");
+  });
+  it('números migrados: branco e em negrito (700)', () => {
+    const blk = (f: string, k: string) => styleBlock(f, k) ?? '';
+    for (const [f, k] of [['src/screens/StoreScreen.js', 'price'], ['src/screens/StoreDetailScreen.js', 'price'], ['src/screens/WorkoutsScreen.js', 'cardSerieText'], ['src/screens/onboarding/LevelSelectScreen.js', 'daysText']] as const) {
+      expect(blk(f, k), `${f} ${k}`).toContain('COLORS.white');
+      expect(blk(f, k), `${f} ${k}`).toContain("'700'");
+    }
   });
 });

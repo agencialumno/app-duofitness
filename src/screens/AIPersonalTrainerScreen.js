@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
   planPreviewTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
   planSerieRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCardAlt, borderRadius: RADIUS.sm, padding: SPACING.sm },
   planSerieBadge: { width: 32, height: 32, borderRadius: RADIUS.xs, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
-  planSerieText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
+  planSerieText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   planSerieName: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
   planSerieMeta: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingVertical: SPACING.sm, marginTop: SPACING.xs },

@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   listText: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.textPrimary, lineHeight: 23 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   stepNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.bgCardAlt, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
-  stepNumText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
+  stepNumText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
   stepBody: { flex: 1 },
   stepTitle: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   stepConta: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white, lineHeight: 22 },

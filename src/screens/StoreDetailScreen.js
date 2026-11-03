@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   tagMuted: { backgroundColor: COLORS.bgCardAlt, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 4 },
   tagMutedText: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, fontWeight: '600' },
   title: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white },
-  price: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.primary },
+  price: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white },
   sectionTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white, marginTop: SPACING.sm },
   description: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 24 },
   cta: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, marginTop: SPACING.md },

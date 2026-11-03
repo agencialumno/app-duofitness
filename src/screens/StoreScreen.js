@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   cardDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: SPACING.sm },
-  price: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
+  price: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white },
   more: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   moreText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.primary },
   empty: { alignItems: 'center', gap: SPACING.sm, padding: SPACING.xl },

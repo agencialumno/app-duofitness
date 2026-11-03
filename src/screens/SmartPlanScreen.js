@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   planList: { gap: SPACING.sm, marginBottom: SPACING.md },
   planCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md },
   planSerieBadge: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-  planSerieText: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.primary },
+  planSerieText: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white },
   planCardBody: { flex: 1, gap: 2 },
   planSerie: { fontSize: FONTS.sizes.xs, color: COLORS.white, fontWeight: '700', letterSpacing: 1.5 },
   planName: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white },

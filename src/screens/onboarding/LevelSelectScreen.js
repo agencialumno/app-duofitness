@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   cardBottom: { paddingLeft: 56, gap: SPACING.xs },
   cardDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 20 },
   daysBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  daysText: { fontSize: FONTS.sizes.xs, color: COLORS.primary, fontWeight: '500' },
+  daysText: { fontSize: FONTS.sizes.xs, color: COLORS.white, fontWeight: '700' },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingVertical: SPACING.md },
   btnDisabled: { opacity: 0.35 },
   btnText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.black },
