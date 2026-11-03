@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     width: 36, height: 36, borderRadius: RADIUS.sm,
-    backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center',
   },
   featureText: { fontSize: FONTS.sizes.md, color: COLORS.textPrimary, fontWeight: '500', flex: 1 },
   footer: { gap: SPACING.sm, alignItems: 'center' },

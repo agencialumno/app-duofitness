@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   cardIcon: {
     width: 48, height: 48, borderRadius: RADIUS.md,
-    backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center',
     flexShrink: 0,
   },
   cardBody: { flex: 1, gap: 4 },

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
     borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md,
   },
-  cardSerie: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center' },
+  cardSerie: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   cardSerieText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.primary },
   cardBody: { flex: 1, gap: 4 },
   cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },

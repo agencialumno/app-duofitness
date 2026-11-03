@@ -144,6 +144,19 @@ export const LOTES: Record<string, Ent[]> = {
     { file: 'src/screens/WorkoutsScreen.js', key: 'aiBadge' }, { file: 'src/screens/WorkoutsScreen.js', key: 'aiBadgeText' },
     { file: 'src/components/ExerciseMedia.js', key: 'badge' }, { file: 'src/components/ExerciseMedia.js', key: 'badgeText' },
   ],
+  'lote 3: fundos tintados de ícone/número e cartões tintados': [
+    { file: 'src/components/health/CategoryCard.js', key: 'iconWrap' },
+    { file: 'src/screens/ActiveWorkoutScreen.js', key: 'exerciseIconWrap' }, { file: 'src/screens/ActiveWorkoutScreen.js', key: 'restCard' },
+    { file: 'src/screens/ExerciseDetailScreen.js', key: 'heroIcon' }, { file: 'src/screens/ExerciseDetailScreen.js', key: 'stepNum' },
+    { file: 'src/screens/ExerciseDetailScreen.js', key: 'tipCard' },
+    { file: 'src/screens/ExercisesScreen.js', key: 'cardIcon' },
+    { file: 'src/screens/HomeScreen.js', key: 'workoutCardIcon' },
+    { file: 'src/screens/WorkoutDetailScreen.js', key: 'exNum' }, { file: 'src/screens/WorkoutDetailScreen.js', key: 'exIcon' },
+    { file: 'src/screens/WorkoutsScreen.js', key: 'cardSerie' },
+    { file: 'src/screens/onboarding/WelcomeScreen.js', key: 'iconWrap' },
+    { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'bubbleUser' },
+    { file: 'src/screens/SmartPlanScreen.js', key: 'profileBanner' },
+  ],
 };
 export const STYLE_EXCEPTIONS: StyleExc[] = [];
 const MAX_STYLE_EXCEPTIONS = 0; // só diminui

@@ -61,7 +61,7 @@ export default function CategoryCard({ view, onPress, testID }) {
 const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.bgCard, borderRadius: card.radius, borderWidth: card.borderWidth, borderColor: COLORS.border, padding: space.cardPadding, gap: space.inner },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.inner, minHeight: HEALTH_UI.minTouch },
-  iconWrap: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#1A1700', alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 36, height: 36, borderRadius: 8, backgroundColor: COLORS.bgCardAlt, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, ...type.label, color: COLORS.white },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: space.inner },
   value: { ...type.value, color: COLORS.white },

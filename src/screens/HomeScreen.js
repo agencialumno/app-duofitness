@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   qActionSecondary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, padding: SPACING.md, borderWidth: 1, borderColor: COLORS.border },
   qActionSecondaryText: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.primary },
   workoutCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.md },
-  workoutCardIcon: { width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center' },
+  workoutCardIcon: { width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   workoutCardBody: { flex: 1 },
   workoutCardName: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white },
   workoutCardInfo: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginTop: 2 },

@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   aiAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', flexShrink: 0, marginBottom: 2 },
   bubble: { maxWidth: '82%', borderRadius: RADIUS.lg, padding: SPACING.md },
   bubbleAI: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderBottomLeftRadius: 4 },
-  bubbleUser: { backgroundColor: '#1A1700', borderWidth: 1, borderColor: '#3A2A00', borderBottomRightRadius: 4 },
+  bubbleUser: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderBottomRightRadius: 4 },
   bubbleText: { fontSize: FONTS.sizes.md, lineHeight: 22 },
   bubbleTextAI: { color: COLORS.textPrimary },
   bubbleTextUser: { color: COLORS.primary },

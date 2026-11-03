@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   progressBg: { height: 3, backgroundColor: COLORS.border, borderRadius: 2 },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2 },
   progressText: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
-  profileBanner: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginHorizontal: SPACING.lg, backgroundColor: '#1A1700', borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm, paddingVertical: 6, marginBottom: SPACING.xs },
+  profileBanner: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginHorizontal: SPACING.lg, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm, paddingVertical: 6, marginBottom: SPACING.xs },
   profileBannerText: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary, fontWeight: '500' },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   questionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.xs },
