@@ -138,7 +138,7 @@ export default function SmartPlanScreen({ navigation, route }) {
   if (generating) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.textSecondary} />
         <Text style={styles.loadingTitle}>Analisando seu perfil...</Text>
         <InfoButton tema="montandoSerie" />
         <Text style={styles.loadingSub}>

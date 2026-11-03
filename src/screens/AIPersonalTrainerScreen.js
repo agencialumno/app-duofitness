@@ -587,7 +587,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
         >
           {messages.length === 0 && loading && (
             <View style={styles.loadingStart}>
-              <ActivityIndicator color={COLORS.primary} />
+              <ActivityIndicator color={COLORS.textSecondary} />
               <Text style={styles.loadingText}>Conectando com seu personal...</Text>
             </View>
           )}
@@ -598,7 +598,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
                 <Ionicons name="fitness-outline" size={14} color={COLORS.black} />
               </View>
               <View style={[styles.bubble, styles.bubbleAI, styles.typingBubble]}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <ActivityIndicator size="small" color={COLORS.textSecondary} />
               </View>
             </View>
           )}

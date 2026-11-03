@@ -229,3 +229,25 @@ describe('papéis migrados não voltam ao amarelo nem à tinta âmbar (lotes 2 e
     expect(STYLE_EXCEPTIONS.length).toBeLessThanOrEqual(MAX_STYLE_EXCEPTIONS);
   });
 });
+
+
+describe('lote 8: indicadores de carregamento não usam o amarelo', () => {
+  // exceções: arquivo + trecho + motivo (a lista só encolhe). Dentro de botão primário o indicador continua preto (não é COLORS.primary).
+  const LOADING_EXCEPTIONS: { file: string; trecho: string; motivo: string }[] = [];
+  it('nenhum ActivityIndicator/RefreshControl usa COLORS.primary fora das exceções', () => {
+    const bad: string[] = [];
+    for (const f of files) {
+      readFileSync(f, 'utf8').split(/\r?\n/).forEach((l, i) => {
+        if (/ActivityIndicator|RefreshControl/.test(l) && /COLORS\.primary\b/.test(l) && !LOADING_EXCEPTIONS.some((x) => x.file === rel(f) && l.includes(x.trecho))) bad.push(`${rel(f)}:${i + 1}  ${l.trim().slice(0, 120)}`);
+      });
+    }
+    expect(bad, bad.join('\n')).toEqual([]);
+    expect(LOADING_EXCEPTIONS.length).toBeLessThanOrEqual(0);
+  });
+  it('os indicadores migrados usam textSecondary', () => {
+    const g = (f: string) => readFileSync(path.join(REPO, f), 'utf8');
+    expect(g('src/screens/SmartPlanScreen.js')).toMatch(/<ActivityIndicator size="large" color=\{COLORS\.textSecondary\} \/>/);
+    expect(g('src/screens/AIPersonalTrainerScreen.js').match(/<ActivityIndicator[^>]*color=\{COLORS\.textSecondary\}/g)).toHaveLength(2);
+    expect(g('src/screens/HealthScreen.js')).toMatch(/tintColor=\{COLORS\.textSecondary\} colors=\{\[COLORS\.textSecondary\]\}/);
+  });
+});

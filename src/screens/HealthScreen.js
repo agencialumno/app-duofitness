@@ -65,7 +65,7 @@ export default function HealthScreen({ navigation }) {
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        refreshControl={canSync ? <RefreshControl refreshing={syncing} onRefresh={() => sync({ force: true })} tintColor={COLORS.primary} colors={[COLORS.primary]} /> : undefined}
+        refreshControl={canSync ? <RefreshControl refreshing={syncing} onRefresh={() => sync({ force: true })} tintColor={COLORS.textSecondary} colors={[COLORS.textSecondary]} /> : undefined}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xl }]}
       >
         {/* "Atualizado às" e a dica do relógio: antes ficavam no cabeçalho */}
