@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   title: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.sm },
   scroll: { flexGrow: 0 },
   content: { gap: SPACING.sm, paddingBottom: SPACING.md },
-  heading: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary, marginTop: SPACING.sm },
+  heading: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.white, marginTop: SPACING.sm },
   text: { fontSize: FONTS.sizes.md, color: COLORS.textPrimary, lineHeight: 23 },
   list: { gap: SPACING.xs },
   listRow: { flexDirection: 'row', gap: SPACING.sm },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   bandLabel: { fontSize: FONTS.sizes.md, color: COLORS.textPrimary },
   bandLabelHere: { fontWeight: '700', color: COLORS.white },
   bandRange: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  hereTag: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
+  hereTag: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
   closeBtn: { minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: SPACING.lg, marginTop: SPACING.xs },
   closeText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.black },
 });

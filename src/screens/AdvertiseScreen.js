@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   noticeText: { flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 19 },
   field: { gap: SPACING.xs },
   fieldLabel: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
-  required: { color: COLORS.primary, fontWeight: '700' },
+  required: { color: COLORS.white, fontWeight: '700' },
   optional: { color: COLORS.textSecondary, fontWeight: '400' },
   hint: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },

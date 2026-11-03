@@ -157,6 +157,16 @@ export const LOTES: Record<string, Ent[]> = {
     { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'bubbleUser' },
     { file: 'src/screens/SmartPlanScreen.js', key: 'profileBanner' },
   ],
+  'lote 5: títulos e rótulos em amarelo (mais o asterisco de obrigatório e o cartão "em breve")': [
+    { file: 'src/components/InfoSheet.js', key: 'heading' }, { file: 'src/components/InfoSheet.js', key: 'hereTag' },
+    { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'planPreviewTitle' },
+    { file: 'src/screens/AdvertiseScreen.js', key: 'required' },
+    { file: 'src/screens/ExerciseDetailScreen.js', key: 'tipTitle' },
+    { file: 'src/screens/HealthConnectScreen.js', key: 'soonTitle' }, { file: 'src/screens/HealthConnectScreen.js', key: 'soon' },
+    { file: 'src/screens/SmartPlanScreen.js', key: 'planSerie' }, { file: 'src/screens/SmartPlanScreen.js', key: 'notesTitle' },
+    { file: 'src/screens/WorkoutDetailScreen.js', key: 'serieLabel' },
+    { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'greetName' },
+  ],
 };
 export const STYLE_EXCEPTIONS: StyleExc[] = [];
 const MAX_STYLE_EXCEPTIONS = 0; // só diminui

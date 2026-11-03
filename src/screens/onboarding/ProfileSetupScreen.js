@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   field: { marginBottom: SPACING.xl },
   label: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginBottom: SPACING.sm, fontWeight: '600', letterSpacing: 1.5 },
   multiHint: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginTop: -SPACING.xs, marginBottom: SPACING.sm },
-  greetName: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.primary, marginBottom: SPACING.lg },
+  greetName: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.lg },
   input: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, color: COLORS.white, fontSize: FONTS.sizes.md },
   goals: { gap: SPACING.sm },
   goalCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md },

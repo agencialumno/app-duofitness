@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   typingBubble: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
   planPreview: { marginTop: SPACING.sm, gap: SPACING.sm },
   planPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.xs },
-  planPreviewTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
+  planPreviewTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white },
   planSerieRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCardAlt, borderRadius: RADIUS.sm, padding: SPACING.sm },
   planSerieBadge: { width: 32, height: 32, borderRadius: RADIUS.xs, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   planSerieText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },

@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
   backBtn: { padding: SPACING.xs },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-  serieLabel: { fontSize: FONTS.sizes.xs, color: COLORS.primary, fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
+  serieLabel: { fontSize: FONTS.sizes.xs, color: COLORS.white, fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
   workoutName: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.xs },
   meta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.lg },
   metaText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
