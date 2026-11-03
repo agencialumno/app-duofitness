@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, marginBottom: SPACING.xl, lineHeight: 22 },
   levels: { gap: SPACING.md, marginBottom: SPACING.xl },
   card: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: SPACING.md, gap: SPACING.sm },
-  cardActive: { borderColor: COLORS.primary, backgroundColor: '#141200' },
+  cardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.bgCardAlt },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   iconWrap: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   iconWrapActive: { backgroundColor: COLORS.primary },

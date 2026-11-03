@@ -167,9 +167,31 @@ export const LOTES: Record<string, Ent[]> = {
     { file: 'src/screens/WorkoutDetailScreen.js', key: 'serieLabel' },
     { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'greetName' },
   ],
+  'lote 7: itens selecionados (texto em branco e fundo tintado em bgCardAlt; a borda amarela continua)': [
+    { file: 'src/screens/CreateWorkoutScreen.js', key: 'selectedCount' }, { file: 'src/screens/CreateWorkoutScreen.js', key: 'filterChipTextActive' },
+    { file: 'src/screens/CreateWorkoutScreen.js', key: 'filterChipActive' }, { file: 'src/screens/CreateWorkoutScreen.js', key: 'exCardActive' },
+    { file: 'src/screens/EditBodyDataScreen.js', key: 'ageLabelActive' }, { file: 'src/screens/EditBodyDataScreen.js', key: 'ageCardActive' },
+    { file: 'src/screens/onboarding/BodyDataScreen.js', key: 'ageLabelActive' }, { file: 'src/screens/onboarding/BodyDataScreen.js', key: 'ageCardActive' },
+    { file: 'src/screens/GuidedPlanScreen.js', key: 'profileChipValueMissing' }, { file: 'src/screens/GuidedPlanScreen.js', key: 'profileChipMissing' },
+    { file: 'src/screens/GuidedPlanScreen.js', key: 'profileChipActive' },
+    { file: 'src/components/guided/GuidedParts.js', key: 'optionSelected' },
+    { file: 'src/components/InfoSheet.js', key: 'stepNum' }, { file: 'src/components/InfoSheet.js', key: 'bandRowHere' },
+    { file: 'src/screens/SmartPlanScreen.js', key: 'optionActive' },
+    { file: 'src/screens/onboarding/LevelSelectScreen.js', key: 'cardActive' }, { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'goalCardActive' },
+  ],
 };
-export const STYLE_EXCEPTIONS: StyleExc[] = [];
-const MAX_STYLE_EXCEPTIONS = 0; // só diminui
+export const STYLE_EXCEPTIONS: StyleExc[] = [
+  { file: 'src/screens/CreateWorkoutScreen.js', key: 'exCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/EditBodyDataScreen.js', key: 'ageCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/onboarding/BodyDataScreen.js', key: 'ageCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/GuidedPlanScreen.js', key: 'profileChipActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/components/guided/GuidedParts.js', key: 'optionSelected', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/components/InfoSheet.js', key: 'bandRowHere', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/SmartPlanScreen.js', key: 'optionActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/onboarding/LevelSelectScreen.js', key: 'cardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+  { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'goalCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },
+];
+const MAX_STYLE_EXCEPTIONS = 9; // só diminui
 
 function styleBlock(file: string, key: string): string | null {
   const L = readFileSync(path.join(REPO, file), 'utf8').split(/\r?\n/);

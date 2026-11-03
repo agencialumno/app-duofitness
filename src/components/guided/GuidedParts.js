@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   trainerLabelText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textSecondary },
   iaBadge: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.white, borderWidth: 1, borderColor: COLORS.textSecondary, borderRadius: 4, paddingHorizontal: 4, overflow: 'hidden' },
   option: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, minHeight: 64, padding: SPACING.md, borderRadius: RADIUS.lg, backgroundColor: COLORS.bgCard, borderWidth: 1.5, borderColor: COLORS.border },
-  optionSelected: { borderColor: COLORS.primary, backgroundColor: '#1A1700' },
+  optionSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.bgCardAlt },
   optionText: { flex: 1 },
   optionLabel: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white },
   optionHint: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 2, lineHeight: 18 },

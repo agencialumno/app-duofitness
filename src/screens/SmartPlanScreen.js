@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   questionSub: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginBottom: SPACING.xl, lineHeight: 20 },
   options: { gap: SPACING.sm },
   option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, gap: SPACING.md },
-  optionActive: { borderColor: COLORS.primary, backgroundColor: '#141200' },
+  optionActive: { borderColor: COLORS.primary, backgroundColor: COLORS.bgCardAlt },
   optionText: { flex: 1 },
   optionLabel: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.textSecondary },
   optionLabelActive: { color: COLORS.white },

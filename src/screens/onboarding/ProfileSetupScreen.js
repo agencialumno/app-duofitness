@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   input: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, color: COLORS.white, fontSize: FONTS.sizes.md },
   goals: { gap: SPACING.sm },
   goalCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md },
-  goalCardActive: { borderColor: COLORS.primary, backgroundColor: '#141200' },
+  goalCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.bgCardAlt },
   goalIcon: { width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   goalIconActive: { backgroundColor: COLORS.primary },
   goalText: { flex: 1 },
