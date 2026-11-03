@@ -10,7 +10,7 @@ const STATE_COLOR = { quiet: COLORS.success, moderate: COLORS.warning, full: COL
 export function ExampleBadge() {
   return (
     <View style={styles.badge} accessibilityLabel="Dados de exemplo">
-      <Ionicons name="flask-outline" size={12} color={COLORS.black} />
+      <Ionicons name="flask-outline" size={12} color={COLORS.white} />
       <Text style={styles.badgeText}>Dados de exemplo</Text>
     </View>
   );
@@ -72,6 +72,6 @@ const styles = StyleSheet.create({
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   empty: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.textSecondary, flexShrink: 1 },
   muted: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.black },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.textSecondary, paddingHorizontal: 10, paddingVertical: 3 },
+  badgeText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.white },
 });

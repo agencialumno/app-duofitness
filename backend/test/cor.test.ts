@@ -117,3 +117,66 @@ describe('contraste do textSecondary nas superfícies dos ícones (>= 3:1, ícon
     for (const s of [COLORS.bg, COLORS.bgCard, COLORS.bgCardAlt]) expect(ratio(COLORS.white, s)).toBeGreaterThanOrEqual(3);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// Lotes 2 em diante (docs/visual-cor.md, item 5): papéis migrados, identificados por ARQUIVO + CHAVE DO ESTILO (nunca por número de linha).
+// O estilo migrado não pode voltar a conter COLORS.primary nem a tinta âmbar. Exceções: arquivo + chave + TRECHO da cor mantida + motivo; a lista só encolhe.
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+const FORBID = /COLORS\.primary\b|#(?:1a1700|141200|3a2a00|2a2400|1a1200|c8a800|1a0f00)\b/i;
+type Ent = { file: string; key: string };
+type StyleExc = { file: string; key: string; trecho: string; motivo: string };
+
+export const LOTES: Record<string, Ent[]> = {
+  'lote 2: selos e etiquetas (e selos "Dados de exemplo" e "IA")': [
+    { file: 'src/components/guided/GuidedParts.js', key: 'trainerLabel' }, { file: 'src/components/guided/GuidedParts.js', key: 'trainerLabelText' },
+    { file: 'src/components/guided/GuidedParts.js', key: 'iaBadge' },
+    { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'planSerieBadge' },
+    { file: 'src/screens/ExerciseDetailScreen.js', key: 'tag' }, { file: 'src/screens/ExerciseDetailScreen.js', key: 'tagText' },
+    { file: 'src/screens/ExercisesScreen.js', key: 'tagCategory' }, { file: 'src/screens/ExercisesScreen.js', key: 'tagCategoryText' },
+    { file: 'src/screens/HomeScreen.js', key: 'streakBadge' }, { file: 'src/screens/HomeScreen.js', key: 'xpBadge' },
+    { file: 'src/screens/ProfileScreen.js', key: 'goalBadge' }, { file: 'src/screens/ProfileScreen.js', key: 'goalText' },
+    { file: 'src/screens/SmartPlanScreen.js', key: 'profileBannerText' }, { file: 'src/screens/SmartPlanScreen.js', key: 'planSerieBadge' },
+    { file: 'src/screens/StoreDetailScreen.js', key: 'tag' }, { file: 'src/screens/StoreDetailScreen.js', key: 'tagText' },
+    { file: 'src/screens/StoreScreen.js', key: 'tag' }, { file: 'src/screens/StoreScreen.js', key: 'tagText' },
+    { file: 'src/components/MarketplaceBanners.js', key: 'badge' }, { file: 'src/components/MarketplaceBanners.js', key: 'badgeText' },
+    { file: 'src/components/MarketplaceImage.js', key: 'badge' }, { file: 'src/components/MarketplaceImage.js', key: 'badgeText' },
+    { file: 'src/components/OccupancyCard.js', key: 'badge' }, { file: 'src/components/OccupancyCard.js', key: 'badgeText' },
+    { file: 'src/screens/WorkoutsScreen.js', key: 'aiBadge' }, { file: 'src/screens/WorkoutsScreen.js', key: 'aiBadgeText' },
+    { file: 'src/components/ExerciseMedia.js', key: 'badge' }, { file: 'src/components/ExerciseMedia.js', key: 'badgeText' },
+  ],
+};
+export const STYLE_EXCEPTIONS: StyleExc[] = [];
+const MAX_STYLE_EXCEPTIONS = 0; // só diminui
+
+function styleBlock(file: string, key: string): string | null {
+  const L = readFileSync(path.join(REPO, file), 'utf8').split(/\r?\n/);
+  const i = L.findIndex((l) => new RegExp(String.raw`^\s*` + key + String.raw`:\s*\{`).test(l));
+  if (i < 0) return null;
+  let d = 0; let j = i;
+  for (; j < L.length; j++) { d += (L[j]!.match(/\{/g) || []).length - (L[j]!.match(/\}/g) || []).length; if (d <= 0) break; }
+  return L.slice(i, j + 1).join('\n');
+}
+
+describe('papéis migrados não voltam ao amarelo nem à tinta âmbar (lotes 2 em diante)', () => {
+  for (const [lote, ents] of Object.entries(LOTES)) {
+    it(`${lote}: nenhum estilo migrado usa COLORS.primary ou a tinta âmbar fora das exceções`, () => {
+      const bad: string[] = [];
+      for (const e of ents) {
+        let blk = styleBlock(e.file, e.key);
+        if (blk === null) { bad.push(`${e.file} «${e.key}»: o estilo não existe mais (atualize a lista do lote)`); continue; }
+        for (const x of STYLE_EXCEPTIONS.filter((s) => s.file === e.file && s.key === e.key)) blk = blk.split(x.trecho).join('');
+        if (FORBID.test(blk)) bad.push(`${e.file} «${e.key}»: ${blk.trim().slice(0, 140)}`);
+      }
+      expect(bad, bad.join('\n')).toEqual([]);
+    });
+  }
+  it('exceções de estilo: cada uma cita um estilo de um lote, o trecho ainda existe nele (senão, apague) e a lista só encolhe', () => {
+    const all = Object.values(LOTES).flat();
+    for (const x of STYLE_EXCEPTIONS) {
+      expect(all.some((e) => e.file === x.file && e.key === x.key), `${x.file} «${x.key}» não está em nenhum lote`).toBe(true);
+      expect(styleBlock(x.file, x.key) ?? '', `${x.file} «${x.key}»: trecho «${x.trecho}» não existe mais`).toContain(x.trecho);
+      expect(x.motivo.length).toBeGreaterThan(10);
+    }
+    expect(STYLE_EXCEPTIONS.length).toBeLessThanOrEqual(MAX_STYLE_EXCEPTIONS);
+  });
+});

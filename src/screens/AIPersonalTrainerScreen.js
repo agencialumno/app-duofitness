@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   planPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.xs },
   planPreviewTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
   planSerieRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.bgCardAlt, borderRadius: RADIUS.sm, padding: SPACING.sm },
-  planSerieBadge: { width: 32, height: 32, borderRadius: RADIUS.xs, backgroundColor: '#1A1700', justifyContent: 'center', alignItems: 'center' },
+  planSerieBadge: { width: 32, height: 32, borderRadius: RADIUS.xs, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   planSerieText: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
   planSerieName: { fontSize: FONTS.sizes.sm, fontWeight: '600', color: COLORS.white },
   planSerieMeta: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },

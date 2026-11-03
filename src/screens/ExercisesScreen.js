@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
   cardTags: { flexDirection: 'row', gap: SPACING.xs, flexWrap: 'wrap' },
   tagCategory: {
     paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: RADIUS.full, backgroundColor: '#1A1700',
+    borderRadius: RADIUS.full, backgroundColor: COLORS.bgCardAlt,
   },
-  tagCategoryText: { fontSize: 11, fontWeight: '500', color: COLORS.primary },
+  tagCategoryText: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
   tagDiff: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.full },
   tagDiffText: { fontSize: 11, fontWeight: '500' },
   equipment: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },

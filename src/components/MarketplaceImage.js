@@ -39,7 +39,7 @@ export default function MarketplaceImage({ imagem, categoria, style, iconSize = 
 const styles = StyleSheet.create({
   box: { width: '100%', aspectRatio: 3 / 2, backgroundColor: COLORS.bgCardAlt, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
-  badge: { position: 'absolute', top: 6, left: 6, backgroundColor: COLORS.black, borderRadius: 999, borderWidth: 1, borderColor: COLORS.primary, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  badge: { position: 'absolute', top: 6, left: 6, backgroundColor: COLORS.black, borderRadius: 999, borderWidth: 1, borderColor: COLORS.textSecondary, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { fontSize: 11, fontWeight: '700', color: COLORS.white },
   placeholder: { flex: 1, backgroundColor: COLORS.bgCardAlt, alignItems: 'center', justifyContent: 'center' },
 });

@@ -192,7 +192,7 @@ export default function WorkoutsScreen({ navigation }) {
                   <Text style={styles.cardName}>{item.name}</Text>
                   {item.generatedByAI && (
                     <View style={styles.aiBadge}>
-                      <Ionicons name="sparkles" size={10} color={COLORS.black} />
+                      <Ionicons name="sparkles" size={10} color={COLORS.white} />
                       <Text style={styles.aiBadgeText}>IA</Text>
                     </View>
                   )}
@@ -241,8 +241,8 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, gap: 4 },
   cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   cardName: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white, flex: 1 },
-  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 6, paddingVertical: 2 },
-  aiBadgeText: { fontSize: 10, fontWeight: '700', color: COLORS.black },
+  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.textSecondary, paddingHorizontal: 6, paddingVertical: 2 },
+  aiBadgeText: { fontSize: 10, fontWeight: '700', color: COLORS.white },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   cardMetaText: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
   cardDot: { color: COLORS.textMuted, fontSize: FONTS.sizes.xs },

@@ -61,7 +61,7 @@ export default function ExerciseMedia({ exercise, renderVideo, stillImages }) {
       )}
       {!failed && (
         <View style={styles.badge}>
-          <Ionicons name="videocam-outline" size={14} color={COLORS.black} />
+          <Ionicons name="videocam-outline" size={14} color={COLORS.white} />
           <Text style={styles.badgeText}>Vídeo em breve</Text>
         </View>
       )}
@@ -73,6 +73,6 @@ const styles = StyleSheet.create({
   box: { width: '100%', aspectRatio: 1, borderRadius: RADIUS.lg, overflow: 'hidden', backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border },
   fill: { width: '100%', height: '100%' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bgCardAlt },
-  badge: { position: 'absolute', left: SPACING.sm, bottom: SPACING.sm, maxWidth: '90%', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.black, flexShrink: 1 },
+  badge: { position: 'absolute', left: SPACING.sm, bottom: SPACING.sm, maxWidth: '90%', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.black, borderWidth: 1, borderColor: COLORS.textSecondary, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.white, flexShrink: 1 },
 });
