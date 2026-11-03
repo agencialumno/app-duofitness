@@ -516,7 +516,7 @@ export default function AIPersonalTrainerScreen({ navigation }) {
           {plan && (
             <View style={styles.planPreview}>
               <View style={styles.planPreviewHeader}>
-                <Ionicons name="sparkles" size={16} color={COLORS.primary} />
+                <Ionicons name="sparkles" size={16} color={COLORS.textSecondary} />
                 <Text style={styles.planPreviewTitle}>Plano criado pelo personal!</Text>
               </View>
               {plan.series.map((s, si) => (

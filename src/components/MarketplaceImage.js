@@ -24,7 +24,7 @@ export default function MarketplaceImage({ imagem, categoria, style, iconSize = 
         <Image source={source} style={styles.image} resizeMode="cover" accessibilityIgnoresInvertColors />
       ) : (
         <View style={styles.placeholder} testID="marketplace-placeholder">
-          <Ionicons name={icone} size={iconSize} color={COLORS.primary} />
+          <Ionicons name={icone} size={iconSize} color={COLORS.textSecondary} />
         </View>
       )}
       {exemplo ? (

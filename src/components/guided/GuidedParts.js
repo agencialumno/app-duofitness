@@ -47,7 +47,7 @@ export function GuidedHeader({ onBack, progress, caption, label }) {
 export function TrainerLabel({ text, badge }) {
   return (
     <View style={styles.trainerLabel}>
-      <Ionicons name="sparkles" size={12} color={COLORS.primary} />
+      <Ionicons name="sparkles" size={12} color={COLORS.textSecondary} />
       <Text style={styles.trainerLabelText}>{text}</Text>
       {badge ? <Text style={styles.iaBadge}>{badge}</Text> : null}
     </View>

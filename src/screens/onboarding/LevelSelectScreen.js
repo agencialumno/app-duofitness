@@ -66,7 +66,7 @@ export default function LevelSelectScreen({ navigation, route }) {
             <View style={styles.cardBottom}>
               <Text style={styles.cardDesc}>{l.desc}</Text>
               <View style={styles.daysBadge}>
-                <Ionicons name="calendar-outline" size={12} color={COLORS.primary} />
+                <Ionicons name="calendar-outline" size={12} color={COLORS.textSecondary} />
                 <Text style={styles.daysText}>{l.days}</Text>
               </View>
             </View>

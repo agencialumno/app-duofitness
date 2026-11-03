@@ -30,7 +30,7 @@ export default function CategoryCard({ view, onPress, testID }) {
     >
       <View style={styles.head}>
         <View style={styles.iconWrap}>
-          <Ionicons name={view.icon} size={20} color={COLORS.primary} />
+          <Ionicons name={view.icon} size={20} color={COLORS.textSecondary} />
         </View>
         <Text style={styles.title}>{view.label}</Text>
         <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />

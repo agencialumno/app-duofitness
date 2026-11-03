@@ -9,7 +9,7 @@ export default function RemindersCard({ onPress }) {
   if (!NOTIFICATIONS_ENABLED) return null;
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} accessibilityRole="button" accessibilityLabel="Lembretes de treino" testID="reminders-card">
-      <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+      <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
       <View style={styles.body}>
         <Text style={styles.title}>Lembretes de treino</Text>
         <Text style={styles.sub}>Horário, dias e silêncio</Text>

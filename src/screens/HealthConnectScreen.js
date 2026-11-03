@@ -130,7 +130,7 @@ export default function HealthConnectScreen({ navigation }) {
             {/* Aviso "Em breve": sempre que a integração estiver desligada */}
             {!integrationEnabled && (
               <View style={styles.soon} testID="connect-soon" accessible accessibilityLabel={`${CONNECT_COPY.soonTitle}. ${CONNECT_COPY.soonText}`}>
-                <Ionicons name="time-outline" size={22} color={COLORS.primary} />
+                <Ionicons name="time-outline" size={22} color={COLORS.textSecondary} />
                 <View style={styles.soonText}>
                   <Text style={styles.soonTitle}>{CONNECT_COPY.soonTitle}</Text>
                   <Text style={styles.muted}>{CONNECT_COPY.soonText}</Text>

@@ -62,7 +62,7 @@ export default function ProfileScreen({ navigation }) {
         <EditNameRow name={user?.name} onSave={renameUser} />
         <Text style={styles.userLevel}>Nível {levelInfo.level} · {levelInfo.title}</Text>
         <View style={styles.goalBadge}>
-          <Ionicons name="flag-outline" size={12} color={COLORS.primary} />
+          <Ionicons name="flag-outline" size={12} color={COLORS.textSecondary} />
           <Text style={styles.goalText}>{formatGoals(user?.goals)}</Text>
         </View>
       </View>
@@ -72,7 +72,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.xpRow}>
           <Text style={styles.xpLabel}>XP TOTAL</Text>
           <View style={styles.xpBadge}>
-            <Ionicons name="star" size={12} color={COLORS.primary} />
+            <Ionicons name="star" size={12} color={COLORS.textSecondary} />
             <Text style={styles.xpValue}>{xp} XP</Text>
           </View>
         </View>
@@ -99,13 +99,13 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.bodyCard}>
             <View style={styles.bodyRow}>
               <View style={styles.bodyStat}>
-                <Ionicons name="scale-outline" size={18} color={COLORS.primary} />
+                <Ionicons name="scale-outline" size={18} color={COLORS.textSecondary} />
                 <Text style={styles.bodyStatValue}>{user.weight} kg</Text>
                 <Text style={styles.bodyStatLabel}>Peso</Text>
               </View>
               <View style={styles.bodyDivider} />
               <View style={styles.bodyStat}>
-                <Ionicons name="resize-outline" size={18} color={COLORS.primary} />
+                <Ionicons name="resize-outline" size={18} color={COLORS.textSecondary} />
                 <Text style={styles.bodyStatValue}>{user.height} cm</Text>
                 <Text style={styles.bodyStatLabel}>Altura</Text>
               </View>
@@ -149,7 +149,7 @@ export default function ProfileScreen({ navigation }) {
             { label: 'Conquistas', value: achievements.length, icon: 'trophy-outline' },
           ].map((s, i) => (
             <View key={i} style={styles.statCard}>
-              <Ionicons name={s.icon} size={20} color={COLORS.primary} />
+              <Ionicons name={s.icon} size={20} color={COLORS.textSecondary} />
               <Text style={styles.statValue}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
@@ -164,7 +164,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.achGrid}>
             {achievements.map((a, i) => (
               <View key={i} style={styles.achCard}>
-                <Ionicons name="trophy" size={24} color={COLORS.primary} />
+                <Ionicons name="trophy" size={24} color={COLORS.textSecondary} />
                 <Text style={styles.achTitle}>{a.title}</Text>
               </View>
             ))}

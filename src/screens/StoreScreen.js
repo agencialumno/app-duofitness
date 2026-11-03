@@ -86,7 +86,7 @@ export default function StoreScreen({ navigation }) {
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="storefront-outline" size={36} color={COLORS.primary} />
+            <Ionicons name="storefront-outline" size={36} color={COLORS.textSecondary} />
             <Text style={styles.emptyTitle}>Nenhum item nesta categoria</Text>
             <Text style={styles.emptyText}>Escolha outra categoria para ver os anúncios dos parceiros.</Text>
           </View>
@@ -121,7 +121,7 @@ export default function StoreScreen({ navigation }) {
                     {item.preco ? <Text style={styles.price}>{item.preco}</Text> : <View />}
                     <View style={styles.more}>
                       <Text style={styles.moreText}>Ver detalhes</Text>
-                      <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
                     </View>
                   </View>
                 </View>

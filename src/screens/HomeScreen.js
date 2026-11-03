@@ -50,7 +50,7 @@ export default function HomeScreen({ navigation }) {
         </View>
         <View style={styles.headerRight}>
           <View style={styles.streakBadge} accessibilityLabel={`Sequência: ${streakDays} ${streakDays === 1 ? 'dia' : 'dias'} seguidos`}>
-            <Ionicons name="flame" size={16} color={COLORS.primary} />
+            <Ionicons name="flame" size={16} color={COLORS.textSecondary} />
             <Text style={styles.streakNum}>{streakDays}</Text>
           </View>
           <InfoButton tema="sequencia" />
@@ -68,7 +68,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.levelTitle}>{levelInfo.title}</Text>
           </View>
           <View style={styles.xpBadge}>
-            <Ionicons name="star" size={12} color={COLORS.primary} />
+            <Ionicons name="star" size={12} color={COLORS.textSecondary} />
             <Text style={styles.xpText}>{xp} XP</Text>
           </View>
         </View>
@@ -115,7 +115,7 @@ export default function HomeScreen({ navigation }) {
           style={styles.imcCTA}
           onPress={() => navigation.navigate('Profile')}
         >
-          <Ionicons name="body-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="body-outline" size={18} color={COLORS.textSecondary} />
           <Text style={styles.imcCTAText}>Adicionar peso e altura para calcular seu IMC</Text>
           <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
         </TouchableOpacity>
@@ -129,7 +129,7 @@ export default function HomeScreen({ navigation }) {
           { label: 'Conquistas', value: achievements.length, icon: 'trophy-outline' },
         ].map((s, i) => (
           <View key={i} style={styles.statCard}>
-            <Ionicons name={s.icon} size={18} color={COLORS.primary} />
+            <Ionicons name={s.icon} size={18} color={COLORS.textSecondary} />
             <Text style={styles.statValue}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
@@ -182,9 +182,9 @@ export default function HomeScreen({ navigation }) {
         accessibilityLabel="Academia agora. Abre a lotação da academia."
       >
         <View style={styles.gymHead}>
-          <Ionicons name="people-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="people-outline" size={18} color={COLORS.textSecondary} />
           <Text style={styles.gymTitle}>Academia agora</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
         </View>
         {occupancy.isMock && <ExampleBadge />}
         <OccupancyCard status={occupancy.status} reading={occupancy.reading} now={occupancy.now} />
@@ -224,7 +224,7 @@ export default function HomeScreen({ navigation }) {
       >
         <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
         <Text style={styles.storeBtnText}>Ver marketplace</Text>
-        <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
       </TouchableOpacity>
 
       {/* Saúde: Duo Score (hábitos; não é avaliação médica) */}
@@ -236,9 +236,9 @@ export default function HomeScreen({ navigation }) {
         accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
       >
         <View style={styles.gymHead}>
-          <Ionicons name="heart-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="heart-outline" size={18} color={COLORS.textSecondary} />
           <Text style={styles.gymTitle}>Saúde</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
         </View>
         <View style={styles.healthRow}>
           <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
@@ -258,7 +258,7 @@ export default function HomeScreen({ navigation }) {
             onPress={() => openInTab(navigation, 'Workouts', 'WorkoutDetail', { workout: lastWorkout }, 'Home')}
           >
             <View style={styles.workoutCardIcon}>
-              <Ionicons name="barbell-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="barbell-outline" size={20} color={COLORS.textSecondary} />
             </View>
             <View style={styles.workoutCardBody}>
               <Text style={styles.workoutCardName}>{lastWorkout.name}</Text>
@@ -279,7 +279,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.achRow}>
               {achievements.slice(-5).reverse().map((a, i) => (
                 <View key={i} style={styles.achCard}>
-                  <Ionicons name="trophy" size={22} color={COLORS.primary} />
+                  <Ionicons name="trophy" size={22} color={COLORS.textSecondary} />
                   <Text style={styles.achTitle}>{a.title}</Text>
                 </View>
               ))}

@@ -248,7 +248,7 @@ function ReviewStage({ settings, plan, user, onBack, onSwap, onAdjust, onSave, s
           <Text style={styles.groupTitle}>Por que esta série</Text>
           {reasons.map((r) => (
             <View key={r} style={styles.reasonRow}>
-              <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.textSecondary} />
               <Text style={styles.reasonText}>{r}</Text>
             </View>
           ))}
@@ -269,7 +269,7 @@ function ReviewStage({ settings, plan, user, onBack, onSwap, onAdjust, onSave, s
             accessibilityState={{ expanded: adjustOpen }}
             accessibilityLabel="Quer ajustar algo?"
           >
-            <Ionicons name="options-outline" size={18} color={COLORS.primary} />
+            <Ionicons name="options-outline" size={18} color={COLORS.white} />
             <Text style={styles.adjustToggleText}>Quer ajustar algo?</Text>
             <Ionicons name={adjustOpen ? 'chevron-down' : 'chevron-up'} size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>

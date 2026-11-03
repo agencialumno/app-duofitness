@@ -34,7 +34,7 @@ export default function WelcomeScreen({ navigation }) {
         {FEATURES.map((item, i) => (
           <View key={i} style={styles.featureItem}>
             <View style={styles.iconWrap}>
-              <Ionicons name={item.icon} size={20} color={COLORS.primary} />
+              <Ionicons name={item.icon} size={20} color={COLORS.textSecondary} />
             </View>
             <Text style={styles.featureText}>{item.text}</Text>
           </View>

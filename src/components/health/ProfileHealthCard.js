@@ -34,9 +34,9 @@ export default function ProfileHealthCard({ onPress }) {
       testID="profile-health-card"
     >
       <View style={styles.head}>
-        <Ionicons name="heart-outline" size={18} color={COLORS.primary} />
+        <Ionicons name="heart-outline" size={18} color={COLORS.textSecondary} />
         <Text style={styles.title}>Saúde</Text>
-        <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
       </View>
       <View style={styles.row}>
         <Text style={styles.score}>{scoreText}</Text>

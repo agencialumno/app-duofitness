@@ -183,7 +183,7 @@ export default function SmartPlanScreen({ navigation, route }) {
         {plan[0]?.personalNotes?.length > 0 && (
           <View style={styles.notesCard}>
             <View style={styles.notesHeader}>
-              <Ionicons name="person-circle-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="person-circle-outline" size={18} color={COLORS.textSecondary} />
               <Text style={styles.notesTitle}>Recomendações para você</Text>
             </View>
             {displayNotes(plan[0].personalNotes).map((note, i) => (
@@ -196,7 +196,7 @@ export default function SmartPlanScreen({ navigation, route }) {
         )}
 
         <View style={styles.tipCard}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="information-circle-outline" size={18} color={COLORS.textSecondary} />
           <Text style={styles.tipText}>
             Alterne as séries a cada sessão. Descanse pelo menos 1 dia entre treinos que trabalham o mesmo grupo muscular.
           </Text>
@@ -234,7 +234,7 @@ export default function SmartPlanScreen({ navigation, route }) {
       {/* Perfil resumido no topo */}
       {user?.imc && (
         <View style={styles.profileBanner}>
-          <Ionicons name="person-outline" size={14} color={COLORS.primary} />
+          <Ionicons name="person-outline" size={14} color={COLORS.textSecondary} />
           <Text style={styles.profileBannerText}>
             {user.name?.split(' ')[0]} · IMC {user.imc} · {user.weight}kg · {user.height}cm
           </Text>

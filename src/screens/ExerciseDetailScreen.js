@@ -92,7 +92,7 @@ export default function ExerciseDetailScreen({ navigation, route }) {
 
         {ex.tips && (
           <View style={styles.tipCard}>
-            <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
+            <Ionicons name="information-circle-outline" size={18} color={COLORS.textSecondary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.tipTitle}>Dica do personal</Text>
               <Text style={styles.tipText}>{ex.tips}</Text>

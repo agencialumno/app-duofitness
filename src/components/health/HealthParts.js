@@ -118,7 +118,7 @@ export function SuggestionsCard({ coach, onToggle }) {
         list.map((s) => (
           <View key={s.id} style={styles.sugRow}>
             <View style={styles.sugHead}>
-              <Ionicons name="bulb-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="bulb-outline" size={18} color={COLORS.textSecondary} />
               <Text style={styles.sugAction}>{s.action}</Text>
             </View>
             <TouchableOpacity
@@ -129,7 +129,7 @@ export function SuggestionsCard({ coach, onToggle }) {
               accessibilityLabel={open[s.id] ? 'Esconder o motivo' : 'Ver o motivo'}
             >
               <Text style={styles.whyText}>Por quê?</Text>
-              <Ionicons name={open[s.id] ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.primary} />
+              <Ionicons name={open[s.id] ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textSecondary} />
             </TouchableOpacity>
             {open[s.id] ? <Text style={styles.support}>{s.reason}</Text> : null}
           </View>
@@ -152,7 +152,7 @@ export function NoDataGroup({ views, open, onToggle, onOpenCategory, onLayout })
         accessibilityLabel={`Sem dados ainda, ${views.length} ${views.length === 1 ? 'categoria' : 'categorias'}. ${open ? 'Recolher' : 'Mostrar'}`}
       >
         <Text style={[styles.sectionTitle, styles.flex]}>Sem dados ainda · {views.length}</Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.primary} />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.textSecondary} />
       </TouchableOpacity>
       {open
         ? views.map((v) => (
@@ -164,7 +164,7 @@ export function NoDataGroup({ views, open, onToggle, onOpenCategory, onLayout })
             accessibilityRole="button"
             accessibilityLabel={`${v.label}: sem dados. ${v.empty.action.label}. Toque para abrir.`}
           >
-            <Ionicons name={v.icon} size={20} color={COLORS.primary} />
+            <Ionicons name={v.icon} size={20} color={COLORS.textSecondary} />
             <Text style={styles.emptyLabel}>{v.label}</Text>
             <View style={styles.pill}>
               <Text style={styles.pillText}>{v.empty.action.label}</Text>
@@ -186,7 +186,7 @@ export function WeeklyReport({ result, notes, onToggle }) {
     <View style={styles.card} testID="health-report">
       <TouchableOpacity style={styles.collapseHead} onPress={toggle} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`Relatório semanal. ${open ? 'Recolher' : 'Mostrar'}`}>
         <Text style={[styles.sectionTitle, styles.flex]}>Relatório semanal</Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.primary} />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.textSecondary} />
       </TouchableOpacity>
       {open ? (
         <>
@@ -206,7 +206,7 @@ export function WeeklyReport({ result, notes, onToggle }) {
               <Text style={styles.label}>O que falta</Text>
               {result.missing.map((m) => (
                 <View key={m} style={styles.missingRow}>
-                  <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
+                  <Ionicons name="add-circle-outline" size={16} color={COLORS.textSecondary} />
                   <Text style={[styles.support, styles.flex, { color: COLORS.white }]}>{m.charAt(0).toUpperCase() + m.slice(1)}</Text>
                 </View>
               ))}
@@ -215,7 +215,7 @@ export function WeeklyReport({ result, notes, onToggle }) {
           ) : null}
           <TouchableOpacity style={styles.whyBtn} onPress={() => setWhy((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: why }} accessibilityLabel="Por que este número?">
             <Text style={styles.whyText}>Por que este número?</Text>
-            <Ionicons name={why ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.primary} />
+            <Ionicons name={why ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
           {why ? (
             <View style={styles.missing}>

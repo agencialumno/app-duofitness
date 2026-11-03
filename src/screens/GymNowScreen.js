@@ -40,7 +40,7 @@ export default function GymNowScreen({ navigation }) {
 
         <View style={styles.card}>
           <View style={styles.tipHead}>
-            <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+            <Ionicons name="time-outline" size={18} color={COLORS.textSecondary} />
             <Text style={styles.tipTitle}>Melhor horário</Text>
           </View>
           {best ? (
