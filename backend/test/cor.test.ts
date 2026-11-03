@@ -179,6 +179,10 @@ export const LOTES: Record<string, Ent[]> = {
     { file: 'src/screens/SmartPlanScreen.js', key: 'optionActive' },
     { file: 'src/screens/onboarding/LevelSelectScreen.js', key: 'cardActive' }, { file: 'src/screens/onboarding/ProfileSetupScreen.js', key: 'goalCardActive' },
   ],
+  'lote 9: texto corrido em amarelo (inclui #C8A800 e as sugestões da Saúde)': [
+    { file: 'src/components/InfoSheet.js', key: 'bullet' }, { file: 'src/components/health/HealthParts.js', key: 'sugAction' },
+    { file: 'src/screens/AIPersonalTrainerScreen.js', key: 'bubbleTextUser' }, { file: 'src/screens/ExerciseDetailScreen.js', key: 'tipText' },
+  ],
 };
 export const STYLE_EXCEPTIONS: StyleExc[] = [
   { file: 'src/screens/CreateWorkoutScreen.js', key: 'exCardActive', trecho: 'borderColor: COLORS.primary', motivo: 'borda amarela do item selecionado: continua amarela (decisão do lote 7)' },

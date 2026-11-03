@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   bubbleUser: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderBottomRightRadius: 4 },
   bubbleText: { fontSize: FONTS.sizes.md, lineHeight: 22 },
   bubbleTextAI: { color: COLORS.textPrimary },
-  bubbleTextUser: { color: COLORS.primary },
+  bubbleTextUser: { color: COLORS.textSecondary },
   typingBubble: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg },
   planPreview: { marginTop: SPACING.sm, gap: SPACING.sm },
   planPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.xs },

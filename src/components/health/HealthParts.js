@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   chipText: { ...type.support, fontWeight: '600', color: COLORS.white },
   sugRow: { gap: space.tight },
   sugHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.inner },
-  sugAction: { flex: 1, ...type.label, color: COLORS.primary },
+  sugAction: { flex: 1, ...type.label, color: COLORS.white },
   whyBtn: { minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: space.tight },
   whyText: { ...type.support, fontWeight: '700', color: COLORS.primary },
   collapseHead: { minHeight: minTouch, flexDirection: 'row', alignItems: 'center', gap: space.inner },

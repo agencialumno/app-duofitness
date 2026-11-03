@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   text: { fontSize: FONTS.sizes.md, color: COLORS.textPrimary, lineHeight: 23 },
   list: { gap: SPACING.xs },
   listRow: { flexDirection: 'row', gap: SPACING.sm },
-  bullet: { fontSize: FONTS.sizes.md, color: COLORS.primary, lineHeight: 23 },
+  bullet: { fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 23 },
   listText: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.textPrimary, lineHeight: 23 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
   stepNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.bgCardAlt, alignItems: 'center', justifyContent: 'center', marginTop: 2 },

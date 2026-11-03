@@ -133,5 +133,5 @@ const styles = StyleSheet.create({
   instructionText: { flex: 1, fontSize: FONTS.sizes.md, color: COLORS.textSecondary, lineHeight: 24 },
   tipCard: { flexDirection: 'row', gap: SPACING.md, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md },
   tipTitle: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.white, marginBottom: 4 },
-  tipText: { fontSize: FONTS.sizes.sm, color: '#C8A800', lineHeight: 20 },
+  tipText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, lineHeight: 20 },
 });
