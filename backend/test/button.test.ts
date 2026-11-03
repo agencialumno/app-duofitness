@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error módulo JS do app, sem tipos
 import Button from '../../src/components/Button.js';
 // @ts-expect-error módulo JS do app, sem tipos
-import { BUTTON, COLORS, HEALTH_UI } from '../../src/utils/theme.js';
+import { BUTTON, COLORS, FONTS, HEALTH_UI, TYPE } from '../../src/utils/theme.js';
 import { mount, findAll, byTestId, textsOf } from './stubs/mini-render';
 
 const REPO = path.resolve(__dirname, '../..');
@@ -89,6 +89,10 @@ describe('props e acessibilidade', () => {
     expect(b.props.accessibilityHint).toBe('Abre o e-mail');
     expect(b.props.testID).toBe('ok');
   });
+  it('accessibilityRole pode ser trocado (ex.: "link" no LinkButton); o padrão é "button"', () => {
+    expect(btn().props.accessibilityRole).toBe('button');
+    expect(btn({ accessibilityRole: 'link' }).props.accessibilityRole).toBe('link');
+  });
   it('accessibilityState: disabled e busy', () => {
     expect(btn().props.accessibilityState).toEqual({ disabled: false, busy: false });
     expect(btn({ disabled: true }).props.accessibilityState).toEqual({ disabled: true, busy: false });
@@ -126,6 +130,26 @@ describe('props e acessibilidade', () => {
     expect(styleOf(btn({ variant: 'tertiary' })).alignSelf).toBeUndefined();
     expect(styleOf(btn({ size: 'compact', fullWidth: true })).alignSelf).toBe('stretch');
     expect(styleOf(btn({ fullWidth: false })).alignSelf).toBeUndefined();
+  });
+});
+
+describe('fonte do rótulo vem do TAMANHO, não da variante', () => {
+  const font = (props: any) => flat(findAll(mount(Button, { label: 'X', ...props }).tree, (n) => n.type === 'Text')[0].props.style);
+  it('normal = TYPE.bodyLarge (18/600) e compacto = TYPE.body (15) em peso 600, igual em todas as variantes', () => {
+    for (const variant of ['primary', 'secondary', 'tertiary', 'destructive']) {
+      const n = font({ variant, size: 'normal' });
+      const c = font({ variant, size: 'compact' });
+      expect([n.fontSize, n.fontWeight], `${variant} normal`).toEqual([TYPE.bodyLarge.fontSize, FONTS.weights.semibold]);
+      expect([c.fontSize, c.fontWeight], `${variant} compacto`).toEqual([TYPE.body.fontSize, FONTS.weights.semibold]);
+    }
+    expect(TYPE.bodyLarge.fontSize).toBe(18);
+    expect(TYPE.body.fontSize).toBe(15);
+    expect(font({ variant: 'destructive', quiet: true, size: 'compact' }).fontSize).toBe(15);
+  });
+  it('o rótulo aceita até 2 linhas e o botão não tem altura fixa (cresce com o texto)', () => {
+    const t = findAll(mount(Button, { label: 'X' }).tree, (n) => n.type === 'Text')[0];
+    expect(t.props.numberOfLines).toBe(2);
+    expect(styleOf(btn()).height).toBeUndefined();
   });
 });
 

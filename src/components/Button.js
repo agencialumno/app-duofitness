@@ -11,7 +11,7 @@ import { BUTTON, FONTS, RADIUS, SPACING, TYPE } from '../utils/theme';
 //  - Não usa navegação nem contexto: pode ser usado também no ErrorBoundary e em modais.
 export default function Button({
   label, onPress, variant = 'primary', size = 'normal', quiet = false, iconLeft, iconRight, loading = false, disabled = false, fullWidth,
-  accessibilityLabel, accessibilityHint, testID,
+  accessibilityLabel, accessibilityHint, accessibilityRole = 'button', testID,
 }) {
   const compact = size === 'compact';
   const tertiary = variant === 'tertiary';
@@ -30,7 +30,7 @@ export default function Button({
       onPress={blocked ? undefined : onPress}
       disabled={blocked}
       aria-disabled={blocked}
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel || label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: blocked, busy: !!loading }}

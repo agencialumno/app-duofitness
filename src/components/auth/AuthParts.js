@@ -3,7 +3,7 @@
 // e o campo focado sempre visível com o teclado aberto.
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
-  AccessibilityInfo, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  AccessibilityInfo, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -91,41 +91,13 @@ export function AuthField({ label, error, hint, secure, value, onChangeText, onB
   );
 }
 
+// PrimaryButton e SecondaryButton são invólucros finos do Button (docs/visual-botoes.md, lote 2): mesmas props de antes, visual do Button.
 export function PrimaryButton({ label, onPress, disabled, loading, testID }) {
-  return (
-    <TouchableOpacity
-      testID={testID}
-      onPress={disabled || loading ? undefined : onPress}
-      disabled={!!(disabled || loading)}
-      aria-disabled={!!(disabled || loading)}
-      activeOpacity={0.85}
-      style={[styles.btn, (disabled || loading) && styles.btnDisabled]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
-    >
-      {loading ? <ActivityIndicator color={COLORS.black} /> : <Text style={styles.btnText}>{label}</Text>}
-    </TouchableOpacity>
-  );
+  return <Button label={label} onPress={onPress} variant="primary" disabled={!!disabled} loading={!!loading} testID={testID} />;
 }
 
-export function SecondaryButton({ label, onPress, icon, disabled, testID }) {
-  return (
-    <TouchableOpacity
-      testID={testID}
-      onPress={disabled ? undefined : onPress}
-      disabled={!!disabled}
-      aria-disabled={!!disabled}
-      activeOpacity={0.8}
-      style={[styles.btn2, disabled && styles.btnDisabled]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-    >
-      {icon ? <Ionicons name={icon} size={20} color={COLORS.white} /> : null}
-      <Text style={styles.btn2Text}>{label}</Text>
-    </TouchableOpacity>
-  );
+export function SecondaryButton({ label, onPress, icon, disabled, size, testID }) {
+  return <Button label={label} onPress={onPress} variant="secondary" size={size} iconLeft={icon} disabled={!!disabled} testID={testID} />;
 }
 
 // Botões de login social para FUNDO ESCURO.
@@ -158,11 +130,10 @@ export function SocialButton({ provider, label, onPress, disabled, testID }) {
   );
 }
 
+// LinkButton: invólucro fino do Button terciário compacto (o `danger` vira o destrutivo só de texto). Mantém o papel "link" de antes.
 export function LinkButton({ label, onPress, testID, danger }) {
   return (
-    <TouchableOpacity testID={testID} onPress={onPress} style={styles.link} accessibilityRole="link" accessibilityLabel={label}>
-      <Text style={[styles.linkText, danger && { color: COLORS.error }]}>{label}</Text>
-    </TouchableOpacity>
+    <Button label={label} onPress={onPress} variant={danger ? 'destructive' : 'tertiary'} quiet={!!danger} size="compact" accessibilityRole="link" testID={testID} />
   );
 }
 
@@ -298,15 +269,9 @@ const styles = StyleSheet.create({
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   errorText: { flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.error },
   hint: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
-  btn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.45 },
-  btnText: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.black, textAlign: 'center' },
-  btn2: { flexDirection: 'row', gap: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.textSecondary, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
   social: { flexDirection: 'row', gap: SPACING.sm, borderRadius: RADIUS.full, borderWidth: 1, minHeight: 52, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
   socialText: { fontSize: FONTS.sizes.md, fontWeight: '600', textAlign: 'center' },
-  btn2Text: { fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.white, textAlign: 'center' },
-  link: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.sm },
-  linkText: { fontSize: FONTS.sizes.md, color: COLORS.primary, textDecorationLine: 'underline', textAlign: 'center' },
   notice: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start', borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, backgroundColor: COLORS.bgCard },
   noticeText: { flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.white, lineHeight: 20 },
   checkRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start', minHeight: 44, paddingVertical: SPACING.xs },
