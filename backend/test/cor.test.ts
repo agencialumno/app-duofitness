@@ -19,70 +19,75 @@ function walk(dir: string, out: string[] = []): string[] {
 const rel = (f: string) => path.relative(REPO, f).replace(/\\/g, '/');
 const files = walk(path.join(REPO, 'src')).filter((f) => rel(f) !== 'src/utils/theme.js');
 
-type Exc = { file: string; line: number; motivo: string };
+// Cada exceção é identificada por ARQUIVO + TRECHO ESTÁVEL da linha (não pelo número da linha, que muda com qualquer edição no arquivo).
+// O trecho precisa aparecer em exatamente uma das linhas de ícone amarelo do arquivo; se aparecer em mais de uma, acrescente contexto.
+type Exc = { file: string; trecho: string; motivo: string };
 const AVALIAR = 'avaliar no aparelho';
 const ESTADO = 'ícone de estado selecionado/ativo: fora do lote 1';
 const ACAO = 'ícone de ação cujo controle tem texto amarelo: acompanha o lote do controle (botão de contorno ou link)';
 export const EXCEPTIONS: Exc[] = [
   // exceções pedidas no lote 1 (ícones de exercício e do player)
-  { file: 'src/components/ExerciseIcon.js', line: 8, motivo: `${AVALIAR} (cor padrão do ícone do exercício)` },
-  { file: 'src/components/ExerciseMedia.js', line: 59, motivo: `${AVALIAR} (play da capa do vídeo)` },
-  { file: 'src/components/ExerciseVideoPlayer.js', line: 87, motivo: `${AVALIAR} (play do player)` },
+  { file: 'src/components/ExerciseIcon.js', trecho: 'function ExerciseIcon(', motivo: `${AVALIAR} (cor padrão do ícone do exercício)` },
+  { file: 'src/components/ExerciseMedia.js', trecho: 'name="play-circle-outline"', motivo: `${AVALIAR} (play da capa do vídeo)` },
+  { file: 'src/components/ExerciseVideoPlayer.js', trecho: 'name="play-circle-outline"', motivo: `${AVALIAR} (play do player)` },
   // ícones de ação: o texto do controle ainda é amarelo, então o ícone fica junto dele
-  { file: 'src/components/EditNameRow.js', line: 26, motivo: 'botão só de ícone (sem texto do controle): não classificável com segurança' },
-  { file: 'src/components/guided/GuidedParts.js', line: 110, motivo: 'ícone do FooterButton: preto no primário e amarelo no secundário, junto do texto do botão' },
-  { file: 'src/components/guided/SeriesCard.js', line: 71, motivo: ACAO },
-  { file: 'src/screens/GymNowScreen.js', line: 65, motivo: ACAO },
-  { file: 'src/screens/HomeScreen.js', line: 164, motivo: ACAO },
-  { file: 'src/screens/HomeScreen.js', line: 171, motivo: ACAO },
-  { file: 'src/screens/HomeScreen.js', line: 225, motivo: ACAO },
-  { file: 'src/screens/ProfileScreen.js', line: 93, motivo: ACAO },
-  { file: 'src/screens/WorkoutsScreen.js', line: 140, motivo: ACAO },
-  { file: 'src/screens/WorkoutsScreen.js', line: 175, motivo: ACAO },
+  { file: 'src/components/EditNameRow.js', trecho: 'name="create-outline"', motivo: 'botão só de ícone (sem texto do controle): não classificável com segurança' },
+  { file: 'src/components/guided/SeriesCard.js', trecho: 'name="swap-horizontal"', motivo: ACAO },
+  { file: 'src/screens/GymNowScreen.js', trecho: 'name="refresh-outline"', motivo: ACAO },
+  { file: 'src/screens/HomeScreen.js', trecho: 'name="options-outline"', motivo: ACAO },
+  { file: 'src/screens/HomeScreen.js', trecho: 'name="add-outline"', motivo: ACAO },
+  { file: 'src/screens/HomeScreen.js', trecho: 'name="storefront-outline"', motivo: ACAO },
+  { file: 'src/screens/ProfileScreen.js', trecho: 'name="create-outline"', motivo: ACAO },
+  { file: 'src/screens/WorkoutsScreen.js', trecho: 'name="options-outline"', motivo: ACAO },
+  { file: 'src/screens/WorkoutsScreen.js', trecho: 'name="trending-up-outline"', motivo: ACAO },
   // cores padrão de componentes de outros papéis (aparecem na varredura como parâmetro `color = COLORS.primary`)
-  { file: 'src/components/InfoButton.js', line: 11, motivo: 'botão "i": migra no lote 10 (contorno cinza)' },
-  { file: 'src/components/health/TrendBars.js', line: 13, motivo: 'barra de gráfico da Saúde: caso de fronteira (item 4.2), sem decisão' },
+  { file: 'src/components/InfoButton.js', trecho: 'function InfoButton(', motivo: 'botão "i": migra no lote 10 (contorno cinza)' },
+  { file: 'src/components/health/TrendBars.js', trecho: 'function TrendBars(', motivo: 'barra de gráfico da Saúde: caso de fronteira (item 4.2), sem decisão' },
   // ícones de estado (outro papel)
-  { file: 'src/components/guided/GuidedParts.js', line: 68, motivo: ESTADO },
-  { file: 'src/components/guided/GuidedParts.js', line: 76, motivo: ESTADO },
-  { file: 'src/components/guided/GuidedParts.js', line: 148, motivo: ESTADO },
-  { file: 'src/components/health/HealthParts.js', line: 78, motivo: ESTADO },
-  { file: 'src/screens/ProfileScreen.js', line: 114, motivo: ESTADO },
+  { file: 'src/components/guided/GuidedParts.js', trecho: 'selected ? COLORS.primary : COLORS.textSecondary', motivo: `${ESTADO} (ícone da opção)` },
+  { file: 'src/components/guided/GuidedParts.js', trecho: 'selected ? COLORS.primary : COLORS.textMuted', motivo: `${ESTADO} (ícone de seleção)` },
+  { file: 'src/components/guided/GuidedParts.js', trecho: 'done ? COLORS.success : active ? COLORS.primary', motivo: `${ESTADO} (passo da checklist)` },
+  { file: 'src/components/health/HealthParts.js', trecho: 'muted ? COLORS.textSecondary : COLORS.primary', motivo: ESTADO },
+  { file: 'src/screens/ProfileScreen.js', trecho: "'analytics-outline'", motivo: ESTADO },
 ];
-const MAX_EXCEPTIONS = 20; // só diminui
+const MAX_EXCEPTIONS = 19; // só diminui (era 20 antes de sair a exceção do ícone do FooterButton, que passou a usar iconLeft do Button)
 
 // linhas de ícone que usam o amarelo da marca como cor: `color={...COLORS.primary...}` (exclui carregamento, cursor e tintColor, que são outros papéis)
 const ICON_PRIMARY = /color=\{[^}]*COLORS\.primary|color = COLORS\.primary/; // inclui o parâmetro padrão `color = COLORS.primary`
 const OTHER_ROLES = /ActivityIndicator|RefreshControl|selectionColor|tintColor/;
 
 describe('ícones decorativos, de ação e setas não usam mais o amarelo (lote 1)', () => {
-  const found: string[] = [];
+  const found: { file: string; line: number; text: string }[] = [];
   for (const f of files) {
     readFileSync(f, 'utf8').split(/\r?\n/).forEach((l, i) => {
-      if (ICON_PRIMARY.test(l) && !OTHER_ROLES.test(l)) found.push(`${rel(f)}:${i + 1}`);
+      if (ICON_PRIMARY.test(l) && !OTHER_ROLES.test(l)) found.push({ file: rel(f), line: i + 1, text: l });
     });
   }
-  const allowed = new Set(EXCEPTIONS.map((e) => `${e.file}:${e.line}`));
+  const matches = (e: Exc) => found.filter((x) => x.file === e.file && x.text.includes(e.trecho));
+  const matched = new Set(EXCEPTIONS.flatMap((e) => matches(e).map((x) => `${x.file}:${x.line}`)));
   it('nenhum ícone usa COLORS.primary fora da lista de exceções', () => {
-    const extra = found.filter((x) => !allowed.has(x));
+    const extra = found.filter((x) => !matched.has(`${x.file}:${x.line}`)).map((x) => `${x.file}:${x.line}  ${x.text.trim()}`);
     expect(extra, `ícone(s) voltaram ao amarelo:\n${extra.join('\n')}`).toEqual([]);
   });
-  it('a lista de exceções só encolhe: cada exceção ainda existe (senão, apague-a) e o total não passa de 20', () => {
-    const gone = EXCEPTIONS.filter((e) => !found.includes(`${e.file}:${e.line}`)).map((e) => `${e.file}:${e.line} (${e.motivo})`);
+  it('a lista de exceções só encolhe: cada exceção existe e casa com uma única linha (senão, apague-a ou acrescente contexto) e o total não passa de 19', () => {
+    const gone = EXCEPTIONS.filter((e) => matches(e).length === 0).map((e) => `${e.file} «${e.trecho}» (${e.motivo})`);
     expect(gone, `exceção(ões) que não existem mais: remova da lista\n${gone.join('\n')}`).toEqual([]);
+    const ambiguous = EXCEPTIONS.filter((e) => matches(e).length > 1).map((e) => `${e.file} «${e.trecho}»`);
+    expect(ambiguous, `trecho(s) que casam com mais de uma linha: acrescente contexto\n${ambiguous.join('\n')}`).toEqual([]);
     expect(EXCEPTIONS.length).toBeLessThanOrEqual(MAX_EXCEPTIONS);
-    for (const e of EXCEPTIONS) expect(e.motivo.length, `${e.file}:${e.line}`).toBeGreaterThan(10);
+    for (const e of EXCEPTIONS) expect(e.motivo.length, `${e.file} ${e.trecho}`).toBeGreaterThan(10);
   });
   it('as três exceções pedidas (ícone de exercício e do player) estão na lista com o motivo "avaliar no aparelho"', () => {
-    for (const [file, line] of [['src/components/ExerciseIcon.js', 8], ['src/components/ExerciseMedia.js', 59], ['src/components/ExerciseVideoPlayer.js', 87]] as const) {
-      const e = EXCEPTIONS.find((x) => x.file === file && x.line === line);
-      expect(e, `${file}:${line}`).toBeTruthy();
+    for (const [file, trecho] of [['src/components/ExerciseIcon.js', 'function ExerciseIcon('], ['src/components/ExerciseMedia.js', 'name="play-circle-outline"'], ['src/components/ExerciseVideoPlayer.js', 'name="play-circle-outline"']] as const) {
+      const e = EXCEPTIONS.find((x) => x.file === file && x.trecho === trecho);
+      expect(e, `${file} ${trecho}`).toBeTruthy();
       expect(e!.motivo).toContain('avaliar no aparelho');
     }
     expect(readFileSync(path.join(REPO, 'src/components/ExerciseIcon.js'), 'utf8')).toMatch(/color = COLORS\.primary/); // o padrão do ExerciseIcon continua amarelo
   });
-  it('a varredura vê os ícones: as exceções e os ícones de estado existem (sanidade do analisador)', () => {
-    expect(found.length).toBeGreaterThanOrEqual(EXCEPTIONS.length);
+  it('sanidade do analisador: a varredura acha exatamente as linhas das exceções (uma linha por exceção)', () => {
+    expect(found.length).toBe(EXCEPTIONS.length);
+    expect(matched.size).toBe(EXCEPTIONS.length);
   });
   it('o ícone da opção "Quer ajustar algo?" usa o branco do rótulo e os decorativos usam textSecondary', () => {
     const g = readFileSync(path.join(REPO, 'src/screens/GuidedPlanScreen.js'), 'utf8');
