@@ -39,3 +39,6 @@ firebase-debug.*.log
 # Fotos de referência dos exercícios (free-exercise-db): procedência NÃO confirmada, nunca vão para o git (docs/procedencia-midia.md)
 assets/exercicios-ref/
 src/data/exerciseStillsImages.generated.js
+
+# PNGs brutos de geração de poses (os vídeos .mp4 e capas .jpg ficam no git; os PNGs brutos ficam locais)
+assets/exercicios/*/
