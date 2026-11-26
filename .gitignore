@@ -42,3 +42,6 @@ src/data/exerciseStillsImages.generated.js
 
 # PNGs brutos de geração de poses (os vídeos .mp4 e capas .jpg ficam no git; os PNGs brutos ficam locais)
 assets/exercicios/*/
+
+# Prints para App Store Connect
+prints-app-store/
