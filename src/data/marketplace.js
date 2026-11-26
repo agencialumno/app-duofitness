@@ -173,7 +173,7 @@ export function getCategoria(id) {
 }
 
 export function getItem(id, items = MARKETPLACE_ITEMS) {
-  return items.find((item) => item.id === id) || null;
+  return items.find((item) => item.id === id) || MARKETPLACE_SAMPLE_ITEMS.find((item) => item.id === id) || null;
 }
 
 /** Itens em destaque (seção "Para você" da Home). */

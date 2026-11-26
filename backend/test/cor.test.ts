@@ -94,7 +94,7 @@ describe('ícones decorativos, de ação e setas não usam mais o amarelo (lote 
     expect(g).toMatch(/name="options-outline" size=\{18\} color=\{COLORS\.white\}/);
     const h = readFileSync(path.join(REPO, 'src/screens/HomeScreen.js'), 'utf8');
     expect(h).toMatch(/name="flame" size=\{16\} color=\{COLORS\.textSecondary\}/);
-    expect(h.match(/name="chevron-forward" size=\{16\} color=\{COLORS\.textSecondary\}/g)).toHaveLength(3);
+    expect(h.match(/name="chevron-forward" size=\{16\} color=\{COLORS\.textSecondary\}/g) || []).toHaveLength(2);
   });
   it('nenhum ícone usa a tinta âmbar como cor', () => {
     for (const f of files) {

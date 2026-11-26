@@ -88,7 +88,7 @@ export default function StoreScreen({ navigation }) {
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="storefront-outline" size={44} color={COLORS.primary} />
+            <Ionicons name="storefront-outline" size={44} color={COLORS.textSecondary} />
             <Text style={styles.emptyTitle}>Em breve novos parceiros</Text>
             <Text style={styles.emptyText}>Quer divulgar seu produto ou serviço para os moradores da rede Duo Fitness? Toque no botão acima e solicite seu espaço!</Text>
           </View>

@@ -35,19 +35,19 @@ describe('nota mais recente do cartão', () => {
 
 describe('navegação', () => {
   const nav = read('src/navigation/MainNavigator.js');
-  it('Saúde, detalhe e conectar existem na pilha do Início E na do Perfil, com as mesmas telas (sem duplicar telas)', () => {
-    const home = nav.slice(nav.indexOf('function HomeStackNav'), nav.indexOf('function WorkoutStackNav'));
-    const prof = nav.slice(nav.indexOf('function ProfileStackNav'), nav.indexOf('export default function MainNavigator'));
+  it('Saúde tem sua própria aba no MainNavigator com as telas principais', () => {
+    const health = nav.slice(nav.indexOf('function HealthStackNav'), nav.indexOf('function ProfileStackNav'));
     for (const [name, comp] of [['Saude', 'HealthScreen'], ['SaudeDetalhe', 'HealthCategoryScreen'], ['SaudeConectar', 'HealthConnectScreen']]) {
-      expect(home).toContain(`name="${name}" component={${comp}}`);
-      expect(prof).toContain(`name="${name}" component={${comp}}`);
+      expect(health).toContain(`name="${name}" component={${comp}}`);
     }
+    expect(nav).toContain('name="Health" component={HealthStackNav}');
     expect((nav.match(/^import Health\w*Screen/gm) || []).length).toBe(3); // um import por tela
   });
-  it('o cartão do Perfil abre a Saúde por navigate("Saude") e a Home continua igual', () => {
+  it('a tela de Perfil não tem o cartão de Saúde (fica centralizado na aba Saúde) e a Home tem o card com Conectar', () => {
     const p = code('src/screens/ProfileScreen.js');
-    expect(p).toMatch(/<ProfileHealthCard onPress=\{\(\) => navigation\.navigate\('Saude'\)\}/);
+    expect(p).not.toContain('ProfileHealthCard');
     expect(read('src/screens/HomeScreen.js')).toContain("navigation.navigate('Saude')");
+    expect(read('src/screens/HomeScreen.js')).toContain("navigation.navigate('SaudeConectar')");
   });
   it('Perfil: Sair da conta e Excluir minha conta no fim; sem Resetar tudo nem demo', () => {
     const p = code('src/screens/ProfileScreen.js');

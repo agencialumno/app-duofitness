@@ -143,7 +143,7 @@ describe('imagens: existem e estão dentro do limite', () => {
 
 describe('contato e anúncio', () => {
   it('sem número configurado o contato avisa em vez de quebrar; com número monta a URL do WhatsApp', () => {
-    const item = M.MARKETPLACE_ITEMS.find((i: any) => i.contato.tipo === 'whatsapp');
+    const item = (M.MARKETPLACE_ITEMS.find((i: any) => i.contato?.tipo === 'whatsapp') || M.MARKETPLACE_SAMPLE_ITEMS.find((i: any) => i.contato?.tipo === 'whatsapp'));
     expect(M.resolveContact(item, { whatsappNumber: '', whatsappMessage: 'Olá {item}' })).toBeNull();
     expect(M.resolveContact(item, { whatsappNumber: '5511999999999', whatsappMessage: 'Olá {item}' })?.url).toMatch(/^https:\/\/wa\.me\/5511999999999/);
     expect(M.buildWhatsAppUrl('5511999999999', 'Oi')).toMatch(/^https:\/\/wa\.me\/5511999999999\?text=/);

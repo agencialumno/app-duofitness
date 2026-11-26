@@ -12,7 +12,6 @@ import { getIMCCategory } from '../utils/imc';
 import InfoButton from '../components/InfoButton';
 import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import AccountCard, { AccountActions } from '../components/auth/AccountCard';
-import ProfileHealthCard from '../components/health/ProfileHealthCard';
 import { useAuth } from '../auth/AuthContext';
 import { computeStreak } from '../utils/health';
 
@@ -193,9 +192,6 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
       </View>
-
-      {/* Saúde: a MESMA tela da aba Início (a rota Saude também existe na pilha do Perfil; o voltar retorna aqui) */}
-      <ProfileHealthCard onPress={() => navigation.navigate('Saude')} />
 
       <RemindersCard onPress={() => navigation.navigate('Lembretes')} />
 

@@ -8,8 +8,6 @@ import { getIMCCategory } from '../utils/imc';
 import MarketplaceImage from '../components/MarketplaceImage';
 import { MARKETPLACE_ITEMS, getDestaques } from '../data/marketplace';
 import { openInTab } from '../navigation/crossTab';
-import useOccupancy from '../hooks/useOccupancy';
-import OccupancyCard, { ExampleBadge } from '../components/OccupancyCard';
 import useHealth from '../hooks/useHealth';
 import { computeStreak, scoreBand } from '../utils/health';
 import InfoButton from '../components/InfoButton';
@@ -27,7 +25,6 @@ export default function HomeScreen({ navigation }) {
   const xpProgress = levelInfo.nextXp
     ? Math.min(((xp % (levelInfo.nextXp / levelInfo.level)) / (levelInfo.nextXp / levelInfo.level)) * 100, 100)
     : 100;
-  const occupancy = useOccupancy();
   const healthInfo = useHealth();
   const healthBand = scoreBand(healthInfo.score);
   const imcInfo = user?.imc ? getIMCCategory(parseFloat(user.imc)) : null;
@@ -173,22 +170,39 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Academia agora: lotação (só números agregados; dados de exemplo ficam rotulados) */}
-      <TouchableOpacity
-        style={styles.gymCard}
-        onPress={() => navigation.navigate('AcademiaAgora')}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Academia agora. Abre a lotação da academia."
-      >
-        <View style={styles.gymHead}>
-          <Ionicons name="people-outline" size={18} color={COLORS.textSecondary} />
-          <Text style={styles.gymTitle}>Academia agora</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-        </View>
-        {occupancy.isMock && <ExampleBadge />}
-        <OccupancyCard status={occupancy.status} reading={occupancy.reading} now={occupancy.now} />
-      </TouchableOpacity>
+      {/* Saúde: Duo Score e integração com Apple Saúde / Google Health */}
+      <View style={styles.gymCard}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Saude')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
+        >
+          <View style={styles.gymHead}>
+            <Ionicons name="heart-outline" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.gymTitle}>Saúde</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+          </View>
+          <View style={styles.healthRow}>
+            <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
+            <View style={styles.healthSide}>
+              <Text style={styles.healthLabel}>Duo Score</Text>
+              <Text style={styles.healthBand}>{healthInfo.loading ? 'Carregando…' : healthBand.label}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.healthConnectBtn}
+          onPress={() => navigation.navigate('SaudeConectar')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Conectar Apple Saúde ou Google Health"
+        >
+          <Ionicons name="sync-outline" size={16} color={COLORS.black} />
+          <Text style={styles.healthConnectBtnText}>Conectar Apple Saúde / Google Health</Text>
+          <Ionicons name="chevron-forward" size={14} color={COLORS.black} />
+        </TouchableOpacity>
+      </View>
 
       {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
       {getDestaques(MARKETPLACE_ITEMS, 3).length > 0 && (
@@ -229,28 +243,6 @@ export default function HomeScreen({ navigation }) {
         <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
         <Text style={styles.storeBtnText}>Ver marketplace</Text>
         <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-      </TouchableOpacity>
-
-      {/* Saúde: Duo Score (hábitos; não é avaliação médica) */}
-      <TouchableOpacity
-        style={styles.gymCard}
-        onPress={() => navigation.navigate('Saude')}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={`Saúde. ${healthInfo.score === null ? 'Duo Score ainda sem dados.' : `Duo Score ${healthInfo.score} de 100, ${healthBand.label}.`} Abre a área de saúde.`}
-      >
-        <View style={styles.gymHead}>
-          <Ionicons name="heart-outline" size={18} color={COLORS.textSecondary} />
-          <Text style={styles.gymTitle}>Saúde</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-        </View>
-        <View style={styles.healthRow}>
-          <Text style={styles.healthScore}>{healthInfo.loading || healthInfo.score === null ? '—' : healthInfo.score}</Text>
-          <View style={styles.healthSide}>
-            <Text style={styles.healthLabel}>Duo Score</Text>
-            <Text style={styles.healthBand}>{healthInfo.loading ? 'Carregando…' : healthBand.label}</Text>
-          </View>
-        </View>
       </TouchableOpacity>
 
       {/* Último treino */}
@@ -345,6 +337,8 @@ const styles = StyleSheet.create({
   healthSide: { flex: 1 },
   healthLabel: { fontSize: FONTS.sizes.xs, color: COLORS.textSecondary },
   healthBand: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.primary },
+  healthConnectBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, marginTop: SPACING.xs },
+  healthConnectBtnText: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.black },
   sectionTitleStrong: { fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textSecondary, marginBottom: SPACING.sm, marginTop: SPACING.xs, letterSpacing: 1.5 },
   forYouScroll: { marginHorizontal: -SPACING.lg },
   forYouList: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },

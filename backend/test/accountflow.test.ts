@@ -272,7 +272,7 @@ describe('telas (código-fonte)', () => {
     // a seção fica no fim do Perfil, depois do cartão de conta e de tudo mais
     const p = code('src/screens/ProfileScreen.js');
     expect(p.indexOf('<AccountActions />')).toBeGreaterThan(p.indexOf('<AccountCard />'));
-    expect(p.indexOf('<AccountActions />')).toBeGreaterThan(p.indexOf('<ProfileHealthCard'));
+    expect(p.indexOf('<AccountActions />')).toBeGreaterThan(p.indexOf('<AboutCard />'));
   });
   it('conexão com Apple Saúde / Health Connect indisponível para menores: tela, ação rápida e provedor', () => {
     const connect = code('src/screens/HealthConnectScreen.js');

@@ -31,7 +31,7 @@ import AdvertiseScreen from '../screens/AdvertiseScreen';
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const WorkoutStack = createStackNavigator();
-const ExerciseStack = createStackNavigator();
+const HealthStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
 // A aba Início é uma pilha: a Home e a vitrine (marketplace e o detalhe do item; as rotas seguem com os nomes internos Loja e LojaDetalhe). Fica DENTRO do MainNavigator
@@ -63,16 +63,18 @@ function WorkoutStackNav() {
       <WorkoutStack.Screen name="AIPersonalTrainer" component={GuidedPlanScreen} />
       <WorkoutStack.Screen name="AIPersonalTrainerChat" component={AIPersonalTrainerScreen} />
       <WorkoutStack.Screen name="EvolucaoSeries" component={SeriesTimelineScreen} />
+      <WorkoutStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
     </WorkoutStack.Navigator>
   );
 }
 
-function ExerciseStackNav() {
+function HealthStackNav() {
   return (
-    <ExerciseStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
-      <ExerciseStack.Screen name="ExercisesList" component={ExercisesScreen} />
-      <ExerciseStack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
-    </ExerciseStack.Navigator>
+    <HealthStack.Navigator screenOptions={STACK_SCREEN_OPTIONS}>
+      <HealthStack.Screen name="Saude" component={HealthScreen} />
+      <HealthStack.Screen name="SaudeDetalhe" component={HealthCategoryScreen} />
+      <HealthStack.Screen name="SaudeConectar" component={HealthConnectScreen} />
+    </HealthStack.Navigator>
   );
 }
 
@@ -82,10 +84,6 @@ function ProfileStackNav() {
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="EditBodyData" component={EditBodyDataScreen} />
       <ProfileStack.Screen name="Lembretes" component={RemindersScreen} />
-      {/* A Saúde é a mesma tela da aba Início, registrada aqui também para o voltar retornar ao Perfil */}
-      <ProfileStack.Screen name="Saude" component={HealthScreen} />
-      <ProfileStack.Screen name="SaudeDetalhe" component={HealthCategoryScreen} />
-      <ProfileStack.Screen name="SaudeConectar" component={HealthConnectScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -114,7 +112,7 @@ export default function MainNavigator() {
           let iconName;
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Workouts') iconName = focused ? 'barbell' : 'barbell-outline';
-          else if (route.name === 'Exercises') iconName = focused ? 'fitness' : 'fitness-outline';
+          else if (route.name === 'Health') iconName = focused ? 'heart' : 'heart-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={22} color={color} />;
         },
@@ -122,7 +120,7 @@ export default function MainNavigator() {
     >
       <Tab.Screen name="Home" component={HomeStackNav} options={{ tabBarLabel: 'Início' }} />
       <Tab.Screen name="Workouts" component={WorkoutStackNav} options={{ tabBarLabel: 'Treinos' }} />
-      <Tab.Screen name="Exercises" component={ExerciseStackNav} options={{ tabBarLabel: 'Exercícios' }} />
+      <Tab.Screen name="Health" component={HealthStackNav} options={{ tabBarLabel: 'Saúde' }} />
       <Tab.Screen name="Profile" component={ProfileStackNav} options={{ tabBarLabel: 'Perfil' }} />
     </Tab.Navigator>
   );

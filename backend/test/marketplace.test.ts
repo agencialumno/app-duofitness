@@ -206,7 +206,7 @@ describe('imagens', () => {
 
 describe('acesso ao marketplace pela Home', () => {
   const home = readFileSync(path.join(REPO, 'src/screens/HomeScreen.js'), 'utf8');
-  const quick = home.slice(home.indexOf('{/* Quick Actions */}'), home.indexOf('{/* Academia agora'));
+  const quick = home.slice(home.indexOf('{/* Quick Actions */}'), home.indexOf('{/* Saúde:'));
 
   it('a ação rápida tem só Gerador rápido e Criar manualmente (sem atalho do marketplace)', () => {
     expect(quick).toContain('Gerador rápido');
@@ -223,9 +223,8 @@ describe('acesso ao marketplace pela Home', () => {
     expect((home.match(/navigate\('Loja'\)/g) || []).length).toBe(1);
   });
 
-  it('"Para você" fica logo abaixo da Academia agora e acima da Saúde', () => {
-    expect(home.indexOf('PARA VOCÊ')).toBeGreaterThan(home.indexOf("navigate('AcademiaAgora')"));
-    expect(home.indexOf('PARA VOCÊ')).toBeLessThan(home.indexOf("navigate('Saude')"));
+  it('"Para você" fica logo abaixo da Saúde', () => {
+    expect(home.indexOf('PARA VOCÊ')).toBeGreaterThan(home.indexOf("navigate('Saude')"));
   });
 
   it('as rotas Loja e LojaDetalhe seguem registradas na pilha da aba Início (também usada no Modo Demo)', () => {

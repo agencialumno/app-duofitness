@@ -56,7 +56,7 @@ export default function WorkoutDetailScreen({ navigation, route }) {
             <TouchableOpacity accessibilityRole="button"
               key={ex.id || i}
               style={styles.exRow}
-              onPress={() => openInTab(navigation, 'Exercises', 'ExerciseDetail', { exercise: ex }, 'Workouts')}
+              onPress={() => navigation.navigate('ExerciseDetail', { exercise: ex })}
             >
               <View style={styles.exNum}><Text style={styles.exNumText}>{i + 1}</Text></View>
               <View style={styles.exIcon}>
