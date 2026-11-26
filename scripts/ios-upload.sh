@@ -141,7 +141,7 @@ if [ "$TOOL" = "altool" ]; then
   if [ "$STEP_RC" -ne 0 ] || looks_failed "$UPLOAD_LOG"; then
     fail_with_hints "$UPLOAD_LOG" "$([ "$STEP_RC" -ne 0 ] && echo "$STEP_RC" || echo 1)" "O envio do .ipa ao App Store Connect"
   fi
-  if ! grep -qi 'No errors uploading' "$UPLOAD_LOG"; then
+  if ! grep -qiE 'No errors.*uploading|UPLOAD SUCCEEDED' "$UPLOAD_LOG"; then
     err "O altool terminou sem erro, mas sem a confirmação 'No errors uploading'. Não dá para garantir que o envio funcionou: confira o App Store Connect (TestFlight) antes de rodar de novo."
     exit 1
   fi
