@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import ScreenTopInset from '../components/ScreenTopInset';
 import { useApp } from '../context/AppContext';
@@ -31,6 +31,7 @@ export default function HomeScreen({ navigation }) {
   // Menor de 18 anos: as faixas de adultos não se aplicam; o rótulo e as cores de categoria ficam escondidos.
   const imcCategoryVisible = showImcCategory(user?.ageGroup);
   const imcColor = imcCategoryVisible ? imcInfo?.color : COLORS.white;
+  const healthConnectLabel = Platform.OS === 'ios' ? 'Conectar Apple Saúde' : 'Conectar Google Health';
 
   return (
     <View style={styles.container}>
@@ -196,10 +197,10 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate('SaudeConectar')}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel="Conectar Apple Saúde ou Google Health"
+          accessibilityLabel={healthConnectLabel}
         >
           <Ionicons name="sync-outline" size={16} color={COLORS.black} />
-          <Text style={styles.healthConnectBtnText}>Conectar Apple Saúde / Google Health</Text>
+          <Text style={styles.healthConnectBtnText}>{healthConnectLabel}</Text>
           <Ionicons name="chevron-forward" size={14} color={COLORS.black} />
         </TouchableOpacity>
       </View>
