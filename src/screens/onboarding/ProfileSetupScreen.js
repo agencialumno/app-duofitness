@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { MAX_NAME_LENGTH, isUsableName, cleanName } from '../../utils/accountName';
+import { CONDOMINIOS, CONDOMINIO_PADRAO } from '../../data/condominios';
 
 const GOALS = [
   { id: 'lose_weight', label: 'Emagrecer', sub: 'Mais cardio e descansos curtos na série', icon: 'trending-down-outline' },
@@ -25,12 +26,14 @@ export default function ProfileSetupScreen({ navigation }) {
   const name = nameKnown ? cleanName(accountName) : typed;
   const setName = setTyped;
   const [goals, setGoals] = useState([]);
+  const [condominio, setCondominio] = useState(CONDOMINIO_PADRAO);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const toggleGoal = (id) => {
     setGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
-  const canContinue = isUsableName(name) && goals.length > 0;
+  const canContinue = !!condominio && isUsableName(name) && goals.length > 0;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -51,6 +54,67 @@ export default function ProfileSetupScreen({ navigation }) {
 
         <Text style={styles.title}>Vamos começar</Text>
         <Text style={styles.sub}>{nameKnown ? 'Qual é o seu objetivo?' : 'Como você se chama e qual é o seu objetivo?'}</Text>
+
+        {/* Condomínio Duo Fitness */}
+        <View style={styles.field}>
+          <Text style={styles.label}>SEU CONDOMÍNIO</Text>
+          <Text style={styles.multiHint}>Selecione onde você treina</Text>
+          <TouchableOpacity
+            style={[styles.condoBtn, dropdownOpen && styles.condoBtnOpen]}
+            onPress={() => setDropdownOpen(prev => !prev)}
+            activeOpacity={0.8}
+            accessibilityRole="combobox"
+            accessibilityLabel={`Condomínio selecionado: ${condominio?.nome || 'Nenhum'}`}
+          >
+            <View style={styles.condoLeft}>
+              <View style={styles.condoIcon}>
+                <Ionicons name="business-outline" size={20} color={COLORS.textSecondary} />
+              </View>
+              <View style={styles.condoTextWrap}>
+                <Text style={styles.condoName}>{condominio?.nome || 'Selecione seu condomínio'}</Text>
+                <Text style={styles.condoSub}>{`Combo ${condominio?.comboLabel || 'TRIPLE'} · Duo Fitness`}</Text>
+              </View>
+            </View>
+            <Ionicons name={dropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+
+          {dropdownOpen && (
+            <View style={styles.dropdownList}>
+              {CONDOMINIOS.map(c => {
+                const isSelected = condominio?.id === c.id;
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={[styles.dropdownItem, isSelected && styles.dropdownItemActive]}
+                    onPress={() => {
+                      setCondominio(c);
+                      setDropdownOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <View style={styles.dropdownItemLeft}>
+                      <Ionicons
+                        name={isSelected ? 'radio-button-on' : 'radio-button-off'}
+                        size={18}
+                        color={isSelected ? COLORS.white : COLORS.textMuted}
+                      />
+                      <View>
+                        <Text style={[styles.dropdownItemName, isSelected && styles.dropdownItemNameActive]}>
+                          {c.nome}
+                        </Text>
+                        <Text style={styles.dropdownItemSub}>{c.descricao}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.comboBadge}>
+                      <Text style={styles.comboBadgeText}>{c.comboLabel}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
         {nameKnown ? (
           <Text style={styles.greetName} accessibilityRole="header" testID="ob-name-known">{`Olá, ${name.split(' ')[0]}!`}</Text>
@@ -104,7 +168,7 @@ export default function ProfileSetupScreen({ navigation }) {
 
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canContinue }}
           style={[styles.btn, !canContinue && styles.btnDisabled]}
-          onPress={() => canContinue && navigation.navigate('BodyData', { name, goals })}
+          onPress={() => canContinue && navigation.navigate('BodyData', { name, goals, condominio: condominio?.nome, combo: condominio?.combo })}
           activeOpacity={canContinue ? 0.85 : 1}
         >
           <Text style={styles.btnText}>Continuar</Text>
@@ -128,6 +192,100 @@ const styles = StyleSheet.create({
   field: { marginBottom: SPACING.xl },
   label: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginBottom: SPACING.sm, fontWeight: '600', letterSpacing: 1.5 },
   multiHint: { fontSize: FONTS.sizes.xs, color: COLORS.textMuted, marginTop: -SPACING.xs, marginBottom: SPACING.sm },
+  condoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
+  condoBtnOpen: {
+    borderColor: COLORS.border,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  condoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    flex: 1,
+  },
+  condoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.bgCardAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  condoTextWrap: {
+    flex: 1,
+  },
+  condoName: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  condoSub: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  dropdownList: {
+    backgroundColor: COLORS.bgCardAlt,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: COLORS.border,
+    borderBottomLeftRadius: RADIUS.md,
+    borderBottomRightRadius: RADIUS.md,
+    padding: SPACING.xs,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACING.sm,
+    borderRadius: RADIUS.sm,
+  },
+  dropdownItemActive: {
+    backgroundColor: COLORS.bgCard,
+  },
+  dropdownItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    flex: 1,
+  },
+  dropdownItemName: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  dropdownItemNameActive: {
+    color: COLORS.white,
+  },
+  dropdownItemSub: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  comboBadge: {
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+  },
+  comboBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.white,
+    letterSpacing: 0.5,
+  },
   greetName: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.white, marginBottom: SPACING.lg },
   input: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, color: COLORS.white, fontSize: FONTS.sizes.md },
   goals: { gap: SPACING.sm },

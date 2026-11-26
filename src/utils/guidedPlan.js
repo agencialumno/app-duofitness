@@ -70,6 +70,7 @@ export function getProfileDefaults(user) {
     height: user?.height ? Number(user.height) : null,
     goals: Array.isArray(user?.goals) && user.goals.length > 0 ? [...user.goals] : [],
     level: user?.level || null,
+    combo: user?.combo || 'triple',
   };
 }
 
@@ -110,7 +111,7 @@ export function defaultSettings(profile) {
     level: profile?.level ?? null,
     days: 3,
     time: 45,
-    combo: null,
+    combo: profile?.combo || 'triple',
     limitation: null,
     focus: 'balanced',
     avoidImpact: false,

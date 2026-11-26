@@ -231,6 +231,7 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.sectionTitle}>PERFIL</Text>
         <View style={styles.infoCard}>
           {[
+            { label: 'Condomínio', value: `${user?.condominio || 'Praia Park Mar'} (Combo ${(user?.combo || 'triple').toUpperCase()})` },
             { label: 'Nível de condicionamento', value: LEVEL_LABELS[user?.level] || '—' },
             { label: 'Objetivo', value: formatGoals(user?.goals) },
             { label: 'Sexo biológico', value: user?.gender === 'male' ? 'Masculino' : user?.gender === 'female' ? 'Feminino' : '—' },

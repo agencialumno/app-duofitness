@@ -112,10 +112,14 @@ const STEP_LIMITATION = {
 };
 
 // Monta a lista de perguntas pulando o que já existe no perfil do usuário
-// (coletado no onboarding: peso, altura, objetivos e nível).
+// (coletado no onboarding: condomínio/combo, peso, altura, objetivos e nível).
 function buildSteps(user) {
   const steps = [];
   const known = {};
+
+  const userCombo = user?.combo || 'triple';
+  known.combo = userCombo;
+  known.equipment = getComboEquipment(userCombo);
 
   if (user?.weight && user?.height) {
     known.weight = user.weight;
@@ -130,7 +134,7 @@ function buildSteps(user) {
     steps.push(STEP_GOALS);
   }
 
-  steps.push(STEP_SCHEDULE, STEP_COMBO);
+  steps.push(STEP_SCHEDULE);
 
   if (user?.level) {
     known.level = user.level;
@@ -142,7 +146,7 @@ function buildSteps(user) {
 
   // Perguntas feitas antes de passar a conversa para a IA online: o servidor
   // precisa de combo, limitação e nível para só oferecer exercícios adequados.
-  const preSteps = [STEP_COMBO, STEP_LIMITATION];
+  const preSteps = [STEP_LIMITATION];
   if (!known.level) preSteps.push(STEP_LEVEL);
 
   return { steps, known, preSteps };

@@ -21,6 +21,8 @@ export default function LevelSelectScreen({ navigation, route }) {
     if (!level) return;
     await saveUser({
       ...params,
+      condominio: params?.condominio || 'Praia Park Mar',
+      combo: params?.combo || 'triple',
       level,
       joinedAt: new Date().toISOString(),
     });

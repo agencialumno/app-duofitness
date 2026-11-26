@@ -48,12 +48,6 @@ const QUESTIONS = [
     ],
   },
   {
-    id: 'combo',
-    question: 'Qual combo Duo Fitness tem no seu condomínio?',
-    sub: 'Isso define quais equipamentos e máquinas entram no seu treino.',
-    options: COMBOS.map(c => ({ value: c.id, label: c.label, sub: c.description })),
-  },
-  {
     id: 'focus',
     question: 'Qual área você quer priorizar?',
     sub: 'O plano será balanceado mas com ênfase no que você escolher.',
@@ -77,15 +71,16 @@ const QUESTIONS = [
   },
 ];
 
-// Perguntas do gerador rápido que têm explicação ("i"): combo e limitação física.
-const INFO_BY_QUESTION = { combo: 'combos', limitation: 'limitacao' };
+// Perguntas do gerador rápido que têm explicação ("i"): limitação física.
+const INFO_BY_QUESTION = { limitation: 'limitacao' };
 
 export default function SmartPlanScreen({ navigation, route }) {
   useReturnToOrigin(navigation, route);
   const insets = useSafeAreaInsets();
   const { addWorkouts, user } = useApp();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const userCombo = user?.combo || 'triple';
+  const [answers, setAnswers] = useState({ combo: userCombo });
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
   const [plan, setPlan] = useState(null);

@@ -20,7 +20,7 @@ import { BuildingChecklist, animateLayout, Chip, FooterButton, GuidedHeader, Opt
 
 // Série guiada: uma pergunta por tela, no aparelho (sem rede). O chat antigo continua na rota
 // "AIPersonalTrainerChat". Nada aqui altera os dados salvos até o morador tocar em "Salvar série".
-const QUESTIONS = ['schedule', 'combo', 'limitation', 'focus'];
+const QUESTIONS = ['schedule', 'limitation', 'focus'];
 
 export default function GuidedPlanScreen({ navigation, route }) {
   useReturnToOrigin(navigation, route); // o voltar interno (etapas) segue igual; só o voltar que SAI da tela volta à aba de origem

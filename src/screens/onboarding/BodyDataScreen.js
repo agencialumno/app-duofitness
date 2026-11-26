@@ -135,6 +135,7 @@ export default function BodyDataScreen({ navigation, route }) {
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !canContinue }}
           style={[styles.btn, !canContinue && styles.btnDisabled]}
           onPress={() => canContinue && navigation.navigate('LevelSelect', {
+            ...route.params,
             name, goals, gender, ageGroup,
             weight: parseFloat(weight),
             height: parseFloat(height),

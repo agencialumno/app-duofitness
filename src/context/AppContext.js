@@ -80,7 +80,12 @@ export const AppProvider = ({ children }) => {
       const d = await readAppData(AsyncStorage);
       const age = await readJsonKey(AsyncStorage, '@duo_age', sanitizeAgeInfo);
       // chave ausente = valor vazio (ao trocar de conta nada do estado anterior pode ficar na memória)
-      setUser(d.user !== undefined ? d.user : null);
+      const u = d.user !== undefined ? d.user : null;
+      if (u) {
+        u.condominio = u.condominio || 'Praia Park Mar';
+        u.combo = u.combo || 'triple';
+      }
+      setUser(u);
       setWorkouts(d.workouts !== undefined ? d.workouts : []);
       try { setSeriesStore(await loadSeries(AsyncStorage, d.workouts !== undefined ? d.workouts : [])); } catch (e) { setSeriesStore(EMPTY_STORE); }
       setCompletedSessions(d.sessions !== undefined ? d.sessions : []);
@@ -96,8 +101,13 @@ export const AppProvider = ({ children }) => {
   };
 
   const saveUser = async (userData) => {
-    setUser(userData);
-    await AsyncStorage.setItem('@duo_user', JSON.stringify(userData));
+    const updated = userData ? {
+      ...userData,
+      condominio: userData.condominio || 'Praia Park Mar',
+      combo: userData.combo || 'triple',
+    } : null;
+    setUser(updated);
+    await AsyncStorage.setItem('@duo_user', JSON.stringify(updated));
     await AsyncStorage.setItem('@duo_onboarded', 'true');
     // Peso novo do perfil: vira um ponto da série atual (só maiores de 18; falha aqui nunca atrapalha o perfil)
     try {
