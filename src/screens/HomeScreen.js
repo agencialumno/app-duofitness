@@ -191,31 +191,35 @@ export default function HomeScreen({ navigation }) {
       </TouchableOpacity>
 
       {/* Para você: vitrine de parceiros (dados locais, funciona offline e no Modo Demo) */}
-      <Text style={styles.sectionTitleStrong} accessibilityRole="header">PARA VOCÊ</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.forYouScroll}
-        contentContainerStyle={styles.forYouList}
-      >
-        {getDestaques(MARKETPLACE_ITEMS, 3).map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.forYouCard}
-            onPress={() => navigation.navigate('LojaDetalhe', { itemId: item.id })}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.titulo}. ${item.descricaoCurta}`}
-            accessibilityHint="Abre os detalhes do item"
+      {getDestaques(MARKETPLACE_ITEMS, 3).length > 0 && (
+        <>
+          <Text style={styles.sectionTitleStrong} accessibilityRole="header">PARA VOCÊ</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.forYouScroll}
+            contentContainerStyle={styles.forYouList}
           >
-            <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={32} exemplo={!!item.exemplo} />
-            <View style={styles.forYouBody}>
-              <Text style={styles.forYouTitle} numberOfLines={2}>{item.titulo}</Text>
-              <Text style={styles.forYouDesc} numberOfLines={2}>{item.descricaoCurta}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {getDestaques(MARKETPLACE_ITEMS, 3).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.forYouCard}
+                onPress={() => navigation.navigate('LojaDetalhe', { itemId: item.id })}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.titulo}. ${item.descricaoCurta}`}
+                accessibilityHint="Abre os detalhes do item"
+              >
+                <MarketplaceImage imagem={item.imagem} categoria={item.categoria} iconSize={32} exemplo={!!item.exemplo} />
+                <View style={styles.forYouBody}>
+                  <Text style={styles.forYouTitle} numberOfLines={2}>{item.titulo}</Text>
+                  <Text style={styles.forYouDesc} numberOfLines={2}>{item.descricaoCurta}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      )}
       <TouchableOpacity
         style={styles.storeBtn}
         onPress={() => navigation.navigate('Loja')}

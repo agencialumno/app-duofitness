@@ -25,7 +25,9 @@ export const CATEGORIAS = [
   { id: 'servicos', label: 'Serviços', icone: 'people-outline' },
 ];
 
-export const MARKETPLACE_ITEMS = [
+export const MARKETPLACE_ITEMS = [];
+
+export const MARKETPLACE_SAMPLE_ITEMS = [
   {
     id: 'acess-kit-treino',
     categoria: 'acessorios',

@@ -7,7 +7,7 @@ import { COLORS, SPACING, TYPE, HEALTH_UI } from '../utils/theme';
 // Cabeçalho único de tela (docs/visual-cabecalho.md). Duas variantes:
 //  - "inner" (padrão): tela interna, com botão voltar; título TYPE.title, até 2 linhas.
 //  - "root": raiz de aba, sem voltar; título grande TYPE.titleLarge.
-// NÃO usa useNavigation: o voltar é o `onBack` que a tela passa, então headerShown, useReturnToOrigin e o gesto do iOS continuam como estão.
+// Não usa hook nem contexto de navegação: o voltar é o `onBack` que a tela passa, então headerShown, useReturnToOrigin e o gesto do iOS continuam como estão.
 // Topo seguro: fundo opaco COLORS.bg com insets.top somado, irmão fixo acima do ScrollView (o conteúdo não passa por baixo do relógio).
 // Alvos de toque de HEALTH_UI.minTouch (44) no voltar e na coluna da ação à direita; quem passa `right` define role e label do nó.
 export default function ScreenHeader({ title, subtitle, onBack, right, variant = 'inner', testID }) {

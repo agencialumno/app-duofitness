@@ -19,7 +19,7 @@ type Item = {
   contato: { tipo: string; url?: string };
   exemplo: boolean;
 };
-const items: Item[] = M.MARKETPLACE_ITEMS;
+const items: Item[] = M.MARKETPLACE_SAMPLE_ITEMS || M.MARKETPLACE_ITEMS;
 const CATEGORY_IDS = ['nutricao', 'suplementos', 'whey', 'acessorios', 'servicos'];
 
 describe('filtragem por categoria', () => {

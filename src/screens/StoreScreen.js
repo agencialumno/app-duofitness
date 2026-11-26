@@ -66,29 +66,31 @@ export default function StoreScreen({ navigation }) {
 
         <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
 
-        <View style={styles.chips} accessibilityRole="tablist">
-          {chips.map((c) => {
-            const active = c.id === categoria;
-            return (
-              <TouchableOpacity
-                key={c.id}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setCategoria(c.id)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={`${c.label}, ${counts[c.id] ?? 0} ${counts[c.id] === 1 ? 'item' : 'itens'}`}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {counts.todos > 0 && (
+          <View style={styles.chips} accessibilityRole="tablist">
+            {chips.map((c) => {
+              const active = c.id === categoria;
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setCategoria(c.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`${c.label}, ${counts[c.id] ?? 0} ${counts[c.id] === 1 ? 'item' : 'itens'}`}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="storefront-outline" size={36} color={COLORS.textSecondary} />
-            <Text style={styles.emptyTitle}>Nenhum item nesta categoria</Text>
-            <Text style={styles.emptyText}>Escolha outra categoria para ver os anúncios dos parceiros.</Text>
+            <Ionicons name="storefront-outline" size={44} color={COLORS.primary} />
+            <Text style={styles.emptyTitle}>Em breve novos parceiros</Text>
+            <Text style={styles.emptyText}>Quer divulgar seu produto ou serviço para os moradores da rede Duo Fitness? Toque no botão acima e solicite seu espaço!</Text>
           </View>
         ) : (
           items.map((item) => {
@@ -130,7 +132,9 @@ export default function StoreScreen({ navigation }) {
           })
         )}
 
-        <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
+        {items.length > 0 && (
+          <AdvertiseButton onPress={() => navigation.navigate('AnunciarMarketplace')} />
+        )}
 
         <Text style={styles.notice}>{MARKETPLACE_CONFIG.partnerNotice}</Text>
       </ScrollView>
