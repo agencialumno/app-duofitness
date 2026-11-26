@@ -253,6 +253,15 @@ export const AppProvider = ({ children }) => {
     return clean;
   };
 
+  // Foto de perfil: salva o URI da foto no perfil (@duo_user)
+  const updateUserAvatar = async (photoUri) => {
+    if (!user) return null;
+    const next = { ...user, photoUri: photoUri || null };
+    setUser(next);
+    await AsyncStorage.setItem('@duo_user', JSON.stringify(next));
+    return next.photoUri;
+  };
+
   // Etapa de idade concluída: grava só no aparelho (entra no snapshot da conta). Se já existe perfil (dados de antes das contas),
   // a faixa etária do perfil passa a ser a da idade informada.
   const saveAge = async (info) => {
@@ -319,7 +328,7 @@ export const AppProvider = ({ children }) => {
             xp, streak, achievements,
       getLevel,
       refreshData: loadData,
-      accountName, rememberSignupName, renameUser,
+      accountName, rememberSignupName, renameUser, updateUserAvatar,
       ageInfo, saveAge, signOutAccount, deleteAccountAndData, rejectUnderage, dataEpoch,
       gate,
     }}>

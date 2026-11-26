@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { COLORS, FONTS, SPACING, RADIUS } from '../utils/theme';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { buildImcSheet, showImcCategory } from '../utils/imcInfo';
 import AccountCard, { AccountActions } from '../components/auth/AccountCard';
 import { useAuth } from '../auth/AuthContext';
 import { computeStreak } from '../utils/health';
+import { pickImageFromGallery, pickImageFromCamera } from '../utils/avatarPicker';
 
 const GOAL_LABELS = {
   lose_weight: 'Emagrecer',
@@ -33,7 +34,7 @@ function formatGoals(goals) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const { user, xp, achievements, completedSessions, seriesCount, getLevel, renameUser } = useApp();
+  const { user, xp, achievements, completedSessions, seriesCount, getLevel, renameUser, updateUserAvatar } = useApp();
   const { refreshUser } = useAuth();
   // Ao abrir e ao voltar ao foco do Perfil: recarrega o usuário (o link de verificação do e-mail só aparece numa recarga).
   useEffect(() => {
@@ -48,6 +49,45 @@ export default function ProfileScreen({ navigation }) {
   // Menor de 18 anos: sem rótulo, dica, cor nem ícone de categoria (as faixas de adultos não se aplicam).
   const imcCategoryVisible = showImcCategory(user?.ageGroup);
 
+  const handleAvatarPress = () => {
+    const options = [
+      {
+        text: 'Tirar foto',
+        onPress: async () => {
+          const res = await pickImageFromCamera();
+          if (res.error === 'permission_denied') {
+            Alert.alert('Permissão necessária', 'Permita o acesso à câmera nas configurações para tirar sua foto de perfil.');
+          } else if (!res.cancelled && res.uri) {
+            await updateUserAvatar(res.uri);
+          }
+        },
+      },
+      {
+        text: 'Escolher da galeria',
+        onPress: async () => {
+          const res = await pickImageFromGallery();
+          if (res.error === 'permission_denied') {
+            Alert.alert('Permissão necessária', 'Permita o acesso às fotos nas configurações para escolher sua foto de perfil.');
+          } else if (!res.cancelled && res.uri) {
+            await updateUserAvatar(res.uri);
+          }
+        },
+      },
+    ];
+    if (user?.photoUri) {
+      options.push({
+        text: 'Remover foto',
+        style: 'destructive',
+        onPress: async () => {
+          await updateUserAvatar(null);
+        },
+      });
+    }
+    options.push({ text: 'Cancelar', style: 'cancel' });
+
+    Alert.alert('Foto de perfil', 'Como deseja atualizar sua foto?', options);
+  };
+
   return (
     <View style={styles.container}>
     <ScreenTopInset />
@@ -55,9 +95,24 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Avatar */}
       <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Image source={require('../../assets/logo.png')} style={styles.avatarLogo} resizeMode="contain" />
-        </View>
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={handleAvatarPress}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Alterar foto de perfil"
+        >
+          <View style={styles.avatar}>
+            {user?.photoUri ? (
+              <Image source={{ uri: user.photoUri }} style={styles.avatarPhoto} resizeMode="cover" />
+            ) : (
+              <Image source={require('../../assets/logo.png')} style={styles.avatarLogo} resizeMode="contain" />
+            )}
+          </View>
+          <View style={styles.avatarBadge}>
+            <Ionicons name="camera" size={13} color={COLORS.black} />
+          </View>
+        </TouchableOpacity>
         <EditNameRow name={user?.name} onSave={renameUser} />
         <Text style={styles.userLevel}>Nível {levelInfo.level} · {levelInfo.title}</Text>
         <View style={styles.goalBadge}>
@@ -214,8 +269,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl, gap: SPACING.lg },
   profileHeader: { alignItems: 'center', gap: SPACING.sm },
+  avatarContainer: { position: 'relative', width: 80, height: 80 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.black, borderWidth: 2, borderColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarPhoto: { width: '100%', height: '100%' },
   avatarLogo: { width: 72, height: 72 },
+  avatarBadge: { position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: COLORS.bg },
   userName: { fontSize: FONTS.sizes.xxl, fontWeight: '700', color: COLORS.white },
   userLevel: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
   goalBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.bgCardAlt, borderRadius: RADIUS.full, paddingHorizontal: SPACING.md, paddingVertical: 4, borderWidth: 1, borderColor: COLORS.border },
