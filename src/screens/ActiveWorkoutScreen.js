@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import ExerciseIcon from '../components/ExerciseIcon';
+import ExerciseMedia from '../components/ExerciseMedia';
+import { EXERCISE_VIDEOS_ENABLED } from '../data/exerciseVideosConfig';
 
 export default function ActiveWorkoutScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -21,6 +23,8 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
   const [xpEarned, setXpEarned] = useState(0);
   const restTimer = useRef(null);
   const totalTimer = useRef(null);
+  const exerciseTimer = useRef(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
   const flashAnim = useRef(new Animated.Value(1)).current;
   const currentEx = exercises[currentIdx];
   const progress = exercises.length > 0 ? ((currentIdx * 100) + ((currentSet - 1) / (currentEx?.sets || 1) * 100)) / exercises.length : 0;
@@ -31,6 +35,30 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
   }, []);
 
   useEffect(() => { return () => clearInterval(restTimer.current); }, []);
+
+  // Contagem regressiva para exercícios por tempo (ex: prancha, wall sit)
+  useEffect(() => {
+    if (resting || !currentEx?.isTime) {
+      if (exerciseTimer.current) clearInterval(exerciseTimer.current);
+      setTimeRemaining(null);
+      return;
+    }
+    const initial = parseInt(String(currentEx.reps).replace(/\D/g, '')) || 30;
+    setTimeRemaining(initial);
+    exerciseTimer.current = setInterval(() => {
+      setTimeRemaining(s => {
+        if (s <= 1) {
+          clearInterval(exerciseTimer.current);
+          flash();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      if (exerciseTimer.current) clearInterval(exerciseTimer.current);
+    };
+  }, [currentIdx, currentSet, resting, currentEx]);
 
   const flash = () => {
     Animated.sequence([
@@ -120,6 +148,13 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Animated.View style={{ opacity: flashAnim }}>
           <View style={styles.exerciseCard}>
+            {/* Como fazer: vídeo / imagens de referência durante todo o exercício */}
+            {EXERCISE_VIDEOS_ENABLED && (
+              <View style={styles.mediaWrap}>
+                <ExerciseMedia exercise={currentEx} />
+              </View>
+            )}
+
             <View style={styles.exerciseIconWrap}>
               <ExerciseIcon exerciseId={currentEx?.id} size={36} />
             </View>
@@ -134,8 +169,12 @@ export default function ActiveWorkoutScreen({ navigation, route }) {
             <Text style={styles.setInfo}>Série {currentSet} de {currentEx?.sets}</Text>
 
             <View style={styles.repsDisplay}>
-              <Text style={styles.repsNumber}>{currentEx?.reps}</Text>
-              <Text style={styles.repsLabel}>{currentEx?.isTime ? 'segundos' : 'repetições'}</Text>
+              <Text style={styles.repsNumber}>
+                {currentEx?.isTime && timeRemaining !== null ? `${timeRemaining}s` : currentEx?.reps}
+              </Text>
+              <Text style={styles.repsLabel}>
+                {currentEx?.isTime ? (timeRemaining === 0 ? 'tempo finalizado!' : 'contagem regressiva') : 'repetições'}
+              </Text>
             </View>
             <Text style={styles.restInfo}>Descanso: {currentEx?.rest}s</Text>
           </View>
@@ -179,6 +218,7 @@ const styles = StyleSheet.create({
   progressBar: { height: 3, backgroundColor: COLORS.border, marginHorizontal: SPACING.lg },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2 },
   content: { padding: SPACING.lg, gap: SPACING.md, paddingBottom: SPACING.xxl },
+  mediaWrap: { width: '100%', maxWidth: 280, aspectRatio: 1, borderRadius: RADIUS.lg, overflow: 'hidden', marginBottom: SPACING.xs },
   exerciseCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.xl, alignItems: 'center', gap: SPACING.sm },
   exerciseIconWrap: { width: 80, height: 80, borderRadius: RADIUS.xl, backgroundColor: COLORS.bgCardAlt, justifyContent: 'center', alignItems: 'center' },
   exName: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.white, textAlign: 'center' },
